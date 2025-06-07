@@ -65,7 +65,11 @@ export const updateBill = async (id, data) => {
   const existing = await prisma.bill.findUnique({ where: { id } });
   if (!existing) return null;
 
-  const updated = await prisma.bill.update({ where: { id }, data });
+  const updateData = { ...data };
+  if (data.status === 'paid' && existing.status !== 'paid') {
+    updateData.paidAt = new Date();
+  }
+  const updated = await prisma.bill.update({ where: { id }, data: updateData });
   let newBill = null;
 
   if (
@@ -112,7 +116,7 @@ export const updateBill = async (id, data) => {
       name: updated.name,
       amount: updated.amount,
       dueDate: updated.dueDate,
-      paidDate: new Date().toISOString(),
+      paidAt: new Date().toISOString(),
       paymentProvider: updated.paymentProvider,
       recurrence: updated.recurrence || 'none'
     });

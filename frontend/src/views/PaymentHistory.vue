@@ -60,7 +60,7 @@
       hide-default-footer
     >
       <template #item.dueDate="{ item }">{{ format(item.dueDate) }}</template>
-      <template #item.paidDate="{ item }">{{ format(item.paidDate) }}</template>
+      <template #item.paidAt="{ item }">{{ format(item.paidAt) }}</template>
       <template #item.amount="{ item }">{{ item.amount.toFixed(2) }}</template>
     </v-data-table>
   </v-container>
@@ -93,7 +93,7 @@ const headers = [
   { title: 'Bill Name', key: 'name' },
   { title: 'Amount', key: 'amount' },
   { title: 'Due Date', key: 'dueDate' },
-  { title: 'Paid Date', key: 'paidDate' },
+  { title: 'Paid Date', key: 'paidAt' },
   { title: 'Provider', key: 'paymentProvider' },
   { title: 'Recurrence', key: 'recurrence' }
 ];
@@ -128,10 +128,10 @@ const filteredPayments = computed(() => {
       (p) => p.paymentProvider && p.paymentProvider === provider.value
     );
   if (startDate.value)
-    data = data.filter((p) => new Date(p.paidDate) >= new Date(startDate.value));
+    data = data.filter((p) => new Date(p.paidAt) >= new Date(startDate.value));
   if (endDate.value)
-    data = data.filter((p) => new Date(p.paidDate) <= new Date(endDate.value));
-  return data;
+    data = data.filter((p) => new Date(p.paidAt) <= new Date(endDate.value));
+  return data.sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt));
 });
 </script>
 
