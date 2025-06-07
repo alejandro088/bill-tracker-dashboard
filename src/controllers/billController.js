@@ -8,17 +8,17 @@ import {
   getMonthlySummary
 } from '../services/billService.js';
 
-export const getAll = (req, res, next) => {
+export const getAll = async (req, res, next) => {
   try {
-    res.json(listBills(req.query));
+    res.json(await listBills(req.query));
   } catch (err) {
     next(err);
   }
 };
 
-export const getById = (req, res, next) => {
+export const getById = async (req, res, next) => {
   try {
-    const bill = getBillById(req.params.id);
+    const bill = await getBillById(req.params.id);
     if (!bill) return res.status(404).json({ message: 'Bill not found' });
     res.json(bill);
   } catch (err) {
@@ -26,18 +26,18 @@ export const getById = (req, res, next) => {
   }
 };
 
-export const create = (req, res, next) => {
+export const create = async (req, res, next) => {
   try {
-    const bill = addBill(req.body);
+    const bill = await addBill(req.body);
     res.status(201).json(bill);
   } catch (err) {
     next(err);
   }
 };
 
-export const update = (req, res, next) => {
+export const update = async (req, res, next) => {
   try {
-    const result = updateBill(req.params.id, req.body);
+    const result = await updateBill(req.params.id, req.body);
     if (!result) return res.status(404).json({ message: 'Bill not found' });
     res.json(result);
   } catch (err) {
@@ -45,27 +45,26 @@ export const update = (req, res, next) => {
   }
 };
 
-export const remove = (req, res, next) => {
+export const remove = async (req, res, next) => {
   try {
-    const success = deleteBill(req.params.id);
-    if (!success) return res.status(404).json({ message: 'Bill not found' });
+    await deleteBill(req.params.id);
     res.status(204).end();
   } catch (err) {
     next(err);
   }
 };
 
-export const upcoming = (req, res, next) => {
+export const upcoming = async (req, res, next) => {
   try {
-    res.json(getUpcomingBills());
+    res.json(await getUpcomingBills());
   } catch (err) {
     next(err);
   }
 };
 
-export const summary = (req, res, next) => {
+export const summary = async (req, res, next) => {
   try {
-    res.json(getMonthlySummary());
+    res.json(await getMonthlySummary());
   } catch (err) {
     next(err);
   }

@@ -44,6 +44,10 @@ A simple and efficient dashboard to manage your **bills, subscriptions, utilitie
 git clone https://github.com/tu-user/bill-tracker-dashboard.git
 cd bill-tracker-dashboard
 npm install
+cp .env.example .env
+# update DATABASE_URL with your MySQL credentials
+npm run migrate
+npm run seed
 npm run dev
 ```
 
