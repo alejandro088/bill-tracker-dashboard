@@ -1,22 +1,25 @@
 <template>
   <div class="container">
     <h1>Bill Tracker Dashboard</h1>
-    <SummaryWidget />
-    <BillForm @added="refresh" />
-    <BillTable :key="refreshKey" />
+    <nav class="nav">
+      <router-link to="/">Dashboard</router-link>
+      <router-link to="/analytics">Analytics</router-link>
+    </nav>
+    <router-view @notify="showToast"></router-view>
+    <div v-if="toast" class="toast">{{ toast }}</div>
   </div>
 </template>
 
 <script setup>
-import BillTable from './components/BillTable.vue';
-import BillForm from './components/BillForm.vue';
-import SummaryWidget from './components/SummaryWidget.vue';
 import { ref } from 'vue';
 
-const refreshKey = ref(0);
+const toast = ref('');
+let timer;
 
-function refresh() {
-  refreshKey.value++;
+function showToast(msg) {
+  toast.value = msg;
+  clearTimeout(timer);
+  timer = setTimeout(() => (toast.value = ''), 3000);
 }
 </script>
 
@@ -26,5 +29,19 @@ function refresh() {
   margin: auto;
   padding: 20px;
   font-family: Arial, Helvetica, sans-serif;
+}
+.nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 4px;
 }
 </style>

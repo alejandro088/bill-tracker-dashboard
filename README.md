@@ -16,6 +16,10 @@ A simple and efficient dashboard to manage your **bills, subscriptions, utilitie
 * 🔎 Filter by category (e.g., utilities, subscriptions, taxes)
 * 📃 Local data persistence (optional JSON file backup)
 * 📊 Monthly financial summary: compare total paid vs. pending bills
+* ✅ Pay bills directly from the dashboard
+* ❌ Cancel auto-renewing subscriptions
+* 📜 View payment history for each subscription
+* 📈 Analytics charts for spending
 
 ## 🚀 Stack (suggested)
 

@@ -6,6 +6,7 @@ import {
   deleteBill as deleteBillFromDb
 } from '../db/mockDB.js';
 import { v4 as uuidv4 } from 'uuid';
+import { addPayment } from './paymentService.js';
 
 const updateOverdueBills = () => {
   const now = new Date();
@@ -79,6 +80,7 @@ export const updateBill = (id, data) => {
 
   const prevStatus = existing.status;
   const updated = updateBillInDb(id, data);
+  let newBill = null;
 
   if (
     updated &&
@@ -89,7 +91,7 @@ export const updateBill = (id, data) => {
   ) {
     const due = new Date(updated.dueDate);
     due.setMonth(due.getMonth() + 1);
-    const newBill = {
+    newBill = {
       id: uuidv4(),
       name: updated.name,
       description: updated.description,
@@ -102,7 +104,17 @@ export const updateBill = (id, data) => {
     addBillToDb(newBill);
   }
 
-  return updated;
+  if (updated && data.status === 'paid' && prevStatus !== 'paid') {
+    addPayment({
+      billId: updated.id,
+      name: updated.name,
+      amount: updated.amount,
+      dueDate: updated.dueDate,
+      paidDate: new Date().toISOString()
+    });
+  }
+
+  return { updated, newBill };
 };
 
 export const deleteBill = (id) => deleteBillFromDb(id);
