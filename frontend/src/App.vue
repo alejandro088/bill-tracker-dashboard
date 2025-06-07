@@ -1,66 +1,67 @@
 <template>
   <v-app>
+    <v-navigation-drawer
+      v-model="drawer"
+      app
+      :temporary="display.smAndDown"
+    >
+      <v-list nav>
+        <v-list-item
+          to="/"
+          prepend-icon="mdi-view-dashboard"
+          title="Dashboard"
+          :active="route.path === '/'"
+        />
+        <v-list-item
+          to="/history"
+          prepend-icon="mdi-history"
+          title="History"
+          :active="route.path.startsWith('/history')"
+        />
+        <v-list-item
+          to="/analytics"
+          prepend-icon="mdi-chart-bar"
+          title="Analytics"
+          :active="route.path.startsWith('/analytics')"
+        />
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-app-bar app>
+      <v-app-bar-nav-icon @click="drawer = !drawer" v-if="display.smAndDown" />
+      <v-toolbar-title>Bill Tracker Dashboard</v-toolbar-title>
+    </v-app-bar>
+
     <v-main>
       <v-container class="container">
-      <h1>Bill Tracker Dashboard</h1>
-      <v-tabs v-model="tab" grow @update:modelValue="navigate">
-        <v-tab value="/">Dashboard</v-tab>
-        <v-tab value="/history">History</v-tab>
-        <v-tab value="/analytics">Analytics</v-tab>
-      </v-tabs>
-      <v-tabs-items v-model="tab">
-        <v-tab-item value="/">
-          <router-view v-slot="{ Component }" v-if="tab === '/'">
-            <component :is="Component" @notify="showToast" />
-          </router-view>
-        </v-tab-item>
-        <v-tab-item value="/history">
-          <router-view v-slot="{ Component }" v-if="tab === '/history'">
-            <component :is="Component" @notify="showToast" />
-          </router-view>
-        </v-tab-item>
-        <v-tab-item value="/analytics">
-          <router-view v-slot="{ Component }" v-if="tab === '/analytics'">
-            <component :is="Component" @notify="showToast" />
-          </router-view>
-        </v-tab-item>
-      </v-tabs-items>
-      <div v-if="toast" class="toast">{{ toast }}</div>
+        <router-view v-slot="{ Component }">
+          <component :is="Component" @notify="showToast" />
+        </router-view>
       </v-container>
     </v-main>
+    <div v-if="toast" class="toast">{{ toast }}</div>
   </v-app>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useDisplay } from 'vuetify'
 
-const toast = ref('');
-let timer;
-const tab = ref('/');
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const display = useDisplay()
+const drawer = ref(!display.smAndDown.value)
+const toast = ref('')
+let timer
 
-watch(
-  () => route.path,
-  (val) => {
-    if (val.startsWith('/analytics')) tab.value = '/analytics';
-    else if (val.startsWith('/history')) tab.value = '/history';
-    else tab.value = '/';
-  },
-  { immediate: true }
-);
-
-function navigate(value) {
-  if (value !== route.path) {
-    router.push(value);
-  }
-}
+watch(display.smAndDown, val => {
+  if (!val) drawer.value = true
+})
 
 function showToast(msg) {
-  toast.value = msg;
-  clearTimeout(timer);
-  timer = setTimeout(() => (toast.value = ''), 3000);
+  toast.value = msg
+  clearTimeout(timer)
+  timer = setTimeout(() => (toast.value = ''), 3000)
 }
 </script>
 
