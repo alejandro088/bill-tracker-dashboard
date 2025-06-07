@@ -82,6 +82,7 @@
 
     <EditBillForm
       v-if="editingBill"
+      :key="editingBill.id"
       :bill="editingBill"
       @updated="onUpdated"
       @close="closeEdit"
