@@ -53,6 +53,19 @@ npm run seed
 npm run dev
 ```
 
+## 🧪 Testing
+
+Backend tests are written with **Vitest**. Prisma and OpenAI calls are mocked so
+no real database or API key is required. Frontend tests exist under
+`tests/frontend`, but they are currently skipped and excluded from the default
+run because Vuetify styles cause issues in JSDOM.
+
+Run all available tests with:
+
+```bash
+npm test
+```
+
 ## 🧐 Roadmap Ideas
 
 * ✅ Manual input of bills and subscriptions
