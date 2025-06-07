@@ -84,6 +84,9 @@
         <v-btn icon v-if="item.invoiceCount > 1" @click="history(item)">
           <v-icon>mdi-history</v-icon>
         </v-btn>
+        <v-btn icon v-if="!item.autoRenew" @click="newInvoice(item)">
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
         <v-btn icon @click="edit(item)">
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
@@ -99,6 +102,12 @@
       @updated="onUpdated"
       @close="closeEdit"
     />
+    <ManualInvoiceForm
+      v-if="newBill"
+      :bill="newBill"
+      @created="onCreated"
+      @close="closeNew"
+    />
   </div>
 </template>
 
@@ -106,6 +115,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import api from '../api.js';
 import EditBillForm from './EditBillForm.vue';
+import ManualInvoiceForm from './ManualInvoiceForm.vue';
 import { useRouter } from 'vue-router';
 
 const emit = defineEmits(['notify']);
@@ -132,6 +142,7 @@ const sort = ref('dueDate');
 const loading = ref(false);
 const error = ref(null);
 const editingBill = ref(null);
+const newBill = ref(null);
 const router = useRouter();
 
 const categoryOptions = [
@@ -275,6 +286,26 @@ function history(bill) {
       category: bill.category
     }
   });
+}
+
+function newInvoice(bill) {
+  newBill.value = {
+    name: bill.name,
+    category: bill.category,
+    paymentProvider: bill.paymentProvider,
+    recurrence: bill.recurrence || 'none',
+    amount: bill.amount,
+    dueDate: bill.dueDate.substring(0, 10),
+    status: 'pending'
+  };
+}
+
+function closeNew() {
+  newBill.value = null;
+}
+
+async function onCreated() {
+  await fetchBills();
 }
 
 function emitNotify(msg) {
