@@ -75,9 +75,10 @@ Automatically records a payment entry when a bill status changes to `"paid"`.
 
 ## 🛠 Development Notes
 
-- No automated tests are available for this agent at the moment.
-- No `npm test` or test scripts are defined for this repo.
-- You may proceed with implementation without running tests.
+- Automated tests live under `tests/` and are run with **Vitest**.
+- Prisma client calls and the OpenAI library are mocked to keep tests fast and independent of external services.
+- Frontend tests in `tests/frontend` are skipped for now due to CSS and Vuetify style issues in JSDOM.
+- Run all tests with `npm test`.
 - After implementation, create a commit and open a Pull Request with a clear title.
 
 ### Commit message suggestion:
