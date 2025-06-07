@@ -55,15 +55,21 @@ npm run dev
 
 ## 🧪 Testing
 
-Backend tests are written with **Vitest**. Prisma and OpenAI calls are mocked so
-no real database or API key is required. Frontend tests exist under
-`tests/frontend`, but they are currently skipped and excluded from the default
-run because Vuetify styles cause issues in JSDOM.
+Unit tests live under `__tests__/unit` and run with **Jest**. Integration tests
+use **Vitest** under `tests/integration`. Frontend specs remain skipped under
+`tests/integration/frontend` due to Vuetify style issues in JSDOM.
 
-Run all available tests with:
+Run all tests with:
 
 ```bash
-npm test
+npm test           # runs unit and integration tests
+```
+
+Or run them individually:
+
+```bash
+npm run test:unit       # Jest
+npm run test:integration # Vitest
 ```
 
 ## 🧐 Roadmap Ideas

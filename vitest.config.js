@@ -5,7 +5,8 @@ import vuetify from 'vite-plugin-vuetify';
 export default defineConfig({
   plugins: [vue(), vuetify({ styles: 'none' })],
   test: {
+    include: ['tests/integration/**/*.test.js'],
     environment: 'jsdom',
-    exclude: ['tests/frontend/**', 'node_modules/**']
+    exclude: ['tests/integration/frontend/**', 'node_modules/**']
   }
 });

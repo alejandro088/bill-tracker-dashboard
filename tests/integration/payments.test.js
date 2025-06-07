@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 process.env.NODE_ENV = 'test';
-vi.mock('../src/db/prismaClient.js', () => ({
+vi.mock('../../src/db/prismaClient.js', () => ({
   default: {
     $connect: vi.fn().mockResolvedValue(),
     $disconnect: vi.fn().mockResolvedValue(),
@@ -9,10 +9,10 @@ vi.mock('../src/db/prismaClient.js', () => ({
   }
 }));
 vi.mock('openai', () => ({ default: vi.fn() }));
-import app from '../src/index.js';
-import * as paymentService from '../src/services/paymentService.js';
+import app from '../../src/index.js';
+import * as paymentService from '../../src/services/paymentService.js';
 
-vi.mock('../src/services/paymentService.js');
+vi.mock('../../src/services/paymentService.js');
 
 const sample = { id: '1', name: 'Internet', amount: 50, paidAt: new Date().toISOString(), dueDate: new Date().toISOString(), paymentProvider: 'Visa', recurrence: 'none', category: 'utilities' };
 

@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-jest.unstable_mockModule('../../src/db/prismaClient.js', () => ({
+jest.unstable_mockModule('../../../src/db/prismaClient.js', () => ({
   default: {
     bill: {
       updateMany: jest.fn(),
@@ -15,13 +15,13 @@ jest.unstable_mockModule('../../src/db/prismaClient.js', () => ({
   }
 }));
 
-jest.unstable_mockModule('../../src/services/paymentService.js', () => ({
+jest.unstable_mockModule('../../../src/services/paymentService.js', () => ({
   addPayment: jest.fn()
 }));
 
-const prisma = (await import('../../src/db/prismaClient.js')).default;
-const { addPayment } = await import('../../src/services/paymentService.js');
-const billService = await import('../../src/services/billService.js');
+const prisma = (await import('../../../src/db/prismaClient.js')).default;
+const { addPayment } = await import('../../../src/services/paymentService.js');
+const billService = await import('../../../src/services/billService.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
