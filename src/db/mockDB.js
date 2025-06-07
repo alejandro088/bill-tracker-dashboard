@@ -3,15 +3,19 @@ const bills = [
   {
     id: '1',
     name: 'Electricity',
+    description: 'Monthly power bill',
+    category: 'utilities',
     dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 60.5,
     status: 'pending'
   },
   {
     id: '2',
-    name: 'Water',
+    name: 'Streaming Service',
+    description: 'Video subscription',
+    category: 'subscriptions',
     dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    amount: 30,
+    amount: 12.99,
     status: 'pending'
   }
 ];
