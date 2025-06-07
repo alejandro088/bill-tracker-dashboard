@@ -44,13 +44,16 @@
 
     <v-data-table
       :headers="headers"
-      :items="bills"
+      :items="groupedBills"
       :loading="loading"
       class="elevation-1"
       hide-default-footer
     >
       <template #item.dueDate="{ item }">
         {{ formatDate(item.dueDate) }}
+      </template>
+      <template #item.invoiceCount="{ item }">
+        Invoices: {{ item.invoiceCount }}
       </template>
       <template #item.paymentProvider="{ item }">
         <v-chip size="small">
@@ -110,7 +113,7 @@ const emit = defineEmits(['notify']);
 const bills = ref([]);
 const total = ref(0);
 const page = ref(1);
-const limit = 10;
+const limit = 1000;
 const search = ref('');
 const category = ref('');
 const status = ref('');
@@ -150,6 +153,7 @@ const headers = [
   { title: 'Name', key: 'name' },
   { title: 'Description', key: 'description' },
   { title: 'Category', key: 'category' },
+  { title: 'Invoices', key: 'invoiceCount' },
   { title: 'Due Date', key: 'dueDate' },
   { title: 'Amount', key: 'amount' },
   { title: 'Payment Provider', key: 'paymentProvider' },
@@ -194,6 +198,22 @@ watch(paymentProvider, (val) => {
 });
 
 const totalPages = computed(() => Math.ceil(total.value / limit) || 1);
+
+const groupedBills = computed(() => {
+  const map = new Map();
+  bills.value.forEach((bill) => {
+    const key = `${bill.name}|${bill.paymentProvider}|${bill.category}`;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(bill);
+  });
+  const result = [];
+  for (const group of map.values()) {
+    group.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
+    const latest = group[0];
+    result.push({ ...latest, invoiceCount: group.length });
+  }
+  return result;
+});
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString();
@@ -247,7 +267,14 @@ async function cancel(bill) {
 }
 
 function history(bill) {
-  router.push(`/history/${bill.name}`);
+  router.push({
+    path: '/history',
+    query: {
+      name: bill.name,
+      provider: bill.paymentProvider || '',
+      category: bill.category
+    }
+  });
 }
 
 function emitNotify(msg) {

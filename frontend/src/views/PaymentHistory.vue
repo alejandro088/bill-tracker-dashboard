@@ -68,9 +68,12 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import api from '../api.js';
 
 const props = defineProps({ name: String });
+const route = useRoute();
+const name = computed(() => route.query.name || props.name || '');
 const payments = ref([]);
 const loading = ref(false);
 const error = ref(null);
@@ -105,8 +108,7 @@ function format(d) {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const url = props.name ? `/payments/${props.name}` : '/payments';
-    const { data } = await api.get(url);
+    const { data } = await api.get('/payments');
     payments.value = data;
     error.value = null;
   } catch (err) {
@@ -117,10 +119,20 @@ const fetchData = async () => {
 };
 
 onMounted(fetchData);
-watch(() => props.name, fetchData);
+watch(
+  () => route.query,
+  fetchData,
+  { deep: true }
+);
 
 const filteredPayments = computed(() => {
   let data = [...payments.value];
+  if (name.value) data = data.filter((p) => p.name === name.value);
+  if (route.query.provider)
+    data = data.filter((p) => p.paymentProvider === route.query.provider);
+  if (route.query.category)
+    data = data.filter((p) => p.category === route.query.category);
+
   if (category.value)
     data = data.filter((p) => p.category === category.value);
   if (provider.value)
@@ -131,7 +143,7 @@ const filteredPayments = computed(() => {
     data = data.filter((p) => new Date(p.paidAt) >= new Date(startDate.value));
   if (endDate.value)
     data = data.filter((p) => new Date(p.paidAt) <= new Date(endDate.value));
-  return data.sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt));
+  return data.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
 });
 </script>
 
