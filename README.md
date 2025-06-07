@@ -27,6 +27,22 @@ npm install
 npm run dev
 ```
 
+### Development
+
+The backend is built with **Node.js** using **Express**. Start the server in
+development mode with:
+
+```bash
+npm run dev
+```
+
+It will reload automatically on changes thanks to **nodemon**. To run the server
+normally, use:
+
+```bash
+npm start
+```
+
 ## 🧐 Roadmap Ideas
 
 * ✅ Manual input of bills and subscriptions
