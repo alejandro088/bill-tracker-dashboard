@@ -1,20 +1,59 @@
 <template>
-  <div class="container">
-    <h1>Bill Tracker Dashboard</h1>
-    <nav class="nav">
-      <router-link to="/">Dashboard</router-link>
-      <router-link to="/analytics">Analytics</router-link>
-    </nav>
-    <router-view @notify="showToast"></router-view>
-    <div v-if="toast" class="toast">{{ toast }}</div>
-  </div>
+  <v-app>
+    <v-container class="container">
+      <h1>Bill Tracker Dashboard</h1>
+      <v-tabs v-model="tab" grow @update:modelValue="navigate">
+        <v-tab value="/">Dashboard</v-tab>
+        <v-tab value="/history">History</v-tab>
+        <v-tab value="/analytics">Analytics</v-tab>
+      </v-tabs>
+      <v-tabs-items v-model="tab">
+        <v-tab-item value="/">
+          <router-view v-slot="{ Component }" v-if="tab === '/'">
+            <component :is="Component" @notify="showToast" />
+          </router-view>
+        </v-tab-item>
+        <v-tab-item value="/history">
+          <router-view v-slot="{ Component }" v-if="tab === '/history'">
+            <component :is="Component" @notify="showToast" />
+          </router-view>
+        </v-tab-item>
+        <v-tab-item value="/analytics">
+          <router-view v-slot="{ Component }" v-if="tab === '/analytics'">
+            <component :is="Component" @notify="showToast" />
+          </router-view>
+        </v-tab-item>
+      </v-tabs-items>
+      <div v-if="toast" class="toast">{{ toast }}</div>
+    </v-container>
+  </v-app>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 const toast = ref('');
 let timer;
+const tab = ref('/');
+const route = useRoute();
+const router = useRouter();
+
+watch(
+  () => route.path,
+  (val) => {
+    if (val.startsWith('/analytics')) tab.value = '/analytics';
+    else if (val.startsWith('/history')) tab.value = '/history';
+    else tab.value = '/';
+  },
+  { immediate: true }
+);
+
+function navigate(value) {
+  if (value !== route.path) {
+    router.push(value);
+  }
+}
 
 function showToast(msg) {
   toast.value = msg;
@@ -29,11 +68,6 @@ function showToast(msg) {
   margin: auto;
   padding: 20px;
   font-family: Arial, Helvetica, sans-serif;
-}
-.nav {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
 }
 .toast {
   position: fixed;

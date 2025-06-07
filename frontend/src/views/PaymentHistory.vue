@@ -1,27 +1,30 @@
 <template>
   <div>
-    <h2>Payment History - {{ name }}</h2>
+    <h2>Payment History<span v-if="name"> - {{ name }}</span></h2>
     <router-link to="/">Back</router-link>
-    <div v-if="loading">Loading...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <table v-else>
-      <thead>
-        <tr>
-          <th>Bill Name</th>
-          <th>Amount</th>
-          <th>Due Date</th>
-          <th>Paid Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in payments" :key="p.paidDate">
-          <td>{{ p.name }}</td>
-          <td>{{ p.amount.toFixed(2) }}</td>
-          <td>{{ format(p.dueDate) }}</td>
-          <td>{{ format(p.paidDate) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-if="!name" class="info">Select a bill from the dashboard to view history.</div>
+    <div v-else>
+      <div v-if="loading">Loading...</div>
+      <div v-else-if="error" class="error">{{ error }}</div>
+      <table v-else>
+        <thead>
+          <tr>
+            <th>Bill Name</th>
+            <th>Amount</th>
+            <th>Due Date</th>
+            <th>Paid Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in payments" :key="p.paidDate">
+            <td>{{ p.name }}</td>
+            <td>{{ p.amount.toFixed(2) }}</td>
+            <td>{{ format(p.dueDate) }}</td>
+            <td>{{ format(p.paidDate) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -39,6 +42,7 @@ function format(d) {
 }
 
 const fetchData = async () => {
+  if (!props.name) return;
   loading.value = true;
   try {
     const { data } = await api.get(`/payments/${props.name}`);
@@ -57,5 +61,8 @@ onMounted(fetchData);
 <style scoped>
 .error {
   color: red;
+}
+.info {
+  margin-top: 10px;
 }
 </style>
