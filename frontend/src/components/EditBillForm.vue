@@ -1,37 +1,49 @@
 <template>
-  <v-card class="pa-4 edit-form">
-    <v-form @submit.prevent="submit">
-      <v-text-field v-model="name" label="Name" density="compact" required />
-      <v-text-field v-model="description" label="Description" density="compact" />
-      <v-text-field
-        v-model.number="amount"
-        label="Amount"
-        type="number"
-        density="compact"
-        required
-      />
-      <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
-        <template #activator="{ props }">
-          <v-text-field v-model="dueDate" label="Due Date" readonly v-bind="props" density="compact" />
-        </template>
-        <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
-      </v-menu>
-      <v-select
-        v-model="paymentProvider"
-        :items="providers"
-        label="Payment Provider"
-        density="compact"
-      />
-      <v-select v-model="category" :items="categories" label="Category" density="compact" />
-      <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
-      <v-switch v-if="category === 'subscriptions'" v-model="autoRenew" label="Auto Renew" />
-      <div class="d-flex gap-2 mt-2">
-        <v-btn type="submit" :loading="loading" color="primary">Save</v-btn>
-        <v-btn type="button" @click="emit('close')">Cancel</v-btn>
-      </div>
-    </v-form>
-    <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
-  </v-card>
+  <v-dialog v-model="dialog" max-width="500" @update:modelValue="val => !val && close()">
+    <v-card>
+      <v-form @submit.prevent="submit">
+        <v-card-title>Edit Bill</v-card-title>
+        <v-card-text class="pt-0">
+          <v-text-field v-model="name" label="Name" density="compact" required />
+          <v-text-field v-model="description" label="Description" density="compact" />
+          <v-text-field
+            v-model.number="amount"
+            label="Amount"
+            type="number"
+            density="compact"
+            required
+          />
+          <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
+            <template #activator="{ props }">
+              <v-text-field
+                v-model="dueDate"
+                label="Due Date"
+                readonly
+                v-bind="props"
+                density="compact"
+              />
+            </template>
+            <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
+          </v-menu>
+          <v-select
+            v-model="paymentProvider"
+            :items="providers"
+            label="Payment Provider"
+            density="compact"
+          />
+          <v-select v-model="category" :items="categories" label="Category" density="compact" />
+          <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
+          <v-switch v-if="category === 'subscriptions'" v-model="autoRenew" label="Auto Renew" />
+          <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
+        </v-card-text>
+        <v-card-actions class="pt-0">
+          <v-spacer />
+          <v-btn text @click="close">Cancel</v-btn>
+          <v-btn type="submit" :loading="loading" color="primary">Save</v-btn>
+        </v-card-actions>
+      </v-form>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -42,6 +54,7 @@ const props = defineProps({ bill: Object });
 const emit = defineEmits(['updated', 'close']);
 
 const menu = ref(false);
+const dialog = ref(false);
 const name = ref('');
 const description = ref('');
 const amount = ref(0);
@@ -77,9 +90,17 @@ const setFields = (b) => {
 
 watch(
   () => props.bill,
-  (b) => setFields(b),
+  (b) => {
+    setFields(b);
+    dialog.value = !!b;
+  },
   { immediate: true }
 );
+
+function close() {
+  dialog.value = false;
+  emit('close');
+}
 
 const submit = async () => {
   loading.value = true;
@@ -95,8 +116,8 @@ const submit = async () => {
       autoRenew: autoRenew.value
     });
     emit('updated');
-    emit('close');
     error.value = null;
+    close();
   } catch (err) {
     error.value = err.message;
   } finally {
