@@ -46,3 +46,20 @@ Calculates totals for `paid`, `pending`, and `overdue` bills in the current mont
 ---
 
 > All backend agents operate on an in-memory DB (mockDB.js) and are extendable for persistence or notifications.
+
+## 🛠 Development Notes for Codex
+
+- No automated tests are available for this agent at the moment.
+- No `npm test` or test scripts are defined for this repo.
+- You may proceed with implementation without running tests.
+- After implementation, create a commit and open a Pull Request with a clear title.
+
+### Commit message suggestion:
+"✨ Implemented [AgentName]: [short description]"
+
+### Pull Request title:
+"🤖 Add [AgentName] logic to [backend/frontend]"
+
+Example:
+"🤖 Add Auto-Renew Agent logic to backend"
+
