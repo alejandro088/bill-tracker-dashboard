@@ -7,12 +7,68 @@ import {
 } from '../db/mockDB.js';
 import { v4 as uuidv4 } from 'uuid';
 
-export const listBills = () => getBills();
+const updateOverdueBills = () => {
+  const now = new Date();
+  getBills().forEach((bill) => {
+    if (
+      bill.status !== 'paid' &&
+      new Date(bill.dueDate) < now &&
+      bill.status !== 'overdue'
+    ) {
+      bill.status = 'overdue';
+    }
+  });
+};
+
+export const listBills = (query = {}) => {
+  updateOverdueBills();
+  let data = [...getBills()];
+
+  const { search, category, status, sort = 'dueDate', page = 1, limit = 10 } =
+    query;
+
+  if (search) {
+    const term = search.toLowerCase();
+    data = data.filter(
+      (b) =>
+        b.name.toLowerCase().includes(term) ||
+        (b.description && b.description.toLowerCase().includes(term))
+    );
+  }
+
+  if (category) {
+    data = data.filter((b) => b.category === category);
+  }
+
+  if (status) {
+    data = data.filter((b) => b.status === status);
+  }
+
+  data.sort((a, b) => {
+    if (!a[sort] || !b[sort]) return 0;
+    return new Date(a[sort]) - new Date(b[sort]);
+  });
+
+  const start = (page - 1) * limit;
+  const end = start + Number(limit);
+  const paginated = data.slice(start, end);
+
+  return {
+    total: data.length,
+    page: Number(page),
+    limit: Number(limit),
+    data: paginated
+  };
+};
 
 export const getBillById = (id) => getBill(id);
 
 export const addBill = (data) => {
-  const bill = { id: uuidv4(), ...data };
+  const bill = {
+    id: uuidv4(),
+    status: 'pending',
+    ...data
+  };
   return addBillToDb(bill);
 };
 
@@ -27,4 +83,22 @@ export const getUpcomingBills = () => {
     const due = new Date(bill.dueDate);
     return due >= now && due <= limit;
   });
+};
+
+export const getMonthlySummary = () => {
+  updateOverdueBills();
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+
+  const summary = { paid: 0, pending: 0, overdue: 0 };
+
+  getBills().forEach((bill) => {
+    const due = new Date(bill.dueDate);
+    if (due.getMonth() === month && due.getFullYear() === year) {
+      summary[bill.status] += bill.amount;
+    }
+  });
+
+  return summary;
 };

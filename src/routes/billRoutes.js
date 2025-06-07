@@ -5,6 +5,7 @@ const router = Router();
 
 router.get('/', controller.getAll);
 router.get('/upcoming', controller.upcoming);
+router.get('/summary', controller.summary);
 router.get('/:id', controller.getById);
 router.post('/', controller.create);
 router.put('/:id', controller.update);

@@ -4,12 +4,13 @@ import {
   addBill,
   updateBill,
   deleteBill,
-  getUpcomingBills
+  getUpcomingBills,
+  getMonthlySummary
 } from '../services/billService.js';
 
 export const getAll = (req, res, next) => {
   try {
-    res.json(listBills());
+    res.json(listBills(req.query));
   } catch (err) {
     next(err);
   }
@@ -57,6 +58,14 @@ export const remove = (req, res, next) => {
 export const upcoming = (req, res, next) => {
   try {
     res.json(getUpcomingBills());
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const summary = (req, res, next) => {
+  try {
+    res.json(getMonthlySummary());
   } catch (err) {
     next(err);
   }
