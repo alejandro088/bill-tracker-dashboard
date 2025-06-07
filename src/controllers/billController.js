@@ -5,7 +5,7 @@ import {
   updateBill,
   deleteBill,
   getUpcomingBills,
-  getMonthlySummary
+  getSummary
 } from '../services/billService.js';
 
 export const getAll = async (req, res, next) => {
@@ -64,7 +64,7 @@ export const upcoming = async (req, res, next) => {
 
 export const summary = async (req, res, next) => {
   try {
-    res.json(await getMonthlySummary());
+    res.json(await getSummary());
   } catch (err) {
     next(err);
   }
