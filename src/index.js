@@ -2,6 +2,7 @@ import express from 'express';
 import billRoutes from './routes/billRoutes.js';
 import logger from './middleware/logger.js';
 import errorHandler from './middleware/errorHandler.js';
+import './reminder.js';
 
 const app = express();
 app.use(express.json());
