@@ -85,7 +85,7 @@ describe('Bill endpoints', () => {
   });
 
   it('GET /bills/summary should return summary', async () => {
-    billService.getMonthlySummary.mockResolvedValue({ paid: 100, pending: 50, overdue: 0 });
+    billService.getSummary.mockResolvedValue({ paid: 100, pending: 50, overdue: 0 });
     const res = await request(app).get('/bills/summary');
     expect(res.status).toBe(200);
     expect(res.body.paid).toBe(100);

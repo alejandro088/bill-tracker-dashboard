@@ -154,3 +154,16 @@ export const getMonthlySummary = async () => {
   });
   return summary;
 };
+
+export const getSummary = async () => {
+  await updateOverdueBills();
+  const grouped = await prisma.bill.groupBy({
+    by: ['status'],
+    _sum: { amount: true }
+  });
+  const summary = { paid: 0, pending: 0, overdue: 0 };
+  grouped.forEach((g) => {
+    summary[g.status] = g._sum.amount ?? 0;
+  });
+  return summary;
+};
