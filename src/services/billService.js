@@ -111,13 +111,14 @@ export const updateBill = async (id, data) => {
   }
 
   if (data.status === 'paid' && existing.status !== 'paid') {
-    addPayment({
+    await addPayment({
       billId: updated.id,
       name: updated.name,
       amount: updated.amount,
       dueDate: updated.dueDate,
       paidAt: new Date().toISOString(),
       paymentProvider: updated.paymentProvider,
+      category: updated.category,
       recurrence: updated.recurrence || 'none'
     });
   }

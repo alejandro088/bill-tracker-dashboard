@@ -4,11 +4,7 @@ import {
   getAllPayments
 } from '../db/paymentsDB.js';
 
-export const addPayment = (payment) => addPaymentToDb(payment);
+export const addPayment = async (payment) => addPaymentToDb(payment);
 
-export const listPayments = (name) => {
-  const data = name ? getPaymentsByName(name) : getAllPayments();
-  return [...data].sort(
-    (a, b) => new Date(b.paidAt) - new Date(a.paidAt)
-  );
-};
+export const listPayments = async (name) =>
+  name ? getPaymentsByName(name) : getAllPayments();
