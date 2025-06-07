@@ -20,6 +20,7 @@ A simple and efficient dashboard to manage your **bills, subscriptions, utilitie
 * ❌ Cancel auto-renewing subscriptions
 * 📜 View payment history for each subscription
 * 📈 Analytics charts for spending
+* 💬 GPT-powered financial assistant
 
 ## 🚀 Stack (suggested)
 
@@ -46,6 +47,7 @@ cd bill-tracker-dashboard
 npm install
 cp .env.example .env
 # update DATABASE_URL with your MySQL credentials
+# add your OPENAI_API_KEY
 npm run migrate
 npm run seed
 npm run dev
