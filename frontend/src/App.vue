@@ -24,6 +24,12 @@
           title="Analytics"
           :active="route.path.startsWith('/analytics')"
         />
+        <v-list-item
+          to="/assistant"
+          prepend-icon="mdi-robot"
+          title="Assistant"
+          :active="route.path.startsWith('/assistant')"
+        />
       </v-list>
     </v-navigation-drawer>
 
