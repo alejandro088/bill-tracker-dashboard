@@ -17,7 +17,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import axios from 'axios';
+import api from '../api.js';
 
 const emit = defineEmits(['added']);
 
@@ -32,7 +32,7 @@ const error = ref(null);
 const submit = async () => {
   loading.value = true;
   try {
-    await axios.post('/bills', {
+    await api.post('/bills', {
       name: name.value,
       description: description.value,
       amount: amount.value,

@@ -12,7 +12,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import api from '../api.js';
 
 const summary = ref({ paid: 0, pending: 0, overdue: 0 });
 const loading = ref(false);
@@ -21,7 +21,7 @@ const error = ref(null);
 const fetchSummary = async () => {
   loading.value = true;
   try {
-    const { data } = await axios.get('/bills/summary');
+    const { data } = await api.get('/bills/summary');
     summary.value = data;
     error.value = null;
   } catch (err) {

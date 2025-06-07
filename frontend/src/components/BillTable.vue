@@ -53,7 +53,7 @@
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
-import axios from 'axios';
+import api from '../api.js';
 
 const bills = ref([]);
 const total = ref(0);
@@ -69,7 +69,7 @@ const error = ref(null);
 const fetchBills = async () => {
   loading.value = true;
   try {
-    const { data } = await axios.get('/bills', {
+    const { data } = await api.get('/bills', {
       params: {
         page: page.value,
         limit,
