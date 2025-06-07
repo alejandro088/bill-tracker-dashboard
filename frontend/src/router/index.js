@@ -5,7 +5,7 @@ import Analytics from '../views/Analytics.vue';
 
 const routes = [
   { path: '/', component: Dashboard },
-  { path: '/history/:name', component: PaymentHistory, props: true },
+  { path: '/history/:name?', component: PaymentHistory, props: true },
   { path: '/analytics', component: Analytics }
 ];
 
