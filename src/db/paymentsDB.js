@@ -1,11 +1,15 @@
-const payments = [];
+import prisma from './prismaClient.js';
 
-export const addPayment = (payment) => {
-  payments.push(payment);
-  return payment;
+export const addPayment = async (payment) => {
+  return prisma.payment.create({ data: payment });
 };
 
-export const getPaymentsByName = (name) =>
-  payments.filter((p) => p.name === name);
+export const getPaymentsByName = async (name) => {
+  return prisma.payment.findMany({
+    where: { name },
+    orderBy: { paidAt: 'desc' }
+  });
+};
 
-export const getAllPayments = () => payments;
+export const getAllPayments = async () =>
+  prisma.payment.findMany({ orderBy: { paidAt: 'desc' } });
