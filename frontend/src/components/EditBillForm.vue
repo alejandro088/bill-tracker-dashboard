@@ -1,32 +1,37 @@
 <template>
-  <div class="edit-form">
-    <form @submit.prevent="submit">
-      <input v-model="name" placeholder="Name" required />
-      <input v-model="description" placeholder="Description" />
-      <input type="number" v-model.number="amount" placeholder="Amount" required />
-      <input type="date" v-model="dueDate" required />
-      <select v-model="paymentProvider">
-        <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
-      </select>
-      <select v-model="category">
-        <option value="utilities">Utilities</option>
-        <option value="subscriptions">Subscriptions</option>
-        <option value="taxes">Taxes</option>
-        <option value="others">Others</option>
-      </select>
-      <select v-model="status">
-        <option value="pending">Pending</option>
-        <option value="paid">Paid</option>
-        <option value="overdue">Overdue</option>
-      </select>
-      <label v-if="category === 'subscriptions'">
-        <input type="checkbox" v-model="autoRenew" /> Auto Renew
-      </label>
-      <button type="submit" :disabled="loading">Save</button>
-      <button type="button" @click="emit('close')">Cancel</button>
-    </form>
-    <div v-if="error" class="error">{{ error }}</div>
-  </div>
+  <v-card class="pa-4 edit-form">
+    <v-form @submit.prevent="submit">
+      <v-text-field v-model="name" label="Name" density="compact" required />
+      <v-text-field v-model="description" label="Description" density="compact" />
+      <v-text-field
+        v-model.number="amount"
+        label="Amount"
+        type="number"
+        density="compact"
+        required
+      />
+      <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
+        <template #activator="{ props }">
+          <v-text-field v-model="dueDate" label="Due Date" readonly v-bind="props" density="compact" />
+        </template>
+        <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
+      </v-menu>
+      <v-select
+        v-model="paymentProvider"
+        :items="providers"
+        label="Payment Provider"
+        density="compact"
+      />
+      <v-select v-model="category" :items="categories" label="Category" density="compact" />
+      <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
+      <v-switch v-if="category === 'subscriptions'" v-model="autoRenew" label="Auto Renew" />
+      <div class="d-flex gap-2 mt-2">
+        <v-btn type="submit" :loading="loading" color="primary">Save</v-btn>
+        <v-btn type="button" @click="emit('close')">Cancel</v-btn>
+      </div>
+    </v-form>
+    <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
+  </v-card>
 </template>
 
 <script setup>
@@ -36,6 +41,7 @@ import api from '../api.js';
 const props = defineProps({ bill: Object });
 const emit = defineEmits(['updated', 'close']);
 
+const menu = ref(false);
 const name = ref('');
 const description = ref('');
 const amount = ref(0);
@@ -48,6 +54,8 @@ const providers = [
   'MODO',
   'PayPal'
 ];
+const categories = ['utilities', 'subscriptions', 'taxes', 'others'];
+const statusOptions = ['pending', 'paid', 'overdue'];
 const category = ref('utilities');
 const status = ref('pending');
 const paymentProvider = ref(providers[0]);
@@ -97,22 +105,4 @@ const submit = async () => {
 };
 </script>
 
-<style scoped>
-.edit-form {
-  margin-top: 10px;
-}
-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-input,
-select,
-button {
-  padding: 5px;
-}
-.error {
-  color: red;
-  margin-top: 5px;
-}
-</style>
+

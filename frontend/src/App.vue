@@ -1,6 +1,7 @@
 <template>
   <v-app>
-    <v-container class="container">
+    <v-main>
+      <v-container class="container">
       <h1>Bill Tracker Dashboard</h1>
       <v-tabs v-model="tab" grow @update:modelValue="navigate">
         <v-tab value="/">Dashboard</v-tab>
@@ -25,7 +26,8 @@
         </v-tab-item>
       </v-tabs-items>
       <div v-if="toast" class="toast">{{ toast }}</div>
-    </v-container>
+      </v-container>
+    </v-main>
   </v-app>
 </template>
 

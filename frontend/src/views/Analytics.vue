@@ -1,9 +1,13 @@
 <template>
-  <div>
+  <v-container>
     <h2>Analytics</h2>
-    <canvas id="categoryChart" width="400" height="200"></canvas>
-    <canvas id="monthChart" width="400" height="200"></canvas>
-  </div>
+    <v-card class="mb-4 pa-4">
+      <canvas id="categoryChart"></canvas>
+    </v-card>
+    <v-card class="pa-4">
+      <canvas id="monthChart"></canvas>
+    </v-card>
+  </v-container>
 </template>
 
 <script setup>
@@ -45,9 +49,4 @@ const buildCharts = async () => {
 onMounted(buildCharts);
 </script>
 
-<style scoped>
-canvas {
-  max-width: 400px;
-  margin-bottom: 20px;
-}
-</style>
+
