@@ -29,6 +29,8 @@
           <th @click="changeSort('dueDate')">Due Date</th>
           <th>Amount</th>
           <th>Status</th>
+          <th>Auto Renew</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -39,6 +41,8 @@
           <td>{{ formatDate(bill.dueDate) }}</td>
           <td>{{ bill.amount.toFixed(2) }}</td>
           <td :class="'status-' + bill.status">{{ bill.status }}</td>
+          <td>{{ bill.autoRenew ? 'Yes' : 'No' }}</td>
+          <td><button @click="edit(bill)">Edit</button></td>
         </tr>
       </tbody>
     </table>
@@ -48,12 +52,19 @@
       <span>{{ page }} / {{ totalPages }}</span>
       <button @click="next" :disabled="page === totalPages">Next</button>
     </div>
+    <EditBillForm
+      v-if="editingBill"
+      :bill="editingBill"
+      @updated="onUpdated"
+      @close="closeEdit"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
 import api from '../api.js';
+import EditBillForm from './EditBillForm.vue';
 
 const bills = ref([]);
 const total = ref(0);
@@ -65,6 +76,7 @@ const status = ref('');
 const sort = ref('dueDate');
 const loading = ref(false);
 const error = ref(null);
+const editingBill = ref(null);
 
 const fetchBills = async () => {
   loading.value = true;
@@ -105,6 +117,18 @@ function changeSort(field) {
 }
 function formatDate(date) {
   return new Date(date).toLocaleDateString();
+}
+
+function edit(bill) {
+  editingBill.value = { ...bill };
+}
+
+function closeEdit() {
+  editingBill.value = null;
+}
+
+async function onUpdated() {
+  await fetchBills();
 }
 </script>
 
