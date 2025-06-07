@@ -10,6 +10,12 @@ A simple and efficient dashboard to manage your **bills, subscriptions, utilitie
 * 📈 Monthly and yearly summary view
 * 🔔 Notifications for upcoming payments
 * 🗂️ Filter by type, date, or payment status
+* 🌐 Search by bill name or description
+* ⚖️ Mark bills as paid, pending or overdue (auto-updated based on due date)
+* 📅 Pagination and sorting support
+* 🔎 Filter by category (e.g., utilities, subscriptions, taxes)
+* 📃 Local data persistence (optional JSON file backup)
+* 📊 Monthly financial summary: compare total paid vs. pending bills
 
 ## 🚀 Stack (suggested)
 
@@ -18,6 +24,16 @@ A simple and efficient dashboard to manage your **bills, subscriptions, utilitie
 * **Database**: MongoDB / PostgreSQL
 * **Notifications**: Node-cron + email/SMS integrations
 
+## 🚀 Frontend (UI features)
+
+* 📆 Dashboard with bill table and filters
+* 📌 Form to add new bills (name, amount, due date, category)
+* 📊 Graphs and charts for monthly expenses (e.g., bar or pie)
+* 🌍 Filter/search by name, category or status
+* 🔎 Sortable table by due date or amount
+* ⚖️ Status indicators: Paid, Pending, Overdue
+* 🔍 Real-time feedback for upcoming bills
+
 ## 📦 Installation
 
 ```bash
@@ -25,22 +41,6 @@ git clone https://github.com/tu-user/bill-tracker-dashboard.git
 cd bill-tracker-dashboard
 npm install
 npm run dev
-```
-
-### Development
-
-The backend is built with **Node.js** using **Express**. Start the server in
-development mode with:
-
-```bash
-npm run dev
-```
-
-It will reload automatically on changes thanks to **nodemon**. To run the server
-normally, use:
-
-```bash
-npm start
 ```
 
 ## 🧐 Roadmap Ideas
