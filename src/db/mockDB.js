@@ -7,7 +7,8 @@ const bills = [
     category: 'utilities',
     dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 60.5,
-    status: 'pending'
+    status: 'pending',
+    autoRenew: false
   },
   {
     id: '2',
@@ -16,7 +17,18 @@ const bills = [
     category: 'subscriptions',
     dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 12.99,
-    status: 'pending'
+    status: 'pending',
+    autoRenew: true
+  },
+  {
+    id: '3',
+    name: 'Music Streaming',
+    description: 'Audio subscription',
+    category: 'subscriptions',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    amount: 9.99,
+    status: 'pending',
+    autoRenew: true
   }
 ];
 

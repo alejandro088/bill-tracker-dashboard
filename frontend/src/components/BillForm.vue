@@ -10,6 +10,9 @@
       <option value="taxes">Taxes</option>
       <option value="others">Others</option>
     </select>
+    <label v-if="category === 'subscriptions'">
+      <input type="checkbox" v-model="autoRenew" /> Auto Renew
+    </label>
     <button type="submit" :disabled="loading">Add</button>
   </form>
   <div v-if="error" class="error">{{ error }}</div>
@@ -26,6 +29,7 @@ const description = ref('');
 const amount = ref(0);
 const dueDate = ref('');
 const category = ref('utilities');
+const autoRenew = ref(false);
 const loading = ref(false);
 const error = ref(null);
 
@@ -37,13 +41,15 @@ const submit = async () => {
       description: description.value,
       amount: amount.value,
       dueDate: dueDate.value,
-      category: category.value
+      category: category.value,
+      autoRenew: autoRenew.value
     });
     name.value = '';
     description.value = '';
     amount.value = 0;
     dueDate.value = '';
     category.value = 'utilities';
+    autoRenew.value = false;
     emit('added');
     error.value = null;
   } catch (err) {

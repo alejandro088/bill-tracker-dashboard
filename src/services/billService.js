@@ -67,12 +67,43 @@ export const addBill = (data) => {
   const bill = {
     id: uuidv4(),
     status: 'pending',
+    autoRenew: false,
     ...data
   };
   return addBillToDb(bill);
 };
 
-export const updateBill = (id, data) => updateBillInDb(id, data);
+export const updateBill = (id, data) => {
+  const existing = getBill(id);
+  if (!existing) return null;
+
+  const prevStatus = existing.status;
+  const updated = updateBillInDb(id, data);
+
+  if (
+    updated &&
+    updated.category === 'subscriptions' &&
+    updated.autoRenew &&
+    data.status === 'paid' &&
+    prevStatus !== 'paid'
+  ) {
+    const due = new Date(updated.dueDate);
+    due.setMonth(due.getMonth() + 1);
+    const newBill = {
+      id: uuidv4(),
+      name: updated.name,
+      description: updated.description,
+      amount: updated.amount,
+      category: updated.category,
+      dueDate: due.toISOString(),
+      status: 'pending',
+      autoRenew: updated.autoRenew
+    };
+    addBillToDb(newBill);
+  }
+
+  return updated;
+};
 
 export const deleteBill = (id) => deleteBillFromDb(id);
 
