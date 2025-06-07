@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "test": "vitest",
     "migrate": "prisma migrate deploy",
     "seed": "node prisma/seed.js"
   },
@@ -24,6 +25,10 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "vitest": "^1.0.0",
+    "supertest": "^6.3.3",
+    "@vue/test-utils": "^2.4.1",
+    "jsdom": "^23.0.0"
   }
 }

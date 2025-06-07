@@ -28,13 +28,16 @@ app.use('/assistant', assistantRoutes);
 app.use('/chat', chatRoutes);
 
 app.use(errorHandler);
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}
 
 process.on('SIGINT', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
+
+export default app;
