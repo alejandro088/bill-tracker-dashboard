@@ -10,6 +10,7 @@
         {{ msg.text }}
       </div>
     </div>
+    <v-switch v-model="llmMode" label="LLM Mode" class="mb-2" />
     <v-text-field
       v-model="input"
       label="Ask a question"
@@ -27,6 +28,7 @@ import api from '../api.js';
 
 const messages = ref([{ from: 'bot', text: 'Hi! Ask me about your bills.' }]);
 const input = ref('');
+const llmMode = ref(true);
 
 async function send() {
   if (!input.value.trim()) return;
@@ -37,6 +39,16 @@ async function send() {
 }
 
 async function handleQuery(q) {
+  if (!llmMode.value) return await manualHandleQuery(q);
+  try {
+    const { data } = await api.post('/assistant/ask', { query: q.slice(0, 200) });
+    return data.answer || "Sorry, I couldn't understand your question.";
+  } catch (err) {
+    return "Sorry, I couldn't understand your question.";
+  }
+}
+
+async function manualHandleQuery(q) {
   const query = q.toLowerCase();
   try {
     if (query.includes('paypal')) {
@@ -49,9 +61,7 @@ async function handleQuery(q) {
         : 'No PayPal payments found.';
     }
     if (query.includes('last month')) {
-      const { data } = await api.get('/bills', {
-        params: { status: 'paid', limit: 1000 }
-      });
+      const { data } = await api.get('/bills', { params: { status: 'paid', limit: 1000 } });
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const end = new Date(now.getFullYear(), now.getMonth(), 1);
