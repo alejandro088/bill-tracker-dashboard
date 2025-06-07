@@ -1,13 +1,17 @@
 <template>
-  <div class="summary">
-    <div v-if="loading">Loading summary...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
-      <span>Paid: {{ summary.paid.toFixed(2) }}</span>
-      <span>Pending: {{ summary.pending.toFixed(2) }}</span>
-      <span>Overdue: {{ summary.overdue.toFixed(2) }}</span>
-    </div>
-  </div>
+  <v-row class="mb-4">
+    <v-col cols="12" v-if="loading">
+      <v-progress-linear indeterminate />
+    </v-col>
+    <v-col cols="12" v-else-if="error">
+      <v-alert type="error" dense>{{ error }}</v-alert>
+    </v-col>
+    <v-col cols="12" v-else class="d-flex gap-2">
+      <v-chip color="green">Paid: {{ summary.paid.toFixed(2) }}</v-chip>
+      <v-chip color="orange">Pending: {{ summary.pending.toFixed(2) }}</v-chip>
+      <v-chip color="red">Overdue: {{ summary.overdue.toFixed(2) }}</v-chip>
+    </v-col>
+  </v-row>
 </template>
 
 <script setup>
@@ -34,13 +38,4 @@ const fetchSummary = async () => {
 onMounted(fetchSummary);
 </script>
 
-<style scoped>
-.summary {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-.error {
-  color: red;
-}
-</style>
+

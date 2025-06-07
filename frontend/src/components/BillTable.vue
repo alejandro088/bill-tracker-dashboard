@@ -1,78 +1,85 @@
 <template>
   <div>
-    <div class="controls">
-      <input v-model="search" placeholder="Search" />
-      <select v-model="category">
-        <option value="">All Categories</option>
-        <option value="utilities">Utilities</option>
-        <option value="subscriptions">Subscriptions</option>
-        <option value="taxes">Taxes</option>
-        <option value="others">Others</option>
-      </select>
-      <select v-model="status">
-        <option value="">All Statuses</option>
-        <option value="paid">Paid</option>
-        <option value="pending">Pending</option>
-        <option value="overdue">Overdue</option>
-      </select>
-      <select v-model="paymentProvider">
-        <option value="">All Providers</option>
-        <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
-      </select>
-    </div>
+    <v-row class="mb-2" align="center">
+      <v-col cols="12" sm="4">
+        <v-text-field v-model="search" label="Search" density="compact" />
+      </v-col>
+      <v-col cols="12" sm="2">
+        <v-select
+          v-model="category"
+          :items="categoryOptions"
+          label="Category"
+          density="compact"
+          clearable
+        />
+      </v-col>
+      <v-col cols="12" sm="2">
+        <v-select
+          v-model="status"
+          :items="statusOptions"
+          label="Status"
+          density="compact"
+          clearable
+        />
+      </v-col>
+      <v-col cols="12" sm="2">
+        <v-select
+          v-model="paymentProvider"
+          :items="providers"
+          label="Provider"
+          density="compact"
+          clearable
+        />
+      </v-col>
+    </v-row>
 
-    <div v-if="loading">Loading...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <v-data-table
+      :headers="headers"
+      :items="bills"
+      :loading="loading"
+      class="elevation-1"
+      hide-default-footer
+    >
+      <template #item.dueDate="{ item }">
+        {{ formatDate(item.dueDate) }}
+      </template>
+      <template #item.paymentProvider="{ item }">
+        <v-chip size="small">
+          <v-icon start>{{ providerIcon(item.paymentProvider) }}</v-icon>
+          {{ item.paymentProvider }}
+        </v-chip>
+      </template>
+      <template #item.status="{ item }">
+        <v-chip :color="statusColor(item.status)" size="small" class="text-white">
+          {{ item.status }}
+        </v-chip>
+      </template>
+      <template #item.autoRenew="{ item }">
+        <v-icon v-if="item.autoRenew">mdi-check</v-icon>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn icon @click="pay(item)" :disabled="item.status === 'paid'">
+          <v-icon>mdi-cash</v-icon>
+        </v-btn>
+        <v-btn
+          icon
+          v-if="item.category === 'subscriptions'"
+          @click="cancel(item)"
+          :disabled="!item.autoRenew"
+        >
+          <v-icon>mdi-cancel</v-icon>
+        </v-btn>
+        <v-btn icon v-if="item.category === 'subscriptions'" @click="history(item)">
+          <v-icon>mdi-history</v-icon>
+        </v-btn>
+        <v-btn icon @click="edit(item)">
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
+      </template>
+    </v-data-table>
 
-    <table v-else>
-      <thead>
-        <tr>
-          <th @click="changeSort('name')">Name</th>
-          <th>Description</th>
-          <th @click="changeSort('category')">Category</th>
-          <th @click="changeSort('dueDate')">Due Date</th>
-          <th>Amount</th>
-          <th>Payment Provider</th>
-          <th>Status</th>
-          <th>Auto Renew</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="bill in bills" :key="bill.id">
-          <td>{{ bill.name }}</td>
-          <td>{{ bill.description }}</td>
-          <td>{{ bill.category }}</td>
-          <td>{{ formatDate(bill.dueDate) }}</td>
-          <td>{{ bill.amount.toFixed(2) }}</td>
-          <td>{{ providerIcon(bill.paymentProvider) }} {{ bill.paymentProvider }}</td>
-          <td :class="'status-' + bill.status">{{ bill.status }}</td>
-          <td>{{ bill.autoRenew ? 'Yes' : 'No' }}</td>
-          <td>
-            <button @click="pay(bill)" :disabled="bill.status === 'paid'">
-              Pay
-            </button>
-            <button
-              v-if="bill.category === 'subscriptions'"
-              @click="cancel(bill)"
-              :disabled="!bill.autoRenew"
-            >
-              Cancel
-            </button>
-            <button v-if="bill.category === 'subscriptions'" @click="history(bill)">
-              History
-            </button>
-            <button @click="edit(bill)">Edit</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <v-pagination v-model="page" :length="totalPages" class="mt-2" />
 
-    <div class="pagination">
-      <button @click="prev" :disabled="page === 1">Prev</button>
-      <span>{{ page }} / {{ totalPages }}</span>
-      <button @click="next" :disabled="page === totalPages">Next</button>
-    </div>
     <EditBillForm
       v-if="editingBill"
       :bill="editingBill"
@@ -97,20 +104,40 @@ const limit = 10;
 const search = ref('');
 const category = ref('');
 const status = ref('');
-const providers = [
-  'Visa',
-  'Mastercard',
-  'MercadoPago',
-  'Google Play',
-  'MODO',
-  'PayPal'
-];
+const providers = ['Visa', 'Mastercard', 'MercadoPago', 'Google Play', 'MODO', 'PayPal'];
 const paymentProvider = ref('');
 const sort = ref('dueDate');
 const loading = ref(false);
 const error = ref(null);
 const editingBill = ref(null);
 const router = useRouter();
+
+const categoryOptions = [
+  { title: 'All Categories', value: '' },
+  { title: 'Utilities', value: 'utilities' },
+  { title: 'Subscriptions', value: 'subscriptions' },
+  { title: 'Taxes', value: 'taxes' },
+  { title: 'Others', value: 'others' }
+];
+
+const statusOptions = [
+  { title: 'All Statuses', value: '' },
+  { title: 'paid', value: 'paid' },
+  { title: 'pending', value: 'pending' },
+  { title: 'overdue', value: 'overdue' }
+];
+
+const headers = [
+  { title: 'Name', key: 'name' },
+  { title: 'Description', key: 'description' },
+  { title: 'Category', key: 'category' },
+  { title: 'Due Date', key: 'dueDate' },
+  { title: 'Amount', key: 'amount' },
+  { title: 'Payment Provider', key: 'paymentProvider' },
+  { title: 'Status', key: 'status' },
+  { title: 'Auto Renew', key: 'autoRenew', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false }
+];
 
 const fetchBills = async () => {
   loading.value = true;
@@ -147,29 +174,24 @@ watch(paymentProvider, (val) => {
 
 const totalPages = computed(() => Math.ceil(total.value / limit) || 1);
 
-function prev() {
-  if (page.value > 1) page.value--;
-}
-function next() {
-  if (page.value < totalPages.value) page.value++;
-}
-function changeSort(field) {
-  sort.value = field;
-}
 function formatDate(date) {
   return new Date(date).toLocaleDateString();
 }
 
+function statusColor(status) {
+  return { paid: 'green', pending: 'orange', overdue: 'red' }[status];
+}
+
 function providerIcon(name) {
   const icons = {
-    Visa: '💳',
-    Mastercard: '💳',
-    MercadoPago: '🤑',
-    'Google Play': '📱',
-    MODO: '🏦',
-    PayPal: '💲'
+    Visa: 'mdi-credit-card',
+    Mastercard: 'mdi-credit-card',
+    MercadoPago: 'mdi-currency-usd',
+    'Google Play': 'mdi-cellphone',
+    MODO: 'mdi-bank',
+    PayPal: 'mdi-currency-usd'
   };
-  return icons[name] || '';
+  return icons[name] || 'mdi-cash';
 }
 
 function edit(bill) {
@@ -213,37 +235,7 @@ function emitNotify(msg) {
 </script>
 
 <style scoped>
-.controls {
-  margin-bottom: 10px;
-}
 .error {
   color: red;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th,
-td {
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-}
-th {
-  cursor: pointer;
-}
-.status-paid {
-  color: green;
-}
-.status-pending {
-  color: orange;
-}
-.status-overdue {
-  color: red;
-}
-.pagination {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
 }
 </style>

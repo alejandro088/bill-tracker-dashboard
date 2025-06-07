@@ -1,31 +1,24 @@
 <template>
-  <div>
+  <v-container>
     <h2>Payment History<span v-if="name"> - {{ name }}</span></h2>
-    <router-link to="/">Back</router-link>
+    <v-btn variant="text" to="/">Back</v-btn>
     <div v-if="!name" class="info">Select a bill from the dashboard to view history.</div>
     <div v-else>
-      <div v-if="loading">Loading...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
-      <table v-else>
-        <thead>
-          <tr>
-            <th>Bill Name</th>
-            <th>Amount</th>
-            <th>Due Date</th>
-            <th>Paid Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in payments" :key="p.paidDate">
-            <td>{{ p.name }}</td>
-            <td>{{ p.amount.toFixed(2) }}</td>
-            <td>{{ format(p.dueDate) }}</td>
-            <td>{{ format(p.paidDate) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <v-progress-linear v-if="loading" indeterminate />
+      <v-alert v-else-if="error" type="error" dense>{{ error }}</v-alert>
+      <v-data-table
+        v-else
+        :headers="headers"
+        :items="payments"
+        class="elevation-1"
+        hide-default-footer
+      >
+        <template #item.dueDate="{ item }">{{ format(item.dueDate) }}</template>
+        <template #item.paidDate="{ item }">{{ format(item.paidDate) }}</template>
+        <template #item.amount="{ item }">{{ item.amount.toFixed(2) }}</template>
+      </v-data-table>
     </div>
-  </div>
+  </v-container>
 </template>
 
 <script setup>
@@ -36,6 +29,13 @@ const props = defineProps({ name: String });
 const payments = ref([]);
 const loading = ref(false);
 const error = ref(null);
+
+const headers = [
+  { title: 'Bill Name', key: 'name' },
+  { title: 'Amount', key: 'amount' },
+  { title: 'Due Date', key: 'dueDate' },
+  { title: 'Paid Date', key: 'paidDate' }
+];
 
 function format(d) {
   return new Date(d).toLocaleDateString();
@@ -58,11 +58,4 @@ const fetchData = async () => {
 onMounted(fetchData);
 </script>
 
-<style scoped>
-.error {
-  color: red;
-}
-.info {
-  margin-top: 10px;
-}
-</style>
+
