@@ -4,6 +4,10 @@
     <input v-model="description" placeholder="Description" />
     <input type="number" v-model.number="amount" placeholder="Amount" required />
     <input type="date" v-model="dueDate" required />
+    <select v-model="paymentProvider">
+      <option disabled value="">Payment Provider</option>
+      <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
+    </select>
     <select v-model="category">
       <option value="utilities">Utilities</option>
       <option value="subscriptions">Subscriptions</option>
@@ -28,6 +32,15 @@ const name = ref('');
 const description = ref('');
 const amount = ref(0);
 const dueDate = ref('');
+const providers = [
+  'Visa',
+  'Mastercard',
+  'MercadoPago',
+  'Google Play',
+  'MODO',
+  'PayPal'
+];
+const paymentProvider = ref(providers[0]);
 const category = ref('utilities');
 const autoRenew = ref(false);
 const loading = ref(false);
@@ -41,6 +54,7 @@ const submit = async () => {
       description: description.value,
       amount: amount.value,
       dueDate: dueDate.value,
+      paymentProvider: paymentProvider.value,
       category: category.value,
       autoRenew: autoRenew.value
     });
@@ -48,6 +62,7 @@ const submit = async () => {
     description.value = '';
     amount.value = 0;
     dueDate.value = '';
+    paymentProvider.value = providers[0];
     category.value = 'utilities';
     autoRenew.value = false;
     emit('added');

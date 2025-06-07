@@ -8,7 +8,8 @@ const bills = [
     dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 60.5,
     status: 'pending',
-    autoRenew: false
+    autoRenew: false,
+    paymentProvider: 'Visa'
   },
   {
     id: '2',
@@ -18,7 +19,8 @@ const bills = [
     dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 12.99,
     status: 'pending',
-    autoRenew: true
+    autoRenew: true,
+    paymentProvider: 'Mastercard'
   },
   {
     id: '3',
@@ -28,7 +30,41 @@ const bills = [
     dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 9.99,
     status: 'pending',
-    autoRenew: true
+    autoRenew: true,
+    paymentProvider: 'MercadoPago'
+  },
+  {
+    id: '4',
+    name: 'Google Storage',
+    description: 'Cloud storage subscription',
+    category: 'subscriptions',
+    dueDate: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(),
+    amount: 2.99,
+    status: 'pending',
+    autoRenew: true,
+    paymentProvider: 'Google Play'
+  },
+  {
+    id: '5',
+    name: 'Ride Share',
+    description: 'Local rides',
+    category: 'services',
+    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    amount: 15.5,
+    status: 'pending',
+    autoRenew: false,
+    paymentProvider: 'MODO'
+  },
+  {
+    id: '6',
+    name: 'Online Shopping',
+    description: 'Misc online purchases',
+    category: 'others',
+    dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+    amount: 40.0,
+    status: 'pending',
+    autoRenew: false,
+    paymentProvider: 'PayPal'
   }
 ];
 
