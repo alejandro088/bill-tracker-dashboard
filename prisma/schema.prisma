@@ -18,6 +18,7 @@ model Bill {
   paymentProvider String?
   autoRenew       Boolean  @default(false)
   recurrence      String   @default("none")
+  paidAt          DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

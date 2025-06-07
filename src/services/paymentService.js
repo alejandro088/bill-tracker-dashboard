@@ -6,5 +6,9 @@ import {
 
 export const addPayment = (payment) => addPaymentToDb(payment);
 
-export const listPayments = (name) =>
-  name ? getPaymentsByName(name) : getAllPayments();
+export const listPayments = (name) => {
+  const data = name ? getPaymentsByName(name) : getAllPayments();
+  return [...data].sort(
+    (a, b) => new Date(b.paidAt) - new Date(a.paidAt)
+  );
+};
