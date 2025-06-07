@@ -42,7 +42,22 @@
           <td>{{ bill.amount.toFixed(2) }}</td>
           <td :class="'status-' + bill.status">{{ bill.status }}</td>
           <td>{{ bill.autoRenew ? 'Yes' : 'No' }}</td>
-          <td><button @click="edit(bill)">Edit</button></td>
+          <td>
+            <button @click="pay(bill)" :disabled="bill.status === 'paid'">
+              Pay
+            </button>
+            <button
+              v-if="bill.category === 'subscriptions'"
+              @click="cancel(bill)"
+              :disabled="!bill.autoRenew"
+            >
+              Cancel
+            </button>
+            <button v-if="bill.category === 'subscriptions'" @click="history(bill)">
+              History
+            </button>
+            <button @click="edit(bill)">Edit</button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -65,6 +80,9 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import api from '../api.js';
 import EditBillForm from './EditBillForm.vue';
+import { useRouter } from 'vue-router';
+
+const emit = defineEmits(['notify']);
 
 const bills = ref([]);
 const total = ref(0);
@@ -77,6 +95,7 @@ const sort = ref('dueDate');
 const loading = ref(false);
 const error = ref(null);
 const editingBill = ref(null);
+const router = useRouter();
 
 const fetchBills = async () => {
   loading.value = true;
@@ -129,6 +148,33 @@ function closeEdit() {
 
 async function onUpdated() {
   await fetchBills();
+}
+
+async function pay(bill) {
+  try {
+    const { data } = await api.put(`/bills/${bill.id}`, { status: 'paid' });
+    await fetchBills();
+    if (data.newBill) emitNotify('New bill generated via auto-renew');
+  } catch (err) {
+    error.value = err.message;
+  }
+}
+
+async function cancel(bill) {
+  try {
+    await api.put(`/bills/${bill.id}`, { autoRenew: false });
+    await fetchBills();
+  } catch (err) {
+    error.value = err.message;
+  }
+}
+
+function history(bill) {
+  router.push(`/history/${bill.name}`);
+}
+
+function emitNotify(msg) {
+  emit('notify', msg);
 }
 </script>
 

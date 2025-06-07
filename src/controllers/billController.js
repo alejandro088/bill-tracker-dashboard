@@ -37,9 +37,9 @@ export const create = (req, res, next) => {
 
 export const update = (req, res, next) => {
   try {
-    const bill = updateBill(req.params.id, req.body);
-    if (!bill) return res.status(404).json({ message: 'Bill not found' });
-    res.json(bill);
+    const result = updateBill(req.params.id, req.body);
+    if (!result) return res.status(404).json({ message: 'Bill not found' });
+    res.json(result);
   } catch (err) {
     next(err);
   }
