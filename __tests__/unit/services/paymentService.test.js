@@ -1,13 +1,13 @@
 import { jest } from '@jest/globals';
 
 process.env.NODE_ENV = 'test';
-const paymentsDbPath = new URL('../../src/db/paymentsDB.js', import.meta.url).pathname;
+const paymentsDbPath = new URL('../../../src/db/paymentsDB.js', import.meta.url).pathname;
 jest.unstable_mockModule(paymentsDbPath, () => ({
   addPayment: jest.fn(),
   getPaymentsByName: jest.fn(),
   getAllPayments: jest.fn()
 }));
-const paymentService = await import('../../src/services/paymentService.js');
+const paymentService = await import('../../../src/services/paymentService.js');
 const db = await import(paymentsDbPath);
 
 describe('paymentService', () => {

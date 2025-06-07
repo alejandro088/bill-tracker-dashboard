@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 process.env.NODE_ENV = 'test';
-vi.mock('../src/db/prismaClient.js', () => ({
+vi.mock('../../src/db/prismaClient.js', () => ({
   default: {
     $connect: vi.fn().mockResolvedValue(),
     $disconnect: vi.fn().mockResolvedValue(),
@@ -13,7 +13,7 @@ vi.mock('openai', () => ({
     chat = { completions: { create: vi.fn().mockResolvedValue({ choices: [{ message: { content: 'answer' } }] }) } };
   }
 }));
-import app from '../src/index.js';
+import app from '../../src/index.js';
 
 describe('Assistant endpoints', () => {
   beforeEach(() => {

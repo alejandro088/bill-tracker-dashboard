@@ -10,8 +10,8 @@ jest.unstable_mockModule('openai', () => ({
   }
 }));
 
-const { ask } = await import('../../src/controllers/assistantController.js');
-import prisma from '../../src/db/prismaClient.js';
+const { ask } = await import('../../../src/controllers/assistantController.js');
+import prisma from '../../../src/db/prismaClient.js';
 import OpenAI from 'openai';
 process.env.OPENAI_API_KEY = 'test';
 
