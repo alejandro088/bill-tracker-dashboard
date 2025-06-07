@@ -1,7 +1,7 @@
 <template>
   <div>
     <SummaryWidget />
-    <BillForm @added="refresh" />
+    <BillForm @added="refresh" @notify="notify" />
     <BillTable :key="refreshKey" @notify="notify" />
   </div>
 </template>

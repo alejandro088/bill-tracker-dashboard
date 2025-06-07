@@ -1,48 +1,64 @@
 <template>
-  <v-form @submit.prevent="submit" class="form">
-    <v-text-field v-model="name" label="Name" density="compact" required />
-    <v-text-field v-model="description" label="Description" density="compact" />
-    <v-text-field
-      v-model.number="amount"
-      label="Amount"
-      type="number"
-      density="compact"
-      required
-    />
-    <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
-      <template #activator="{ props }">
-        <v-text-field
-          v-model="dueDate"
-          label="Due Date"
-          readonly
-          v-bind="props"
-          density="compact"
-        />
-      </template>
-      <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
-    </v-menu>
-    <v-select
-      v-model="paymentProvider"
-      :items="providers"
-      label="Payment Provider"
-      density="compact"
-    />
-    <v-select v-model="category" :items="categories" label="Category" density="compact" />
-    <v-switch
-      v-if="category === 'subscriptions'"
-      v-model="autoRenew"
-      label="Auto Renew"
-    />
-    <v-btn type="submit" :loading="loading" color="primary" class="mt-2">Add</v-btn>
-  </v-form>
-  <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
+  <v-btn class="add-btn" color="primary" @click="dialog = true">
+    <v-icon start>mdi-plus</v-icon>
+    Add Bill
+  </v-btn>
+
+  <v-dialog v-model="dialog" max-width="500">
+    <v-card>
+      <v-form @submit.prevent="submit">
+        <v-card-title>Add Bill</v-card-title>
+        <v-card-text class="pt-0">
+          <v-text-field v-model="name" label="Name" density="compact" required />
+          <v-text-field v-model="description" label="Description" density="compact" />
+          <v-text-field
+            v-model.number="amount"
+            label="Amount"
+            type="number"
+            density="compact"
+            required
+          />
+          <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
+            <template #activator="{ props }">
+              <v-text-field
+                v-model="dueDate"
+                label="Due Date"
+                readonly
+                v-bind="props"
+                density="compact"
+              />
+            </template>
+            <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
+          </v-menu>
+          <v-select
+            v-model="paymentProvider"
+            :items="providers"
+            label="Payment Provider"
+            density="compact"
+          />
+          <v-select v-model="category" :items="categories" label="Category" density="compact" />
+          <v-switch
+            v-if="category === 'subscriptions'"
+            v-model="autoRenew"
+            label="Auto Renew"
+          />
+          <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
+        </v-card-text>
+        <v-card-actions class="pt-0">
+          <v-spacer />
+          <v-btn text @click="close">Cancel</v-btn>
+          <v-btn type="submit" :loading="loading" color="primary">Add</v-btn>
+        </v-card-actions>
+      </v-form>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import api from '../api.js';
 
-const emit = defineEmits(['added']);
+const emit = defineEmits(['added', 'notify']);
 
 const name = ref('');
 const description = ref('');
@@ -63,6 +79,11 @@ const category = ref('utilities');
 const autoRenew = ref(false);
 const loading = ref(false);
 const error = ref(null);
+const dialog = ref(false);
+
+function close() {
+  dialog.value = false;
+}
 
 const submit = async () => {
   loading.value = true;
@@ -84,7 +105,9 @@ const submit = async () => {
     category.value = 'utilities';
     autoRenew.value = false;
     emit('added');
+    emit('notify', 'Bill added');
     error.value = null;
+    close();
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -92,5 +115,13 @@ const submit = async () => {
   }
 };
 </script>
+
+<style scoped>
+.add-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+</style>
 
 
