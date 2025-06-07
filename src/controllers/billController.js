@@ -3,7 +3,8 @@ import {
   getBillById,
   addBill,
   updateBill,
-  deleteBill
+  deleteBill,
+  getUpcomingBills
 } from '../services/billService.js';
 
 export const getAll = (req, res, next) => {
@@ -48,6 +49,14 @@ export const remove = (req, res, next) => {
     const success = deleteBill(req.params.id);
     if (!success) return res.status(404).json({ message: 'Bill not found' });
     res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const upcoming = (req, res, next) => {
+  try {
+    res.json(getUpcomingBills());
   } catch (err) {
     next(err);
   }
