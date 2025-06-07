@@ -25,8 +25,15 @@ export const listBills = (query = {}) => {
   updateOverdueBills();
   let data = [...getBills()];
 
-  const { search, category, status, sort = 'dueDate', page = 1, limit = 10 } =
-    query;
+  const {
+    search,
+    category,
+    status,
+    paymentProvider,
+    sort = 'dueDate',
+    page = 1,
+    limit = 10
+  } = query;
 
   if (search) {
     const term = search.toLowerCase();
@@ -43,6 +50,14 @@ export const listBills = (query = {}) => {
 
   if (status) {
     data = data.filter((b) => b.status === status);
+  }
+
+  if (paymentProvider) {
+    data = data.filter(
+      (b) =>
+        b.paymentProvider &&
+        b.paymentProvider.toLowerCase() === paymentProvider.toLowerCase()
+    );
   }
 
   data.sort((a, b) => {
@@ -69,6 +84,7 @@ export const addBill = (data) => {
     id: uuidv4(),
     status: 'pending',
     autoRenew: false,
+    paymentProvider: data.paymentProvider || '',
     ...data
   };
   return addBillToDb(bill);
@@ -99,7 +115,8 @@ export const updateBill = (id, data) => {
       category: updated.category,
       dueDate: due.toISOString(),
       status: 'pending',
-      autoRenew: updated.autoRenew
+      autoRenew: updated.autoRenew,
+      paymentProvider: updated.paymentProvider
     };
     addBillToDb(newBill);
   }

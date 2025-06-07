@@ -15,6 +15,10 @@
         <option value="pending">Pending</option>
         <option value="overdue">Overdue</option>
       </select>
+      <select v-model="paymentProvider">
+        <option value="">All Providers</option>
+        <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
+      </select>
     </div>
 
     <div v-if="loading">Loading...</div>
@@ -28,6 +32,7 @@
           <th @click="changeSort('category')">Category</th>
           <th @click="changeSort('dueDate')">Due Date</th>
           <th>Amount</th>
+          <th>Payment Provider</th>
           <th>Status</th>
           <th>Auto Renew</th>
           <th>Actions</th>
@@ -40,6 +45,7 @@
           <td>{{ bill.category }}</td>
           <td>{{ formatDate(bill.dueDate) }}</td>
           <td>{{ bill.amount.toFixed(2) }}</td>
+          <td>{{ providerIcon(bill.paymentProvider) }} {{ bill.paymentProvider }}</td>
           <td :class="'status-' + bill.status">{{ bill.status }}</td>
           <td>{{ bill.autoRenew ? 'Yes' : 'No' }}</td>
           <td>
@@ -91,6 +97,15 @@ const limit = 10;
 const search = ref('');
 const category = ref('');
 const status = ref('');
+const providers = [
+  'Visa',
+  'Mastercard',
+  'MercadoPago',
+  'Google Play',
+  'MODO',
+  'PayPal'
+];
+const paymentProvider = ref('');
 const sort = ref('dueDate');
 const loading = ref(false);
 const error = ref(null);
@@ -107,7 +122,8 @@ const fetchBills = async () => {
         sort: sort.value,
         search: search.value,
         category: category.value,
-        status: status.value
+        status: status.value,
+        paymentProvider: paymentProvider.value
       }
     });
     bills.value = data.data;
@@ -120,8 +136,14 @@ const fetchBills = async () => {
   }
 };
 
-watch([page, search, category, status, sort], fetchBills);
+watch([page, search, category, status, paymentProvider, sort], fetchBills);
 onMounted(fetchBills);
+
+watch(paymentProvider, (val) => {
+  router.replace({
+    query: { ...router.currentRoute.value.query, paymentProvider: val || undefined }
+  });
+});
 
 const totalPages = computed(() => Math.ceil(total.value / limit) || 1);
 
@@ -136,6 +158,18 @@ function changeSort(field) {
 }
 function formatDate(date) {
   return new Date(date).toLocaleDateString();
+}
+
+function providerIcon(name) {
+  const icons = {
+    Visa: '💳',
+    Mastercard: '💳',
+    MercadoPago: '🤑',
+    'Google Play': '📱',
+    MODO: '🏦',
+    PayPal: '💲'
+  };
+  return icons[name] || '';
 }
 
 function edit(bill) {
