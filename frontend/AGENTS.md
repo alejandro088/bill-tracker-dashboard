@@ -73,6 +73,20 @@ Prepares data for pie and bar charts:
 
 ---
 
+## 6. Financial Chatbot Assistant
+
+**Purpose:**
+Provides quick answers to common billing questions through a chat interface.
+
+**Component:**
+- `Assistant.vue`
+
+**Logic:**
+- Parses keyword-based queries like "PayPal" or "last month".
+- Fetches matching bills and summarizes or lists the results.
+
+---
+
 > These frontend agents are reactive (computed or watcher-based) and run automatically based on state changes.
 
 ## 🛠 Development Notes
