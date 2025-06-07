@@ -37,6 +37,12 @@
             density="compact"
           />
           <v-select v-model="category" :items="categories" label="Category" density="compact" />
+          <v-select
+            v-model="recurrence"
+            :items="recurrenceOptions"
+            label="Recurrence"
+            density="compact"
+          />
           <v-switch
             v-if="category === 'subscriptions'"
             v-model="autoRenew"
@@ -76,6 +82,8 @@ const providers = [
 const paymentProvider = ref(providers[0]);
 const categories = ['utilities', 'subscriptions', 'taxes', 'others'];
 const category = ref('utilities');
+const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
+const recurrence = ref('none');
 const autoRenew = ref(false);
 const loading = ref(false);
 const error = ref(null);
@@ -95,7 +103,8 @@ const submit = async () => {
       dueDate: dueDate.value,
       paymentProvider: paymentProvider.value,
       category: category.value,
-      autoRenew: autoRenew.value
+      autoRenew: autoRenew.value,
+      recurrence: recurrence.value
     });
     name.value = '';
     description.value = '';
@@ -103,6 +112,7 @@ const submit = async () => {
     dueDate.value = '';
     paymentProvider.value = providers[0];
     category.value = 'utilities';
+    recurrence.value = 'none';
     autoRenew.value = false;
     emit('added');
     emit('notify', 'Bill added');

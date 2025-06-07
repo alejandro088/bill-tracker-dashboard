@@ -33,6 +33,12 @@
           />
           <v-select v-model="category" :items="categories" label="Category" density="compact" />
           <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
+          <v-select
+            v-model="recurrence"
+            :items="recurrenceOptions"
+            label="Recurrence"
+            density="compact"
+          />
           <v-switch v-if="category === 'subscriptions'" v-model="autoRenew" label="Auto Renew" />
           <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
         </v-card-text>
@@ -72,6 +78,8 @@ const statusOptions = ['pending', 'paid', 'overdue'];
 const category = ref('utilities');
 const status = ref('pending');
 const paymentProvider = ref(providers[0]);
+const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
+const recurrence = ref('none');
 const autoRenew = ref(false);
 const loading = ref(false);
 const error = ref(null);
@@ -85,6 +93,7 @@ const setFields = (b) => {
   category.value = b.category;
   status.value = b.status;
   paymentProvider.value = b.paymentProvider || providers[0];
+  recurrence.value = b.recurrence || 'none';
   autoRenew.value = b.autoRenew || false;
 };
 
@@ -113,7 +122,8 @@ const submit = async () => {
       paymentProvider: paymentProvider.value,
       category: category.value,
       status: status.value,
-      autoRenew: autoRenew.value
+      autoRenew: autoRenew.value,
+      recurrence: recurrence.value
     });
     emit('updated');
     error.value = null;

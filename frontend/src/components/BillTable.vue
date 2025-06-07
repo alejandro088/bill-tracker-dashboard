@@ -31,6 +31,15 @@
           clearable
         />
       </v-col>
+      <v-col cols="12" sm="2">
+        <v-select
+          v-model="recurrence"
+          :items="recurrenceOptions"
+          label="Recurrence"
+          density="compact"
+          clearable
+        />
+      </v-col>
     </v-row>
 
     <v-data-table
@@ -107,6 +116,15 @@ const category = ref('');
 const status = ref('');
 const providers = ['Visa', 'Mastercard', 'MercadoPago', 'Google Play', 'MODO', 'PayPal'];
 const paymentProvider = ref('');
+const recurrenceOptions = [
+  { title: 'All', value: '' },
+  { title: 'Weekly', value: 'weekly' },
+  { title: 'Monthly', value: 'monthly' },
+  { title: 'Bimonthly', value: 'bimonthly' },
+  { title: 'Yearly', value: 'yearly' },
+  { title: 'None', value: 'none' }
+];
+const recurrence = ref('');
 const sort = ref('dueDate');
 const loading = ref(false);
 const error = ref(null);
@@ -135,6 +153,7 @@ const headers = [
   { title: 'Due Date', key: 'dueDate' },
   { title: 'Amount', key: 'amount' },
   { title: 'Payment Provider', key: 'paymentProvider' },
+  { title: 'Recurrence', key: 'recurrence' },
   { title: 'Status', key: 'status' },
   { title: 'Auto Renew', key: 'autoRenew', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false }
@@ -151,7 +170,8 @@ const fetchBills = async () => {
         search: search.value,
         category: category.value,
         status: status.value,
-        paymentProvider: paymentProvider.value
+        paymentProvider: paymentProvider.value,
+        recurrence: recurrence.value
       }
     });
     bills.value = data.data;
@@ -164,7 +184,7 @@ const fetchBills = async () => {
   }
 };
 
-watch([page, search, category, status, paymentProvider, sort], fetchBills);
+watch([page, search, category, status, paymentProvider, recurrence, sort], fetchBills);
 onMounted(fetchBills);
 
 watch(paymentProvider, (val) => {

@@ -9,7 +9,8 @@ const bills = [
     amount: 60.5,
     status: 'pending',
     autoRenew: false,
-    paymentProvider: 'Visa'
+    paymentProvider: 'Visa',
+    recurrence: 'none'
   },
   {
     id: '2',
@@ -20,7 +21,8 @@ const bills = [
     amount: 12.99,
     status: 'pending',
     autoRenew: true,
-    paymentProvider: 'Mastercard'
+    paymentProvider: 'Mastercard',
+    recurrence: 'monthly'
   },
   {
     id: '3',
@@ -31,7 +33,8 @@ const bills = [
     amount: 9.99,
     status: 'pending',
     autoRenew: true,
-    paymentProvider: 'MercadoPago'
+    paymentProvider: 'MercadoPago',
+    recurrence: 'monthly'
   },
   {
     id: '4',
@@ -42,7 +45,8 @@ const bills = [
     amount: 2.99,
     status: 'pending',
     autoRenew: true,
-    paymentProvider: 'Google Play'
+    paymentProvider: 'Google Play',
+    recurrence: 'monthly'
   },
   {
     id: '5',
@@ -53,7 +57,8 @@ const bills = [
     amount: 15.5,
     status: 'pending',
     autoRenew: false,
-    paymentProvider: 'MODO'
+    paymentProvider: 'MODO',
+    recurrence: 'none'
   },
   {
     id: '6',
@@ -64,7 +69,8 @@ const bills = [
     amount: 40.0,
     status: 'pending',
     autoRenew: false,
-    paymentProvider: 'PayPal'
+    paymentProvider: 'PayPal',
+    recurrence: 'none'
   }
 ];
 

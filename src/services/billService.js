@@ -30,6 +30,7 @@ export const listBills = (query = {}) => {
     category,
     status,
     paymentProvider,
+    recurrence,
     sort = 'dueDate',
     page = 1,
     limit = 10
@@ -60,6 +61,10 @@ export const listBills = (query = {}) => {
     );
   }
 
+  if (recurrence) {
+    data = data.filter((b) => (b.recurrence || 'none') === recurrence);
+  }
+
   data.sort((a, b) => {
     if (!a[sort] || !b[sort]) return 0;
     return new Date(a[sort]) - new Date(b[sort]);
@@ -85,6 +90,7 @@ export const addBill = (data) => {
     status: 'pending',
     autoRenew: false,
     paymentProvider: data.paymentProvider || '',
+    recurrence: data.recurrence || 'none',
     ...data
   };
   return addBillToDb(bill);
@@ -106,7 +112,22 @@ export const updateBill = (id, data) => {
     prevStatus !== 'paid'
   ) {
     const due = new Date(updated.dueDate);
-    due.setMonth(due.getMonth() + 1);
+    switch (updated.recurrence) {
+      case 'weekly':
+        due.setDate(due.getDate() + 7);
+        break;
+      case 'bimonthly':
+        due.setMonth(due.getMonth() + 2);
+        break;
+      case 'yearly':
+        due.setFullYear(due.getFullYear() + 1);
+        break;
+      case 'monthly':
+        due.setMonth(due.getMonth() + 1);
+        break;
+      default:
+        return { updated, newBill: null };
+    }
     newBill = {
       id: uuidv4(),
       name: updated.name,
@@ -116,7 +137,8 @@ export const updateBill = (id, data) => {
       dueDate: due.toISOString(),
       status: 'pending',
       autoRenew: updated.autoRenew,
-      paymentProvider: updated.paymentProvider
+      paymentProvider: updated.paymentProvider,
+      recurrence: updated.recurrence || 'none'
     };
     addBillToDb(newBill);
   }
@@ -127,7 +149,9 @@ export const updateBill = (id, data) => {
       name: updated.name,
       amount: updated.amount,
       dueDate: updated.dueDate,
-      paidDate: new Date().toISOString()
+      paidDate: new Date().toISOString(),
+      paymentProvider: updated.paymentProvider,
+      recurrence: updated.recurrence || 'none'
     });
   }
 
