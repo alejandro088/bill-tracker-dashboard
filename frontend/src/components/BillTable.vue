@@ -81,7 +81,7 @@
         >
           <v-icon>mdi-cancel</v-icon>
         </v-btn>
-        <v-btn icon v-if="item.category === 'subscriptions'" @click="history(item)">
+        <v-btn icon v-if="item.invoiceCount > 1" @click="history(item)">
           <v-icon>mdi-history</v-icon>
         </v-btn>
         <v-btn icon @click="edit(item)">
