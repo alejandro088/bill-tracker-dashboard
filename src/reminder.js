@@ -1,14 +1,12 @@
 import cron from 'node-cron';
-import { getBills } from './db/mockDB.js';
+import prisma from './db/prismaClient.js';
 
-const checkUpcoming = () => {
+const checkUpcoming = async () => {
   const now = new Date();
   const limit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  const upcoming = getBills().filter((bill) => {
-    const due = new Date(bill.dueDate);
-    return due >= now && due <= limit;
+  const upcoming = await prisma.bill.findMany({
+    where: { dueDate: { gte: now, lte: limit } }
   });
-
   if (upcoming.length) {
     console.log('Upcoming bills:', upcoming);
   }

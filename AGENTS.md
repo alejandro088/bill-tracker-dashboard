@@ -71,7 +71,7 @@ Automatically records a payment entry when a bill status changes to `"paid"`.
 
 ---
 
-> All backend agents operate on an in-memory DB (mockDB.js) and are extendable for persistence or notifications.
+> Backend agents now operate on a MySQL database via Prisma.
 
 ## 🛠 Development Notes
 

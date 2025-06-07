@@ -1,30 +1,18 @@
-import {
-  getBills,
-  getBillById as getBill,
-  addBill as addBillToDb,
-  updateBill as updateBillInDb,
-  deleteBill as deleteBillFromDb
-} from '../db/mockDB.js';
-import { v4 as uuidv4 } from 'uuid';
+import prisma from '../db/prismaClient.js';
 import { addPayment } from './paymentService.js';
 
-const updateOverdueBills = () => {
-  const now = new Date();
-  getBills().forEach((bill) => {
-    if (
-      bill.status !== 'paid' &&
-      new Date(bill.dueDate) < now &&
-      bill.status !== 'overdue'
-    ) {
-      bill.status = 'overdue';
-    }
+const updateOverdueBills = async () => {
+  await prisma.bill.updateMany({
+    where: {
+      dueDate: { lt: new Date() },
+      NOT: { status: { in: ['paid', 'overdue'] } }
+    },
+    data: { status: 'overdue' }
   });
 };
 
-export const listBills = (query = {}) => {
-  updateOverdueBills();
-  let data = [...getBills()];
-
+export const listBills = async (query = {}) => {
+  await updateOverdueBills();
   const {
     search,
     category,
@@ -36,80 +24,55 @@ export const listBills = (query = {}) => {
     limit = 10
   } = query;
 
+  const where = {};
   if (search) {
-    const term = search.toLowerCase();
-    data = data.filter(
-      (b) =>
-        b.name.toLowerCase().includes(term) ||
-        (b.description && b.description.toLowerCase().includes(term))
-    );
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } }
+    ];
   }
+  if (category) where.category = category;
+  if (status) where.status = status;
+  if (paymentProvider) where.paymentProvider = paymentProvider;
+  if (recurrence) where.recurrence = recurrence;
 
-  if (category) {
-    data = data.filter((b) => b.category === category);
-  }
-
-  if (status) {
-    data = data.filter((b) => b.status === status);
-  }
-
-  if (paymentProvider) {
-    data = data.filter(
-      (b) =>
-        b.paymentProvider &&
-        b.paymentProvider.toLowerCase() === paymentProvider.toLowerCase()
-    );
-  }
-
-  if (recurrence) {
-    data = data.filter((b) => (b.recurrence || 'none') === recurrence);
-  }
-
-  data.sort((a, b) => {
-    if (!a[sort] || !b[sort]) return 0;
-    return new Date(a[sort]) - new Date(b[sort]);
+  const total = await prisma.bill.count({ where });
+  const data = await prisma.bill.findMany({
+    where,
+    orderBy: { [sort]: 'asc' },
+    skip: (page - 1) * limit,
+    take: Number(limit)
   });
 
-  const start = (page - 1) * limit;
-  const end = start + Number(limit);
-  const paginated = data.slice(start, end);
-
-  return {
-    total: data.length,
-    page: Number(page),
-    limit: Number(limit),
-    data: paginated
-  };
+  return { total, page: Number(page), limit: Number(limit), data };
 };
 
-export const getBillById = (id) => getBill(id);
+export const getBillById = async (id) => prisma.bill.findUnique({ where: { id } });
 
-export const addBill = (data) => {
-  const bill = {
-    id: uuidv4(),
-    status: 'pending',
-    autoRenew: false,
-    paymentProvider: data.paymentProvider || '',
-    recurrence: data.recurrence || 'none',
-    ...data
-  };
-  return addBillToDb(bill);
+export const addBill = async (data) => {
+  return prisma.bill.create({
+    data: {
+      status: 'pending',
+      autoRenew: false,
+      paymentProvider: data.paymentProvider || '',
+      recurrence: data.recurrence || 'none',
+      ...data
+    }
+  });
 };
 
-export const updateBill = (id, data) => {
-  const existing = getBill(id);
+export const updateBill = async (id, data) => {
+  const existing = await prisma.bill.findUnique({ where: { id } });
   if (!existing) return null;
 
-  const prevStatus = existing.status;
-  const updated = updateBillInDb(id, data);
+  const updated = await prisma.bill.update({ where: { id }, data });
   let newBill = null;
 
   if (
-    updated &&
     updated.category === 'subscriptions' &&
     updated.autoRenew &&
     data.status === 'paid' &&
-    prevStatus !== 'paid'
+    existing.status !== 'paid'
   ) {
     const due = new Date(updated.dueDate);
     switch (updated.recurrence) {
@@ -126,24 +89,24 @@ export const updateBill = (id, data) => {
         due.setMonth(due.getMonth() + 1);
         break;
       default:
-        return { updated, newBill: null };
+        break;
     }
-    newBill = {
-      id: uuidv4(),
-      name: updated.name,
-      description: updated.description,
-      amount: updated.amount,
-      category: updated.category,
-      dueDate: due.toISOString(),
-      status: 'pending',
-      autoRenew: updated.autoRenew,
-      paymentProvider: updated.paymentProvider,
-      recurrence: updated.recurrence || 'none'
-    };
-    addBillToDb(newBill);
+    newBill = await prisma.bill.create({
+      data: {
+        name: updated.name,
+        description: updated.description,
+        amount: updated.amount,
+        category: updated.category,
+        dueDate: due,
+        status: 'pending',
+        autoRenew: updated.autoRenew,
+        paymentProvider: updated.paymentProvider,
+        recurrence: updated.recurrence || 'none'
+      }
+    });
   }
 
-  if (updated && data.status === 'paid' && prevStatus !== 'paid') {
+  if (data.status === 'paid' && existing.status !== 'paid') {
     addPayment({
       billId: updated.id,
       name: updated.name,
@@ -158,31 +121,31 @@ export const updateBill = (id, data) => {
   return { updated, newBill };
 };
 
-export const deleteBill = (id) => deleteBillFromDb(id);
+export const deleteBill = async (id) => {
+  await prisma.bill.delete({ where: { id } });
+  return true;
+};
 
-export const getUpcomingBills = () => {
+export const getUpcomingBills = async () => {
   const now = new Date();
   const limit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  return getBills().filter((bill) => {
-    const due = new Date(bill.dueDate);
-    return due >= now && due <= limit;
+  return prisma.bill.findMany({
+    where: { dueDate: { gte: now, lte: limit } }
   });
 };
 
-export const getMonthlySummary = () => {
-  updateOverdueBills();
+export const getMonthlySummary = async () => {
+  await updateOverdueBills();
   const now = new Date();
-  const month = now.getMonth();
-  const year = now.getFullYear();
-
-  const summary = { paid: 0, pending: 0, overdue: 0 };
-
-  getBills().forEach((bill) => {
-    const due = new Date(bill.dueDate);
-    if (due.getMonth() === month && due.getFullYear() === year) {
-      summary[bill.status] += bill.amount;
-    }
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const bills = await prisma.bill.findMany({
+    where: { dueDate: { gte: start, lt: end } }
   });
 
+  const summary = { paid: 0, pending: 0, overdue: 0 };
+  bills.forEach((bill) => {
+    summary[bill.status] += bill.amount;
+  });
   return summary;
 };
