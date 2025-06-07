@@ -45,9 +45,35 @@ Calculates totals for `paid`, `pending`, and `overdue` bills in the current mont
 
 ---
 
+## 4. Overdue Status Agent
+
+**Purpose:**
+Marks bills as `"overdue"` when their due date passes and they remain unpaid.
+
+**Runs:**
+- Invoked whenever bills are listed or summaries are generated.
+
+**Location:**
+- `src/services/billService.js` (`updateOverdueBills`)
+
+---
+
+## 5. Payment History Agent
+
+**Purpose:**
+Automatically records a payment entry when a bill status changes to `"paid"`.
+
+**Trigger:**
+- On bill update when status transitions to `"paid"`.
+
+**Location:**
+- `src/services/billService.js`
+
+---
+
 > All backend agents operate on an in-memory DB (mockDB.js) and are extendable for persistence or notifications.
 
-## 🛠 Development Notes for Codex
+## 🛠 Development Notes
 
 - No automated tests are available for this agent at the moment.
 - No `npm test` or test scripts are defined for this repo.

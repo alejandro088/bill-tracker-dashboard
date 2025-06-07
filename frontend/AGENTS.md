@@ -18,7 +18,7 @@ When a new subscription bill is generated via auto-renewal, show a toast to the 
 
 ---
 
-## 2. UI Status + Totals Agent
+## 2. UI Totals Updater Agent
 
 **Purpose:**  
 Automatically updates totals for:
@@ -32,7 +32,35 @@ Automatically updates totals for:
 
 ---
 
-## 3. Analytics Data Generator
+## 3. Form Dialog Manager
+
+**Purpose:**
+Handles opening and closing of the Add and Edit bill dialogs.
+
+**Components:**
+- `BillForm.vue`
+- `EditBillForm.vue`
+
+**Logic:**
+- Uses reactive `dialog` state and watchers to show or hide the modal forms.
+
+---
+
+## 4. Navigation Drawer Agent
+
+**Purpose:**
+Controls drawer visibility and highlights the active navigation tab based on the current route.
+
+**Location:**
+- `App.vue`
+
+**Logic:**
+- Watches display breakpoints to toggle the drawer.
+- Uses `useRoute` to mark the active list item.
+
+---
+
+## 5. Analytics Chart Data Agent
 
 **Purpose:**  
 Prepares data for pie and bar charts:
@@ -47,7 +75,7 @@ Prepares data for pie and bar charts:
 
 > These frontend agents are reactive (computed or watcher-based) and run automatically based on state changes.
 
-## 🛠 Development Notes for Codex
+## 🛠 Development Notes
 
 - No automated tests are available for this agent at the moment.
 - No `npm test` or test scripts are defined for this repo.
