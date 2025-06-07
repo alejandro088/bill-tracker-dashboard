@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import billRoutes from './routes/billRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 import logger from './middleware/logger.js';
 import errorHandler from './middleware/errorHandler.js';
 import './reminder.js';
@@ -24,6 +25,7 @@ app.use(logger);
 app.use('/bills', billRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/assistant', assistantRoutes);
+app.use('/chat', chatRoutes);
 
 app.use(errorHandler);
 

@@ -19,6 +19,9 @@
       @click:append-inner="send"
       @keyup.enter="send"
     />
+    <v-btn color="primary" @click="resetConversation" class="mt-2">
+      Nueva conversación
+    </v-btn>
   </v-container>
 </template>
 
@@ -29,6 +32,15 @@ import api from '../api.js';
 const messages = ref([{ from: 'bot', text: 'Hi! Ask me about your bills.' }]);
 const input = ref('');
 const llmMode = ref(true);
+
+async function resetConversation() {
+  try {
+    await api.post('/chat/reset');
+  } catch (e) {
+    // ignore errors when resetting
+  }
+  messages.value = [{ from: 'bot', text: 'Hi! Ask me about your bills.' }];
+}
 
 async function send() {
   if (!input.value.trim()) return;
