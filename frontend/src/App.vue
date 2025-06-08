@@ -25,6 +25,12 @@
           :active="route.path.startsWith('/analytics')"
         />
         <v-list-item
+          to="/summary"
+          prepend-icon="mdi-table"
+          title="Resumen"
+          :active="route.path.startsWith('/summary')"
+        />
+        <v-list-item
           to="/assistant"
           prepend-icon="mdi-robot"
           title="Assistant"

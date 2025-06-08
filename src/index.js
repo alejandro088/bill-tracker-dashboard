@@ -6,6 +6,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import summaryRoutes from './routes/summaryRoutes.js';
 import logger from './middleware/logger.js';
 import errorHandler from './middleware/errorHandler.js';
 import './reminder.js';
@@ -28,6 +29,7 @@ app.use('/payments', paymentRoutes);
 app.use('/services', serviceRoutes);
 app.use('/assistant', assistantRoutes);
 app.use('/chat', chatRoutes);
+app.use('/summary', summaryRoutes);
 
 app.use(errorHandler);
 if (process.env.NODE_ENV !== 'test') {

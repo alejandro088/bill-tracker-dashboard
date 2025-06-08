@@ -28,8 +28,8 @@ export const listBills = async (query = {}) => {
   const where = {};
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { description: { contains: search, mode: 'insensitive' } }
+      { Service: { name: { contains: search, mode: 'insensitive' } } },
+      { Service: { description: { contains: search, mode: 'insensitive' } } }
     ];
   }
   if (category) where.category = category;
@@ -43,13 +43,28 @@ export const listBills = async (query = {}) => {
     where,
     orderBy: { [sort]: 'asc' },
     skip: (page - 1) * limit,
-    take: Number(limit)
+    take: Number(limit),
+    include: { Service: true }
   });
 
-  return { total, page: Number(page), limit: Number(limit), data };
+  const mapped = data.map((b) => ({
+    ...b,
+    name: b.Service?.name,
+    description: b.Service?.description,
+    Service: undefined
+  }));
+
+  return { total, page: Number(page), limit: Number(limit), data: mapped };
 };
 
-export const getBillById = async (id) => prisma.bill.findUnique({ where: { id } });
+export const getBillById = async (id) => {
+  const bill = await prisma.bill.findUnique({
+    where: { id },
+    include: { Service: true }
+  });
+  if (!bill) return null;
+  return { ...bill, name: bill.Service?.name, description: bill.Service?.description, Service: undefined };
+};
 
 export const addBill = async (data) => {
   let serviceId = data.serviceId;
@@ -73,9 +88,10 @@ export const addBill = async (data) => {
         }
       });
     }
-    serviceId = service.id;
+      serviceId = service.id;
   }
 
+  const { name, description, ...billData } = data;
   return prisma.bill.create({
     data: {
       status: 'pending',
@@ -83,7 +99,7 @@ export const addBill = async (data) => {
       paymentProvider: data.paymentProvider || '',
       recurrence: data.recurrence || 'none',
       serviceId,
-      ...data
+      ...billData
     }
   });
 };
@@ -92,7 +108,8 @@ export const updateBill = async (id, data) => {
   const existing = await prisma.bill.findUnique({ where: { id } });
   if (!existing) return null;
 
-  const updateData = { ...data };
+  const { name, description, ...rest } = data;
+  const updateData = { ...rest };
   if (data.status === 'paid' && existing.status !== 'paid') {
     updateData.paidAt = new Date();
   }
@@ -125,8 +142,6 @@ export const updateBill = async (id, data) => {
     newBill = await prisma.bill.create({
       data: {
         serviceId: updated.serviceId,
-        name: updated.name,
-        description: updated.description,
         amount: updated.amount,
         category: updated.category,
         dueDate: due,
@@ -139,9 +154,10 @@ export const updateBill = async (id, data) => {
   }
 
   if (data.status === 'paid' && existing.status !== 'paid') {
+    const service = await prisma.service.findUnique({ where: { id: updated.serviceId } });
     await addPayment({
       billId: updated.id,
-      name: updated.name,
+      name: service?.name || '',
       amount: updated.amount,
       dueDate: updated.dueDate,
       paidAt: new Date().toISOString(),
@@ -162,9 +178,16 @@ export const deleteBill = async (id) => {
 export const getUpcomingBills = async () => {
   const now = new Date();
   const limit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  return prisma.bill.findMany({
-    where: { dueDate: { gte: now, lte: limit } }
+  const bills = await prisma.bill.findMany({
+    where: { dueDate: { gte: now, lte: limit } },
+    include: { Service: true }
   });
+  return bills.map((b) => ({
+    ...b,
+    name: b.Service?.name,
+    description: b.Service?.description,
+    Service: undefined
+  }));
 };
 
 export const getMonthlySummary = async () => {
@@ -181,6 +204,25 @@ export const getMonthlySummary = async () => {
     summary[bill.status] += bill.amount;
   });
   return summary;
+};
+
+export const getMonthlyStatusByMonth = async (year = new Date().getFullYear()) => {
+  await updateOverdueBills();
+  const start = new Date(year, 0, 1);
+  const end = new Date(year + 1, 0, 1);
+  const bills = await prisma.bill.findMany({
+    where: { dueDate: { gte: start, lt: end } },
+    select: { dueDate: true, status: true, amount: true }
+  });
+  const map = {};
+  bills.forEach((b) => {
+    const month = b.dueDate.toISOString().slice(0, 7);
+    const key = `${month}-${b.status}`;
+    if (!map[key]) map[key] = { month, status: b.status, total: 0, count: 0 };
+    map[key].total += b.amount;
+    map[key].count += 1;
+  });
+  return Object.values(map).sort((a, b) => a.month.localeCompare(b.month));
 };
 
 export const getSummary = async () => {
