@@ -213,7 +213,7 @@ const totalPages = computed(() => Math.ceil(total.value / limit) || 1);
 const groupedBills = computed(() => {
   const map = new Map();
   bills.value.forEach((bill) => {
-    const key = `${bill.name}|${bill.paymentProvider}|${bill.category}`;
+    const key = bill.serviceId || `${bill.name}|${bill.paymentProvider}|${bill.category}`;
     if (!map.has(key)) map.set(key, []);
     map.get(key).push(bill);
   });
@@ -283,7 +283,8 @@ function history(bill) {
     query: {
       name: bill.name,
       provider: bill.paymentProvider || '',
-      category: bill.category
+      category: bill.category,
+      serviceId: bill.serviceId
     }
   });
 }
@@ -296,7 +297,8 @@ function newInvoice(bill) {
     recurrence: bill.recurrence || 'none',
     amount: bill.amount,
     dueDate: bill.dueDate.substring(0, 10),
-    status: 'pending'
+    status: 'pending',
+    serviceId: bill.serviceId
   };
 }
 

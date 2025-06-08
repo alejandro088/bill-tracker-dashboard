@@ -66,6 +66,7 @@ const category = ref('');
 const paymentProvider = ref('');
 const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
 const recurrence = ref('none');
+const serviceId = ref('');
 const amount = ref(0);
 const dueDate = ref('');
 const statusOptions = ['pending', 'paid', 'overdue'];
@@ -81,6 +82,7 @@ watch(
       category.value = b.category;
       paymentProvider.value = b.paymentProvider || '';
       recurrence.value = b.recurrence || 'none';
+      serviceId.value = b.serviceId || '';
       amount.value = b.amount || 0;
       dueDate.value = (b.dueDate || '').substring(0, 10);
       status.value = b.status || 'pending';
@@ -108,7 +110,8 @@ const submit = async () => {
       amount: amount.value,
       dueDate: dueDate.value,
       status: status.value,
-      autoRenew: false
+      autoRenew: false,
+      serviceId: serviceId.value
     });
     emit('created');
     error.value = null;

@@ -18,6 +18,7 @@ export const listBills = async (query = {}) => {
     category,
     status,
     paymentProvider,
+    serviceId,
     recurrence,
     sort = 'dueDate',
     page = 1,
@@ -35,6 +36,7 @@ export const listBills = async (query = {}) => {
   if (status) where.status = status;
   if (paymentProvider) where.paymentProvider = paymentProvider;
   if (recurrence) where.recurrence = recurrence;
+  if (serviceId) where.serviceId = serviceId;
 
   const total = await prisma.bill.count({ where });
   const data = await prisma.bill.findMany({
@@ -50,12 +52,37 @@ export const listBills = async (query = {}) => {
 export const getBillById = async (id) => prisma.bill.findUnique({ where: { id } });
 
 export const addBill = async (data) => {
+  let serviceId = data.serviceId;
+  if (!serviceId) {
+    let service = await prisma.service.findFirst({
+      where: {
+        name: data.name,
+        category: data.category,
+        paymentProvider: data.paymentProvider || ''
+      }
+    });
+    if (!service) {
+      service = await prisma.service.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          category: data.category,
+          paymentProvider: data.paymentProvider || '',
+          recurrence: data.recurrence || 'none',
+          autoRenew: data.autoRenew ?? false
+        }
+      });
+    }
+    serviceId = service.id;
+  }
+
   return prisma.bill.create({
     data: {
       status: 'pending',
       autoRenew: false,
       paymentProvider: data.paymentProvider || '',
       recurrence: data.recurrence || 'none',
+      serviceId,
       ...data
     }
   });
@@ -97,6 +124,7 @@ export const updateBill = async (id, data) => {
     }
     newBill = await prisma.bill.create({
       data: {
+        serviceId: updated.serviceId,
         name: updated.name,
         description: updated.description,
         amount: updated.amount,
