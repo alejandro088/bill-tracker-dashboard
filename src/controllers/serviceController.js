@@ -2,7 +2,7 @@ import { listServices, getServiceById } from '../services/serviceService.js';
 
 export const getAll = async (req, res, next) => {
   try {
-    res.json(await listServices());
+    res.json(await listServices(req.query));
   } catch (err) {
     next(err);
   }
