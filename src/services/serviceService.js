@@ -14,3 +14,9 @@ export const getServiceById = async (id) =>
     where: { id },
     include: { bills: true }
   });
+
+export const updateService = async (id, data) => {
+  const existing = await prisma.service.findUnique({ where: { id } });
+  if (!existing) return null;
+  return prisma.service.update({ where: { id }, data });
+};
