@@ -2,13 +2,13 @@
   <div>
     <v-row class="mb-2" align="center">
       <v-col cols="12" sm="4">
-        <v-tooltip text="Filtrar por categor\u00eda">
+        <v-tooltip text="Filtrar por categoría">
           <template #activator="{ props }">
             <v-select
               v-bind="props"
               v-model="category"
               :items="categoryOptions"
-              label="Categor\u00eda"
+              label="Categoría"
               density="compact"
               clearable
             />
@@ -44,12 +44,17 @@
         </v-tooltip>
       </v-col>
     </v-row>
-    <v-switch
-      v-model="dueSoon"
-      density="compact"
-      label="Vencimientos en 7 d\u00edas"
-      class="mb-2"
-    />
+    <v-tooltip text="Mostrar solo servicios con facturas a vencer en los próximos 7 días">
+      <template #activator="{ props }">
+        <v-switch
+          v-bind="props"
+          v-model="dueSoon"
+          density="compact"
+          label="Vencimientos próximos (7 días)"
+          class="mb-2"
+        />
+      </template>
+    </v-tooltip>
     <v-progress-linear v-if="loading" indeterminate />
     <v-alert v-else-if="error" type="error" dense>{{ error }}</v-alert>
     <v-data-table
@@ -61,7 +66,7 @@
     >
       <template #item.name="{ item }">
         {{ item.name }}
-        <v-tooltip v-if="item.autoRenew" text="Renovaci\u00f3n autom\u00e1tica activada">
+        <v-tooltip v-if="item.autoRenew" text="Renovación automática activada">
           <template #activator="{ props }">
             <v-icon v-bind="props" class="ml-1" size="small">mdi-autorenew</v-icon>
           </template>
@@ -69,14 +74,14 @@
       </template>
       <template #item.lastBill="{ item }">
         <span v-if="item.lastBill" class="d-inline-flex align-center">
-          <v-tooltip text="Monto de la \u00faltima factura">
+          <v-tooltip text="Monto de la última factura">
             <template #activator="{ props }">
               <span class="pointer" v-bind="props" @click="openQuick(item.lastBill)">
                 {{ formatAmount(item.lastBill.amount) }}
               </span>
             </template>
           </v-tooltip>
-          <v-tooltip :text="`Venci\u00f3 el ${formatDate(item.lastBill.dueDate)}`">
+          <v-tooltip :text="dueTooltip(item.lastBill.dueDate)">
             <template #activator="{ props }">
               <span class="pointer ml-1" v-bind="props" @click="openQuick(item.lastBill)">
                 ({{ shortMonth(item.lastBill.dueDate) }})
@@ -96,9 +101,9 @@
             </template>
           </v-tooltip>
           <v-icon icon="mdi-chevron-right" size="small" class="ml-1 pointer" @click="openQuick(item.lastBill)" />
-          <v-tooltip v-if="item.lastBill.status === 'overdue'" :text="`Venci\u00f3 el ${formatDate(item.lastBill.dueDate)}`">
+          <v-tooltip v-if="item.lastBill.status === 'overdue'" :text="`Venció el ${formatDate(item.lastBill.dueDate)}`">
             <template #activator="{ props }">
-              <v-badge v-bind="props" color="red" class="ml-1">⚠ overdue ({{ overdueDays(item.lastBill.dueDate) }} d\u00edas)</v-badge>
+              <v-badge v-bind="props" color="red" class="ml-1">⚠ overdue ({{ overdueDays(item.lastBill.dueDate) }} días)</v-badge>
             </template>
           </v-tooltip>
         </span>
@@ -112,6 +117,7 @@
               :to="`/services/${item.id}`"
               variant="text"
               icon
+              class="mx-1"
             >
               <v-icon>mdi-file-document-outline</v-icon>
             </v-btn>
@@ -119,14 +125,14 @@
         </v-tooltip>
         <v-tooltip text="Agregar factura">
           <template #activator="{ props }">
-            <v-btn v-bind="props" icon @click="newInvoice(item)">
+            <v-btn v-bind="props" icon class="mx-1" @click="newInvoice(item)">
               <v-icon>mdi-file-plus</v-icon>
             </v-btn>
           </template>
         </v-tooltip>
         <v-tooltip text="Archivar servicio">
           <template #activator="{ props }">
-            <v-btn v-bind="props" icon @click="archive(item)">
+            <v-btn v-bind="props" icon class="mx-1" @click="archive(item)">
               <v-icon>mdi-archive</v-icon>
             </v-btn>
           </template>
@@ -262,7 +268,7 @@ function overdueDays(date) {
 }
 
 function formatDate(d) {
-  return new Date(d).toLocaleDateString();
+  return new Date(d).toLocaleDateString('es-ES');
 }
 
 function statusLabel(bill) {
@@ -274,7 +280,15 @@ function formatAmount(val) {
 }
 
 function shortMonth(date) {
-  return new Date(date).toLocaleDateString('es-ES', { month: 'short' });
+  return new Date(date)
+    .toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })
+    .replace('.', '');
+}
+
+function dueTooltip(date) {
+  const d = new Date(date);
+  const prefix = d < new Date() ? 'Venció el' : 'Vencerá el';
+  return `${prefix} ${formatDate(d)}`;
 }
 
 function statusColor(status) {
