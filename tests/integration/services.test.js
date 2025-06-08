@@ -33,6 +33,17 @@ describe('Service endpoints', () => {
     expect(res.body[0].name).toBe('Internet');
   });
 
+  it('GET /services with filters should pass query to service', async () => {
+    serviceService.listServices.mockResolvedValue([]);
+    await request(app)
+      .get('/services')
+      .query({ category: 'utilities', paymentProvider: 'Visa' });
+    expect(serviceService.listServices).toHaveBeenCalledWith({
+      category: 'utilities',
+      paymentProvider: 'Visa'
+    });
+  });
+
   it('GET /services/:id should return service by id', async () => {
     serviceService.getServiceById.mockResolvedValue(sampleService);
     const res = await request(app).get('/services/1');
