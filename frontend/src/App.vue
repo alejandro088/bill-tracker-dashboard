@@ -30,12 +30,6 @@
           title="Resumen"
           :active="route.path.startsWith('/summary')"
         />
-        <v-list-item
-          to="/assistant"
-          prepend-icon="mdi-robot"
-          title="Assistant"
-          :active="route.path.startsWith('/assistant')"
-        />
       </v-list>
     </v-navigation-drawer>
 
@@ -52,6 +46,7 @@
       </v-container>
     </v-main>
     <div v-if="toast" class="toast">{{ toast }}</div>
+    <ChatbotWidget />
   </v-app>
 </template>
 
@@ -59,6 +54,7 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
+import ChatbotWidget from './components/ChatbotWidget.vue'
 
 const route = useRoute()
 const display = useDisplay()

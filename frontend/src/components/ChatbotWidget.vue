@@ -1,37 +1,65 @@
 <template>
-  <v-container>
-    <h2>Assistant</h2>
-    <div class="chat-window">
-      <div
-        v-for="(msg, index) in messages"
-        :key="index"
-        :class="['bubble', msg.from]"
-      >
-        {{ msg.text }}
-      </div>
-    </div>
-    <v-switch v-model="llmMode" label="LLM Mode" class="mb-2" />
-    <v-text-field
-      v-model="input"
-      label="Ask a question"
-      density="compact"
-      append-inner-icon="mdi-send"
-      @click:append-inner="send"
-      @keyup.enter="send"
+  <div>
+    <v-btn
+      v-if="!open"
+      class="chat-toggle"
+      color="primary"
+      icon="mdi-message-outline"
+      @click="open = true"
     />
-    <v-btn color="primary" @click="resetConversation" class="mt-2">
-      Nueva conversación
-    </v-btn>
-  </v-container>
+
+    <v-card v-else class="chat-panel elevation-12">
+      <div class="d-flex justify-space-between align-center px-2 py-1">
+        <span class="font-weight-medium">Assistant</span>
+        <v-btn icon size="small" @click="open = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+      <div class="chat-window">
+        <div
+          v-for="(msg, index) in messages"
+          :key="index"
+          :class="['bubble', msg.from]"
+        >
+          {{ msg.text }}
+        </div>
+      </div>
+      <v-switch v-model="llmMode" label="LLM Mode" density="compact" class="mb-1" />
+      <v-text-field
+        v-model="input"
+        label="Ask a question"
+        density="compact"
+        append-inner-icon="mdi-send"
+        @click:append-inner="send"
+        @keyup.enter="send"
+      />
+      <div class="d-flex justify-space-between px-2 pb-2">
+        <v-btn color="primary" @click="send">Send</v-btn>
+        <v-btn variant="text" @click="resetConversation">New conversation</v-btn>
+      </div>
+    </v-card>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import api from '../api.js';
 
-const messages = ref([{ from: 'bot', text: 'Hi! Ask me about your bills.' }]);
+const open = ref(false);
+const messages = ref([]);
 const input = ref('');
 const llmMode = ref(true);
+
+onMounted(() => {
+  const saved = localStorage.getItem('chatbot_messages');
+  messages.value = saved
+    ? JSON.parse(saved)
+    : [{ from: 'bot', text: 'Hi! Ask me about your bills.' }];
+});
+
+watch(messages, val => {
+  localStorage.setItem('chatbot_messages', JSON.stringify(val));
+}, { deep: true });
 
 async function resetConversation() {
   try {
@@ -101,19 +129,33 @@ async function manualHandleQuery(q) {
 </script>
 
 <style scoped>
-.chat-window {
-  border: 1px solid #ccc;
-  min-height: 200px;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 4px;
+.chat-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+.chat-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  max-height: 380px;
   display: flex;
   flex-direction: column;
+  z-index: 1000;
+}
+.chat-window {
+  flex: 1;
+  overflow-y: auto;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  padding: 8px;
 }
 .bubble {
   max-width: 80%;
   margin-bottom: 6px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
 }
 .bubble.user {
@@ -125,4 +167,3 @@ async function manualHandleQuery(q) {
   align-self: flex-start;
 }
 </style>
-
