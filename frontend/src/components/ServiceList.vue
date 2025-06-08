@@ -38,13 +38,38 @@
       class="elevation-1"
       hide-default-footer
     >
+      <template #item.lastBill="{ item }">
+        <span v-if="item.lastBill">
+          {{ formatAmount(item.lastBill.amount) }} ({{ shortMonth(item.lastBill.dueDate) }})
+          <v-icon
+            :color="statusColor(item.lastBill.status)"
+            class="ml-1"
+            :icon="statusIcon(item.lastBill.status)"
+            size="small"
+          />
+        </span>
+        <span v-else>-</span>
+      </template>
       <template #item.actions="{ item }">
-        <v-btn :to="`/services/${item.id}`" variant="text" color="primary">
-          Ver facturas
-        </v-btn>
-        <v-btn icon @click="newInvoice(item)">
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
+        <v-tooltip text="Historial de facturas">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              :to="`/services/${item.id}`"
+              variant="text"
+              icon
+            >
+              <v-icon>mdi-file-document-outline</v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
+        <v-tooltip text="Agregar factura">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" icon @click="newInvoice(item)">
+              <v-icon>mdi-file-plus</v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
       </template>
     </v-data-table>
     <ManualInvoiceForm
@@ -64,9 +89,9 @@ import ManualInvoiceForm from './ManualInvoiceForm.vue';
 const services = ref([]);
 const loading = ref(false);
 const error = ref(null);
-const category = ref('');
-const paymentProvider = ref('');
-const recurrence = ref('');
+const category = ref(localStorage.getItem('svc_category') || '');
+const paymentProvider = ref(localStorage.getItem('svc_provider') || '');
+const recurrence = ref(localStorage.getItem('svc_recurrence') || '');
 const newBill = ref(null);
 
 const providers = ['Visa', 'Mastercard', 'MercadoPago', 'Google Play', 'MODO', 'PayPal'];
@@ -90,6 +115,7 @@ const headers = [
   { title: 'Categoría', key: 'category' },
   { title: 'Proveedor', key: 'paymentProvider' },
   { title: 'Recurrencia', key: 'recurrence' },
+  { title: 'Última factura', key: 'lastBill' },
   { title: 'Acciones', key: 'actions', sortable: false }
 ];
 
@@ -113,7 +139,12 @@ const fetchServices = async () => {
 };
 
 onMounted(fetchServices);
-watch([category, paymentProvider, recurrence], fetchServices);
+watch([category, paymentProvider, recurrence], () => {
+  localStorage.setItem('svc_category', category.value);
+  localStorage.setItem('svc_provider', paymentProvider.value);
+  localStorage.setItem('svc_recurrence', recurrence.value);
+  fetchServices();
+});
 
 function newInvoice(service) {
   newBill.value = {
@@ -134,6 +165,22 @@ function closeNew() {
 
 function onCreated() {
   closeNew();
+}
+
+function formatAmount(val) {
+  return `$${Number(val).toFixed(2)}`;
+}
+
+function shortMonth(date) {
+  return new Date(date).toLocaleDateString('es-ES', { month: 'short' });
+}
+
+function statusColor(status) {
+  return { paid: 'green', pending: 'orange', overdue: 'red' }[status] || 'grey';
+}
+
+function statusIcon(status) {
+  return { paid: 'mdi-check', pending: 'mdi-clock-outline', overdue: 'mdi-alert' }[status];
 }
 </script>
 
