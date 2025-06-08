@@ -34,20 +34,52 @@
     >
       <template #item.dueDate="{ item }">{{ format(item.dueDate) }}</template>
       <template #item.amount="{ item }">{{ item.amount.toFixed(2) }}</template>
+      <template #item.paymentProvider="{ item }">
+        <span v-if="item.paymentProvider">{{ item.paymentProvider }}</span>
+        <v-tooltip v-else text="Agregar medio de pago" location="top">
+          <template #activator="{ props }">
+            <v-icon
+              v-bind="props"
+              class="cursor-pointer"
+              @click="edit(item)"
+            >mdi-pencil</v-icon>
+          </template>
+        </v-tooltip>
+      </template>
+      <template #item.status="{ item }">
+        <v-chip :color="statusColor(item.status)" size="small" class="text-white">
+          <v-icon start>{{ statusIcon(item.status) }}</v-icon>
+          {{ item.status }}
+        </v-chip>
+      </template>
       <template #item.actions="{ item }">
-        <v-btn
-          v-if="item.status === 'pending'"
-          size="small"
-          color="green"
-          variant="text"
-          @click="pay(item)"
-        >
-          Pagar
-        </v-btn>
-        <v-btn size="small" variant="text" @click="edit(item)">✏️ Editar</v-btn>
-        <v-btn size="small" variant="text" color="red" @click="remove(item)">
-          🗑️
-        </v-btn>
+        <v-tooltip v-if="item.status === 'pending'" text="Pagar" location="top">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon
+              color="green"
+              size="small"
+              @click="pay(item)"
+            >
+              <v-icon>mdi-cash-check</v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
+        <v-tooltip text="Editar" location="top">
+          <template #activator="{ props }">
+            <v-btn icon size="small" v-bind="props" @click="edit(item)">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
+        <v-tooltip text="Eliminar" location="top">
+          <template #activator="{ props }">
+            <v-btn icon size="small" color="red" v-bind="props" @click="remove(item)">
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </template>
+        </v-tooltip>
       </template>
     </v-data-table>
     <EditBillForm
@@ -83,10 +115,9 @@ const statusOptions = [
 ];
 
 const headers = [
-  { title: 'Nombre', key: 'name' },
-  { title: 'Descripción', key: 'description' },
   { title: 'Due Date', key: 'dueDate' },
   { title: 'Monto', key: 'amount' },
+  { title: 'Medio de pago', key: 'paymentProvider', sortable: false },
   { title: 'Estado', key: 'status' },
   { title: 'Acciones', key: 'actions', sortable: false }
 ];
@@ -107,8 +138,12 @@ const fetchData = async () => {
 
 onMounted(fetchData);
 
+const sortedBills = computed(() =>
+  [...bills.value].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+);
+
 const filteredBills = computed(() =>
-  filter.value ? bills.value.filter((b) => b.status === filter.value) : bills.value
+  filter.value ? sortedBills.value.filter((b) => b.status === filter.value) : sortedBills.value
 );
 
 const totals = computed(() => {
@@ -120,6 +155,20 @@ const totals = computed(() => {
     { paid: 0, pending: 0, overdue: 0 }
   );
 });
+
+function statusColor(status) {
+  return { paid: 'green', pending: 'orange', overdue: 'red' }[status] || 'grey';
+}
+
+function statusIcon(status) {
+  return (
+    {
+      paid: 'mdi-check-circle',
+      pending: 'mdi-clock-outline',
+      overdue: 'mdi-alert-circle'
+    }[status] || ''
+  );
+}
 
 function format(d) {
   return new Date(d).toLocaleDateString();
