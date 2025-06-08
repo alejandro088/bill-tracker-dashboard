@@ -2,12 +2,12 @@
   <div>
     <SummaryWidget />
     <BillForm @added="refresh" @notify="notify" />
-    <BillTable :key="refreshKey" @notify="notify" />
+    <ServiceList :key="refreshKey" />
   </div>
 </template>
 
 <script setup>
-import BillTable from '../components/BillTable.vue';
+import ServiceList from '../components/ServiceList.vue';
 import BillForm from '../components/BillForm.vue';
 import SummaryWidget from '../components/SummaryWidget.vue';
 import { ref } from 'vue';

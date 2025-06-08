@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import billRoutes from './routes/billRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import serviceRoutes from './routes/serviceRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import logger from './middleware/logger.js';
@@ -24,6 +25,7 @@ app.use(logger);
 
 app.use('/bills', billRoutes);
 app.use('/payments', paymentRoutes);
+app.use('/services', serviceRoutes);
 app.use('/assistant', assistantRoutes);
 app.use('/chat', chatRoutes);
 
