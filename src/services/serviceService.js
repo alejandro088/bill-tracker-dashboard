@@ -6,7 +6,12 @@ export const listServices = async (query = {}) => {
   if (category) where.category = category;
   if (recurrence) where.recurrence = recurrence;
   if (paymentProvider) where.paymentProvider = paymentProvider;
-  return prisma.service.findMany({ where, orderBy: { name: 'asc' } });
+  const services = await prisma.service.findMany({
+    where,
+    orderBy: { name: 'asc' },
+    include: { bills: { orderBy: { dueDate: 'desc' }, take: 1 } }
+  });
+  return services.map((s) => ({ ...s, lastBill: s.bills[0] || null, bills: undefined }));
 };
 
 export const getServiceById = async (id) =>
