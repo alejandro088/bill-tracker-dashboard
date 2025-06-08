@@ -55,14 +55,11 @@ describe('billService listBills', () => {
 describe('billService updateBill', () => {
   const existing = {
     id: '1',
-    name: 'Netflix',
-    description: 'Streaming',
     amount: 10,
     dueDate: new Date('2024-01-01T00:00:00Z'),
     status: 'pending',
     category: 'subscriptions',
     autoRenew: true,
-    paymentProvider: 'Visa',
     recurrence: 'monthly'
   };
 
@@ -78,7 +75,7 @@ describe('billService updateBill', () => {
     prisma.bill.update.mockResolvedValue({ ...existing, status: 'paid', paidAt: new Date() });
     prisma.bill.create.mockResolvedValue({ ...existing, id: '2' });
 
-    const result = await billService.updateBill('1', { status: 'paid' });
+    const result = await billService.updateBill('1', { status: 'paid', paymentProvider: 'Visa' });
 
     expect(prisma.bill.update).toHaveBeenCalled();
     expect(prisma.bill.create).toHaveBeenCalled();
@@ -92,7 +89,7 @@ describe('billService updateBill', () => {
     prisma.service.findUnique.mockResolvedValue({ name: 'Netflix' });
     prisma.bill.update.mockResolvedValue({ ...noRenew, status: 'paid' });
 
-    const result = await billService.updateBill('1', { status: 'paid' });
+    const result = await billService.updateBill('1', { status: 'paid', paymentProvider: 'Visa' });
 
     expect(prisma.bill.create).not.toHaveBeenCalled();
     expect(addPayment).toHaveBeenCalled();

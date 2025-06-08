@@ -17,7 +17,6 @@ export const listBills = async (query = {}) => {
     search,
     category,
     status,
-    paymentProvider,
     serviceId,
     recurrence,
     sort = 'dueDate',
@@ -34,7 +33,6 @@ export const listBills = async (query = {}) => {
   }
   if (category) where.category = category;
   if (status) where.status = status;
-  if (paymentProvider) where.paymentProvider = paymentProvider;
   if (recurrence) where.recurrence = recurrence;
   if (serviceId) where.serviceId = serviceId;
 
@@ -72,8 +70,7 @@ export const addBill = async (data) => {
     let service = await prisma.service.findFirst({
       where: {
         name: data.name,
-        category: data.category,
-        paymentProvider: data.paymentProvider || ''
+        category: data.category
       }
     });
     if (!service) {
@@ -82,7 +79,6 @@ export const addBill = async (data) => {
           name: data.name,
           description: data.description,
           category: data.category,
-          paymentProvider: data.paymentProvider || '',
           recurrence: data.recurrence || 'none',
           autoRenew: data.autoRenew ?? false
         }
@@ -96,7 +92,6 @@ export const addBill = async (data) => {
     data: {
       status: 'pending',
       autoRenew: false,
-      paymentProvider: data.paymentProvider || '',
       recurrence: data.recurrence || 'none',
       serviceId,
       ...billData
@@ -147,23 +142,17 @@ export const updateBill = async (id, data) => {
         dueDate: due,
         status: 'pending',
         autoRenew: updated.autoRenew,
-        paymentProvider: updated.paymentProvider,
         recurrence: updated.recurrence || 'none'
       }
     });
   }
 
   if (data.status === 'paid' && existing.status !== 'paid') {
-    const service = await prisma.service.findUnique({ where: { id: updated.serviceId } });
     await addPayment({
       billId: updated.id,
-      name: service?.name || '',
       amount: updated.amount,
-      dueDate: updated.dueDate,
       paidAt: new Date().toISOString(),
-      paymentProvider: updated.paymentProvider,
-      category: updated.category,
-      recurrence: updated.recurrence || 'none'
+      paymentProvider: data.paymentProvider || 'unknown'
     });
   }
 

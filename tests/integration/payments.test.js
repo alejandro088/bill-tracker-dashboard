@@ -14,7 +14,13 @@ import * as paymentService from '../../src/services/paymentService.js';
 
 vi.mock('../../src/services/paymentService.js');
 
-const sample = { id: '1', name: 'Internet', amount: 50, paidAt: new Date().toISOString(), dueDate: new Date().toISOString(), paymentProvider: 'Visa', recurrence: 'none', category: 'utilities' };
+const sample = {
+  id: '1',
+  amount: 50,
+  paidAt: new Date().toISOString(),
+  paymentProvider: 'Visa',
+  Bill: { Service: { name: 'Internet' } }
+};
 
 describe('Payment endpoints', () => {
   beforeEach(() => vi.resetAllMocks());
@@ -23,7 +29,7 @@ describe('Payment endpoints', () => {
     paymentService.listPayments.mockResolvedValue([sample]);
     const res = await request(app).get('/payments');
     expect(res.status).toBe(200);
-    expect(res.body[0].name).toBe('Internet');
+    expect(res.body[0].Bill.Service.name).toBe('Internet');
   });
 
   it('GET /payments/:name should filter by name', async () => {
