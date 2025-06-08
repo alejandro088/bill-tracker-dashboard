@@ -11,6 +11,10 @@ jest.unstable_mockModule('../../../src/db/prismaClient.js', () => ({
       create: jest.fn(),
       delete: jest.fn(),
       groupBy: jest.fn()
+    },
+    service: {
+      findFirst: jest.fn(),
+      create: jest.fn()
     }
   }
 }));

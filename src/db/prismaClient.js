@@ -3,6 +3,7 @@ if (process.env.NODE_ENV === 'test') {
   prisma = {
     bill: {},
     payment: {},
+    service: {},
     $connect: async () => {},
     $disconnect: async () => {}
   };

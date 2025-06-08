@@ -74,6 +74,7 @@ import api from '../api.js';
 const props = defineProps({ name: String });
 const route = useRoute();
 const name = computed(() => route.query.name || props.name || '');
+const serviceId = computed(() => route.query.serviceId || '');
 const payments = ref([]);
 const loading = ref(false);
 const error = ref(null);
