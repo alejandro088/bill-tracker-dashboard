@@ -10,6 +10,7 @@ import summaryRoutes from './routes/summaryRoutes.js';
 import logger from './middleware/logger.js';
 import errorHandler from './middleware/errorHandler.js';
 import './reminder.js';
+import '../notifier/cron.js';
 import prisma from './db/prismaClient.js';
 
 dotenv.config();
