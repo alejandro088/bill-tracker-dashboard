@@ -67,14 +67,18 @@ describe('Bill endpoints', () => {
 
   it('PUT /bills/:id should update bill', async () => {
     billService.updateBill.mockResolvedValue({ updated: { ...sampleBill, status: 'paid' }, newBill: null });
-    const res = await request(app).put('/bills/1').send({ status: 'paid' });
+    const res = await request(app)
+      .put('/bills/1')
+      .send({ status: 'paid', payments: [{ amount: 50, paymentProvider: 'Visa' }] });
     expect(res.status).toBe(200);
     expect(res.body.updated.status).toBe('paid');
   });
 
   it('PUT /bills/:id should create new bill when auto-renew paid', async () => {
     billService.updateBill.mockResolvedValue({ updated: { ...sampleBill, status: 'paid', autoRenew: true }, newBill: { ...sampleBill, id: '2' } });
-    const res = await request(app).put('/bills/1').send({ status: 'paid' });
+    const res = await request(app)
+      .put('/bills/1')
+      .send({ status: 'paid', payments: [{ amount: 50, paymentProvider: 'Visa' }] });
     expect(res.status).toBe(200);
     expect(res.body.newBill.id).toBe('2');
   });

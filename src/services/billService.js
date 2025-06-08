@@ -42,13 +42,14 @@ export const listBills = async (query = {}) => {
     orderBy: { [sort]: 'asc' },
     skip: (page - 1) * limit,
     take: Number(limit),
-    include: { Service: true }
+    include: { Service: true, payments: true }
   });
 
   const mapped = data.map((b) => ({
     ...b,
     name: b.Service?.name,
     description: b.Service?.description,
+    payments: b.payments,
     Service: undefined
   }));
 
@@ -58,10 +59,10 @@ export const listBills = async (query = {}) => {
 export const getBillById = async (id) => {
   const bill = await prisma.bill.findUnique({
     where: { id },
-    include: { Service: true }
+    include: { Service: true, payments: true }
   });
   if (!bill) return null;
-  return { ...bill, name: bill.Service?.name, description: bill.Service?.description, Service: undefined };
+  return { ...bill, name: bill.Service?.name, description: bill.Service?.description, payments: bill.payments, Service: undefined };
 };
 
 export const addBill = async (data) => {
@@ -148,12 +149,18 @@ export const updateBill = async (id, data) => {
   }
 
   if (data.status === 'paid' && existing.status !== 'paid') {
-    await addPayment({
-      billId: updated.id,
-      amount: updated.amount,
-      paidAt: new Date().toISOString(),
-      paymentProvider: data.paymentProvider || 'unknown'
-    });
+    const payments = Array.isArray(data.payments) && data.payments.length
+      ? data.payments
+      : [{ amount: updated.amount, paymentProvider: data.paymentProvider || 'unknown' }];
+    const paidAt = new Date().toISOString();
+    for (const p of payments) {
+      await addPayment({
+        billId: updated.id,
+        amount: p.amount,
+        paidAt,
+        paymentProvider: p.paymentProvider || 'unknown'
+      });
+    }
   }
 
   return { updated, newBill };

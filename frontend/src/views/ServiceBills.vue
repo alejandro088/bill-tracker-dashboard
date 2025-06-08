@@ -35,7 +35,9 @@
       <template #item.dueDate="{ item }">{{ format(item.dueDate) }}</template>
       <template #item.amount="{ item }">{{ item.amount.toFixed(2) }}</template>
       <template #item.paymentProvider="{ item }">
-        <span v-if="item.paymentProvider">{{ item.paymentProvider }}</span>
+        <span v-if="item.payments?.length">
+          {{ summarize(item.payments) }}
+        </span>
         <v-tooltip v-else text="Agregar medio de pago" location="top">
           <template #activator="{ props }">
             <v-icon
@@ -176,6 +178,17 @@ function statusIcon(status) {
       overdue: 'mdi-alert-circle'
     }[status] || ''
   );
+}
+
+function summarize(payments) {
+  const map = {};
+  payments.forEach((p) => {
+    if (!map[p.paymentProvider]) map[p.paymentProvider] = 0;
+    map[p.paymentProvider] += Number(p.amount);
+  });
+  return Object.entries(map)
+    .map(([prov, amt]) => `${prov} ($${amt.toFixed(2)})`)
+    .join(' + ');
 }
 
 function format(d) {

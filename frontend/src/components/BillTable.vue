@@ -56,10 +56,8 @@
         Invoices: {{ item.invoiceCount }}
       </template>
       <template #item.paymentProvider="{ item }">
-        <v-chip size="small">
-          <v-icon start>{{ providerIcon(item.paymentProvider) }}</v-icon>
-          {{ item.paymentProvider }}
-        </v-chip>
+        <span v-if="item.payments?.length">{{ summarize(item.payments) }}</span>
+        <v-icon v-else color="grey">mdi-minus</v-icon>
       </template>
       <template #item.status="{ item }">
         <v-chip :color="statusColor(item.status)" size="small" class="text-white">
@@ -213,7 +211,7 @@ const totalPages = computed(() => Math.ceil(total.value / limit) || 1);
 const groupedBills = computed(() => {
   const map = new Map();
   bills.value.forEach((bill) => {
-    const key = bill.serviceId || `${bill.name}|${bill.paymentProvider}|${bill.category}`;
+    const key = bill.serviceId || `${bill.name}|${bill.category}`;
     if (!map.has(key)) map.set(key, []);
     map.get(key).push(bill);
   });
@@ -244,6 +242,17 @@ function providerIcon(name) {
     PayPal: 'mdi-currency-usd'
   };
   return icons[name] || 'mdi-cash';
+}
+
+function summarize(payments) {
+  const map = {};
+  payments.forEach((p) => {
+    if (!map[p.paymentProvider]) map[p.paymentProvider] = 0;
+    map[p.paymentProvider] += Number(p.amount);
+  });
+  return Object.entries(map)
+    .map(([prov, amt]) => `${prov} ($${amt.toFixed(2)})`)
+    .join(' + ');
 }
 
 function edit(bill) {

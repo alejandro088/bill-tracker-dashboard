@@ -27,7 +27,7 @@ export const listServices = async (query = {}) => {
 export const getServiceById = async (id) =>
   prisma.service.findUnique({
     where: { id },
-    include: { bills: true }
+    include: { bills: { include: { payments: true } } }
   });
 
 export const updateService = async (id, data) => {
