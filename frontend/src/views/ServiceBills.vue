@@ -88,6 +88,12 @@
       @updated="onUpdated"
       @close="closeEdit"
     />
+    <PayDialog
+      v-if="payingBill"
+      :bill="payingBill"
+      @paid="onPaid"
+      @close="closePay"
+    />
   </v-container>
 </template>
 
@@ -96,6 +102,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../api.js';
 import EditBillForm from '../components/EditBillForm.vue';
+import PayDialog from '../components/PayDialog.vue';
 
 const route = useRoute();
 const id = route.params.id;
@@ -106,6 +113,7 @@ const loading = ref(false);
 const error = ref(null);
 const filter = ref('');
 const editingBill = ref(null);
+const payingBill = ref(null);
 
 const statusOptions = [
   { title: 'All', value: '' },
@@ -187,13 +195,16 @@ async function onUpdated() {
 }
 
 async function pay(bill) {
-  try {
-    const provider = prompt('Payment provider', bill.paymentProvider || '');
-    await api.put(`/bills/${bill.id}`, { status: 'paid', paymentProvider: provider });
-    await fetchData();
-  } catch (err) {
-    error.value = err.message;
-  }
+  payingBill.value = bill;
+}
+
+function closePay() {
+  payingBill.value = null;
+}
+
+async function onPaid() {
+  await fetchData();
+  closePay();
 }
 
 async function remove(bill) {
