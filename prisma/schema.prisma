@@ -13,15 +13,15 @@ model Bill {
   dueDate         DateTime
   status          String
   category        String
-  paymentProvider String?
-  serviceId       String?
+  serviceId       String
   autoRenew       Boolean  @default(false)
   recurrence      String   @default("none")
   paidAt          DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  Service Service? @relation(fields: [serviceId], references: [id])
+  Service   Service   @relation(fields: [serviceId], references: [id])
+  payments  Payment[]
 
   @@index([serviceId])
 }
@@ -29,13 +29,9 @@ model Bill {
 model Payment {
   id              String   @id @default(uuid())
   billId          String
-  name            String
   amount          Float
-  dueDate         DateTime
   paidAt          DateTime
-  paymentProvider String?
-  recurrence      String   @default("none")
-  category        String?
+  paymentProvider String
 
   Bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
 

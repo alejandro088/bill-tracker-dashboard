@@ -22,7 +22,6 @@ const sampleBill = {
   dueDate: new Date().toISOString(),
   status: 'pending',
   category: 'utilities',
-  paymentProvider: 'Visa',
   autoRenew: false,
   recurrence: 'none'
 };
@@ -41,8 +40,8 @@ describe('Bill endpoints', () => {
 
   it('GET /bills with filters should pass query to service', async () => {
     billService.listBills.mockResolvedValue({ total: 0, page: 1, limit: 10, data: [] });
-    await request(app).get('/bills').query({ category: 'utilities', paymentProvider: 'Visa' });
-    expect(billService.listBills).toHaveBeenCalledWith({ category: 'utilities', paymentProvider: 'Visa' });
+    await request(app).get('/bills').query({ category: 'utilities' });
+    expect(billService.listBills).toHaveBeenCalledWith({ category: 'utilities' });
   });
 
   it('GET /bills/:id should return bill by id', async () => {

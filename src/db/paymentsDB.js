@@ -6,10 +6,18 @@ export const addPayment = async (payment) => {
 
 export const getPaymentsByName = async (name) => {
   return prisma.payment.findMany({
-    where: { name },
+    where: {
+      Bill: {
+        Service: { name }
+      }
+    },
+    include: { Bill: { include: { Service: true } } },
     orderBy: { paidAt: 'desc' }
   });
 };
 
 export const getAllPayments = async () =>
-  prisma.payment.findMany({ orderBy: { paidAt: 'desc' } });
+  prisma.payment.findMany({
+    include: { Bill: { include: { Service: true } } },
+    orderBy: { paidAt: 'desc' }
+  });
