@@ -1,11 +1,21 @@
 import prisma from '../db/prismaClient.js';
 
 export const listServices = async (query = {}) => {
-  const { category, recurrence, paymentProvider } = query;
-  const where = {};
+  const { category, recurrence, paymentProvider, dueSoon } = query;
+  const where = { archived: false };
   if (category) where.category = category;
   if (recurrence) where.recurrence = recurrence;
   if (paymentProvider) where.paymentProvider = paymentProvider;
+  if (dueSoon) {
+    const soon = new Date();
+    soon.setDate(soon.getDate() + Number(dueSoon));
+    where.bills = {
+      some: {
+        status: { not: 'paid' },
+        dueDate: { lte: soon }
+      }
+    };
+  }
   const services = await prisma.service.findMany({
     where,
     orderBy: { name: 'asc' },
