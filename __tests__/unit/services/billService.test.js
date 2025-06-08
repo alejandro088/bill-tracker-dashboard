@@ -46,9 +46,14 @@ describe('billService listBills', () => {
       orderBy: { dueDate: 'asc' },
       skip: 5,
       take: 5,
-      include: { Service: true }
+      include: { Service: true, payments: true }
     });
-    expect(result).toEqual({ total: 1, page: 2, limit: 5, data: [{ id: '1', name: undefined, description: undefined }] });
+    expect(result).toEqual({
+      total: 1,
+      page: 2,
+      limit: 5,
+      data: [{ id: '1', name: undefined, description: undefined, payments: undefined }]
+    });
   });
 });
 
@@ -75,7 +80,10 @@ describe('billService updateBill', () => {
     prisma.bill.update.mockResolvedValue({ ...existing, status: 'paid', paidAt: new Date() });
     prisma.bill.create.mockResolvedValue({ ...existing, id: '2' });
 
-    const result = await billService.updateBill('1', { status: 'paid', paymentProvider: 'Visa' });
+    const result = await billService.updateBill('1', {
+      status: 'paid',
+      payments: [{ amount: 10, paymentProvider: 'Visa' }]
+    });
 
     expect(prisma.bill.update).toHaveBeenCalled();
     expect(prisma.bill.create).toHaveBeenCalled();
@@ -89,7 +97,10 @@ describe('billService updateBill', () => {
     prisma.service.findUnique.mockResolvedValue({ name: 'Netflix' });
     prisma.bill.update.mockResolvedValue({ ...noRenew, status: 'paid' });
 
-    const result = await billService.updateBill('1', { status: 'paid', paymentProvider: 'Visa' });
+    const result = await billService.updateBill('1', {
+      status: 'paid',
+      payments: [{ amount: 10, paymentProvider: 'Visa' }]
+    });
 
     expect(prisma.bill.create).not.toHaveBeenCalled();
     expect(addPayment).toHaveBeenCalled();
