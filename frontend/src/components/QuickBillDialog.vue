@@ -6,6 +6,14 @@
         <div class="mb-2">Monto: {{ formatAmount(bill.amount) }}</div>
         <div class="mb-2">Vencimiento: {{ formatDate(bill.dueDate) }}</div>
         <div>Estado: {{ bill.status }}</div>
+        <v-select
+          v-if="bill.status !== 'paid'"
+          v-model="provider"
+          :items="providers"
+          label="Medio de pago"
+          density="compact"
+          class="mt-2"
+        />
       </v-card-text>
       <v-card-actions>
         <v-btn variant="text" color="green" @click="markPaid" :disabled="bill.status==='paid'">Marcar como pagado</v-btn>
@@ -27,11 +35,14 @@ const emit = defineEmits(['updated', 'close']);
 
 const open = ref(false);
 const editing = ref(false);
+const providers = ['Visa', 'Mastercard', 'MercadoPago', 'Google Play', 'MODO', 'PayPal'];
+const provider = ref(providers[0]);
 
 watch(
   () => props.bill,
   (b) => {
     open.value = !!b;
+    if (b) provider.value = b.paymentProvider || providers[0];
   },
   { immediate: true }
 );
@@ -42,7 +53,7 @@ function close() {
 }
 
 async function markPaid() {
-  await api.put(`/bills/${props.bill.id}`, { status: 'paid' });
+  await api.put(`/bills/${props.bill.id}`, { status: 'paid', paymentProvider: provider.value });
   emit('updated');
   close();
 }

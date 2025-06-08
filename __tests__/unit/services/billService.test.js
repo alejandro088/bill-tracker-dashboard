@@ -14,7 +14,8 @@ jest.unstable_mockModule('../../../src/db/prismaClient.js', () => ({
     },
     service: {
       findFirst: jest.fn(),
-      create: jest.fn()
+      create: jest.fn(),
+      findUnique: jest.fn()
     }
   }
 }));
@@ -44,9 +45,10 @@ describe('billService listBills', () => {
       where: { category: 'utilities' },
       orderBy: { dueDate: 'asc' },
       skip: 5,
-      take: 5
+      take: 5,
+      include: { Service: true }
     });
-    expect(result).toEqual({ total: 1, page: 2, limit: 5, data: [{ id: '1' }] });
+    expect(result).toEqual({ total: 1, page: 2, limit: 5, data: [{ id: '1', name: undefined, description: undefined }] });
   });
 });
 
@@ -72,6 +74,7 @@ describe('billService updateBill', () => {
 
   it('creates new bill and payment when auto-renew subscription is paid', async () => {
     prisma.bill.findUnique.mockResolvedValue(existing);
+    prisma.service.findUnique.mockResolvedValue({ name: 'Netflix' });
     prisma.bill.update.mockResolvedValue({ ...existing, status: 'paid', paidAt: new Date() });
     prisma.bill.create.mockResolvedValue({ ...existing, id: '2' });
 
@@ -86,6 +89,7 @@ describe('billService updateBill', () => {
   it('updates bill without creating new one when not auto-renew', async () => {
     const noRenew = { ...existing, autoRenew: false };
     prisma.bill.findUnique.mockResolvedValue(noRenew);
+    prisma.service.findUnique.mockResolvedValue({ name: 'Netflix' });
     prisma.bill.update.mockResolvedValue({ ...noRenew, status: 'paid' });
 
     const result = await billService.updateBill('1', { status: 'paid' });

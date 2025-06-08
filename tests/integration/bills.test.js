@@ -99,4 +99,13 @@ describe('Bill endpoints', () => {
     expect(res.status).toBe(200);
     expect(res.body.paid).toBe(100);
   });
+
+  it('GET /summary/monthly should return monthly summary', async () => {
+    billService.getMonthlyStatusByMonth.mockResolvedValue([
+      { month: '2025-07', status: 'paid', total: 120, count: 2 }
+    ]);
+    const res = await request(app).get('/summary/monthly');
+    expect(res.status).toBe(200);
+    expect(res.body[0].month).toBe('2025-07');
+  });
 });

@@ -139,7 +139,8 @@ async function onUpdated() {
 
 async function pay(bill) {
   try {
-    await api.put(`/bills/${bill.id}`, { status: 'paid' });
+    const provider = prompt('Payment provider', bill.paymentProvider || '');
+    await api.put(`/bills/${bill.id}`, { status: 'paid', paymentProvider: provider });
     await fetchData();
   } catch (err) {
     error.value = err.message;
