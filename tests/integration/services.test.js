@@ -20,6 +20,7 @@ const sampleService = {
   category: 'utilities',
   paymentProvider: 'Visa',
   recurrence: 'monthly',
+  autoRenew: true,
   bills: []
 };
 
@@ -49,5 +50,15 @@ describe('Service endpoints', () => {
     const res = await request(app).get('/services/1');
     expect(res.status).toBe(200);
     expect(res.body.id).toBe('1');
+  });
+
+  it('PUT /services/:id should update service', async () => {
+    serviceService.updateService.mockResolvedValue({
+      ...sampleService,
+      autoRenew: false
+    });
+    const res = await request(app).put('/services/1').send({ autoRenew: false });
+    expect(res.status).toBe(200);
+    expect(res.body.autoRenew).toBe(false);
   });
 });
