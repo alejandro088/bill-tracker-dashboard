@@ -31,7 +31,7 @@ import EditBillForm from './EditBillForm.vue';
 import api from '../api.js';
 
 const props = defineProps({ bill: Object });
-const emit = defineEmits(['updated', 'close']);
+const emit = defineEmits(['updated', 'close', 'notify']);
 
 const open = ref(false);
 const editing = ref(false);
@@ -54,6 +54,7 @@ function close() {
 
 async function markPaid() {
   await api.put(`/bills/${props.bill.id}`, { status: 'paid', paymentProvider: provider.value });
+  emit('notify', `Factura pagada: ${props.bill.name} (${formatAmount(props.bill.amount)})`);
   emit('updated');
   close();
 }

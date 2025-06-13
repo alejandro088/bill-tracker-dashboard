@@ -7,9 +7,9 @@
       permanent
     >
       <div class="sidebar-header">
-        <v-avatar size="40" class="mr-2">
+        <!-- <v-avatar size="40" class="mr-2">
           <v-img src="/logo.png" alt="Logo" />
-        </v-avatar>
+        </v-avatar> -->
         <span class="sidebar-title">Bill Tracker</span>
       </div>
       <v-divider class="mb-2" />
@@ -53,11 +53,24 @@
         prepend-inner-icon="mdi-magnify"
         class="search-bar"
       />
-      <v-btn icon class="mx-2">
-        <v-badge content="5" color="red" overlap>
-          <v-icon>mdi-bell</v-icon>
-        </v-badge>
-      </v-btn>
+      <v-menu offset-y>
+        <template #activator="{ props }">
+          <v-btn icon class="mx-2" v-bind="props">
+            <v-badge :content="notifications.length" color="red" overlap v-if="notifications.length">
+              <v-icon>mdi-bell</v-icon>
+            </v-badge>
+            <v-icon v-else>mdi-bell</v-icon>
+          </v-btn>
+        </template>
+        <v-list style="min-width: 250px; max-width: 350px;">
+          <v-list-item v-if="!notifications.length">
+            <v-list-item-title class="text-grey">Sin notificaciones</v-list-item-title>
+          </v-list-item>
+          <v-list-item v-for="(n, i) in notifications" :key="i">
+            <v-list-item-title>{{ n }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
       <v-btn icon class="mx-2">
         <v-icon>mdi-account-circle</v-icon>
       </v-btn>
@@ -66,11 +79,14 @@
     <v-main>
       <v-container class="container">
         <router-view v-slot="{ Component }">
-          <component :is="Component" @notify="showToast" />
+          <component :is="Component" @notify="showNotification" />
         </router-view>
       </v-container>
     </v-main>
     <div v-if="toast" class="toast">{{ toast }}</div>
+    <div v-if="showNewNotification" class="new-notification-toast">
+      Tienes una nueva notificación
+    </div>
     <ChatbotWidget />
   </v-app>
 </template>
@@ -85,12 +101,23 @@ const route = useRoute()
 const drawer = ref(true)
 const toast = ref('')
 const search = ref('')
+const notifications = ref([])
+const showNewNotification = ref(false)
 let timer
+let notifTimer
 
 function showToast(msg) {
   toast.value = msg
   clearTimeout(timer)
   timer = setTimeout(() => (toast.value = ''), 3000)
+}
+
+function showNotification(msg) {
+  notifications.value.unshift(msg)
+  showToast(msg)
+  showNewNotification.value = true
+  clearTimeout(notifTimer)
+  notifTimer = setTimeout(() => (showNewNotification.value = false), 3500)
 }
 </script>
 
@@ -128,16 +155,16 @@ function showToast(msg) {
   letter-spacing: 1px;
   color: #fff;
 }
-.v-list-item {
+.sidebar .v-list-item {
   border-radius: 6px;
   margin: 4px 8px;
-  color: #fff !important;
+  color: #fff;
 }
-.v-list-item--active {
+.sidebar .v-list-item--active {
   background: #1976d2 !important;
   color: #fff !important;
 }
-.v-list-item__prepend > .v-icon {
+..sidebar v-list-item__prepend > .v-icon {
   color: #fff !important;
 }
 .app-bar {
@@ -154,5 +181,25 @@ function showToast(msg) {
   margin-left: 8px;
   min-height: 100vh;
   transition: margin-left 0.2s;
+}
+.new-notification-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #1976d2;
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  z-index: 9999;
+  animation: fadeInOut 3.5s;
+}
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(20px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(20px); }
 }
 </style>

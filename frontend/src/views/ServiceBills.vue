@@ -55,7 +55,7 @@
         </v-chip>
       </template>
       <template #item.actions="{ item }">
-        <v-tooltip v-if="item.status === 'pending'" text="Pagar" location="top">
+        <v-tooltip v-if="item.status !== 'paid'" text="Pagar" location="top">
           <template #activator="{ props }">
             <v-btn
               v-bind="props"
@@ -95,6 +95,7 @@
       :bill="payingBill"
       @paid="onPaid"
       @close="closePay"
+      @notify="$emit('notify', $event)"
     />
   </v-container>
 </template>

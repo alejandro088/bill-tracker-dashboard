@@ -4,7 +4,7 @@
       <!-- Formulario para agregar factura -->
       <v-col cols="12" md="6" lg="4">
         <v-card class="pa-4 mb-4 elevation-2">
-          <BillForm @added="refresh" @notify="notify" />
+          
         </v-card>
       </v-col>
       <!-- Espacio para futuras tarjetas o KPIs -->

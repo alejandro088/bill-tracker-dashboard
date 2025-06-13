@@ -35,6 +35,7 @@
             :items="providers"
             label="Payment Provider"
             density="compact"
+            
           />
           <v-select v-model="category" :items="categories" label="Category" density="compact" />
           <v-select
@@ -130,13 +131,3 @@ const submit = async () => {
   }
 };
 </script>
-
-<style scoped>
-.add-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-}
-</style>
-
-

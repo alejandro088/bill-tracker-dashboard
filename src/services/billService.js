@@ -104,8 +104,17 @@ export const updateBill = async (id, data) => {
   const existing = await prisma.bill.findUnique({ where: { id } });
   if (!existing) return null;
 
-  const { name, description, ...rest } = data;
+  const { name, description, payments, ...rest } = data;
   const updateData = { ...rest };
+  if (Array.isArray(payments) && payments.length) {
+    const paidAt = new Date();
+    updateData.payments = {
+      create: payments.map(p => ({
+        ...p,
+        paidAt
+      }))
+    };
+  }
   if (data.status === 'paid' && existing.status !== 'paid') {
     updateData.paidAt = new Date();
   }
@@ -149,11 +158,11 @@ export const updateBill = async (id, data) => {
   }
 
   if (data.status === 'paid' && existing.status !== 'paid') {
-    const payments = Array.isArray(data.payments) && data.payments.length
+    const paymentsArr = Array.isArray(data.payments) && data.payments.length
       ? data.payments
       : [{ amount: updated.amount, paymentProvider: data.paymentProvider || 'unknown' }];
     const paidAt = new Date().toISOString();
-    for (const p of payments) {
+    for (const p of paymentsArr) {
       await addPayment({
         billId: updated.id,
         amount: p.amount,

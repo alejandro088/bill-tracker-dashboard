@@ -46,7 +46,7 @@ import { ref, watch, computed } from 'vue';
 import api from '../api.js';
 
 const props = defineProps({ bill: Object });
-const emit = defineEmits(['paid', 'close']);
+const emit = defineEmits(['paid', 'close', 'notify']);
 
 const dialog = ref(false);
 const providers = ['Visa', 'Mastercard', 'MODO', 'MercadoPago', 'Google Play', 'PayPal'];
@@ -76,12 +76,17 @@ function close() {
   emit('close');
 }
 
+function formatAmount(a) {
+  return `$${Number(a).toFixed(2)}`;
+}
+
 async function confirm() {
   if (total.value !== props.bill.amount) return;
   await api.put(`/bills/${props.bill.id}`, {
     status: 'paid',
     payments: payments.value
   });
+  emit('notify', `Factura pagada: ${props.bill?.name || ''} (${formatAmount(props.bill?.amount)})`);
   emit('paid');
   close();
 }
