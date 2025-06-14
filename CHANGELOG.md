@@ -2,27 +2,29 @@
 
 ## [Unreleased]
 
-### [2025-06-14] - Mejoras en la Interfaz de Usuario
+### [2025-06-14] - Mejoras en la Interfaz de Usuario General
 #### Added
-- Implementado nuevo diálogo de confirmación moderno para eliminar facturas
-- Mejorado el diseño del ChatbotWidget con una interfaz más moderna y amigable
-- Agregados iconos y tooltips en la vista de historial de pagos
+- Nuevo diseño de encabezados con fondo degradado naranja
+- Diseño mejorado para tablas de datos con estilos consistentes
+- Tooltips informativos en botones de acción
+- Notificaciones mejoradas para acciones del usuario
+- Chips de estado con diseño moderno y coherente
 
 #### Changed
-- Actualizado el diseño del ChatbotWidget con:
-  - Nueva cabecera con mejor espaciado y tipografía
-  - Burbujas de chat mejoradas con iconos y timestamps
-  - Mejor organización del área de entrada
-  - Interfaz más espaciosa y legible
-  - Modo oscuro y scrollbar personalizada
-- Mejorado el formato de fechas en la vista de historial de pagos
-- Unificado el estilo de los botones de acción en todas las tablas
-- Optimizada la presentación de datos en PaymentHistory
+- Actualizado el diseño de todas las vistas principales:
+  - ServiceList: Nuevo encabezado y mejoras en la tabla
+  - PaymentHistory: Rediseño completo con encabezado moderno
+  - ServiceBills: Mejora en la presentación de facturas
+  - Analytics: Nuevo diseño de la sección de análisis
+- Unificación de estilos en botones de acción
+- Mejora en la presentación de fechas y montos
+- Optimización de espaciados y alineaciones
+- Actualización de la paleta de colores para mejor contraste
 
 #### Technical
-- Refactorización del manejo de diálogos de confirmación
-- Consolidación de estilos y componentes comunes
-- Mejora en la consistencia visual de la aplicación
+- Refactorización de componentes para mejor mantenibilidad
+- Mejora en la estructura de los templates
+- Optimización de estilos y clases CSS
 - Implementación de mejores prácticas de UX/UI
 
 ### [2025-06-14] - Mejoras en la vista de Facturas

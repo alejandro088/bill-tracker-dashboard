@@ -176,10 +176,12 @@ export const addBill = async (data) => {
     return prisma.bill.create({
         data: {
             status: 'pending',
-            autoRenew: false,
+            autoRenew: data.autoRenew ?? false,
             recurrence: data.recurrence || 'none',
             serviceId,
-            ...billData,
+            amount: data.amount,
+            dueDate: data.dueDate || new Date(),
+            category: data.category || 'other',
         },
     });
 };

@@ -1,19 +1,5 @@
 <template>
   <v-container fluid class="dashboard-container">
-    <v-row dense>
-      <!-- Formulario para agregar factura -->
-      <v-col cols="12" md="6" lg="4">
-        <v-card class="pa-4 mb-4 elevation-2">
-          
-        </v-card>
-      </v-col>
-      <!-- Espacio para futuras tarjetas o KPIs -->
-      <v-col cols="12" lg="4">
-        <v-card class="pa-4 mb-4 elevation-2 d-flex align-center justify-center" style="min-height:120px;">
-          <span class="text-grey">(Espacio para KPIs o gráficas)</span>
-        </v-card>
-      </v-col>
-    </v-row>
     <!-- Fila separada para el resumen -->
     <v-row class="mb-2">
       <v-col cols="12">
@@ -24,7 +10,7 @@
       <!-- Tabla de servicios -->
       <v-col cols="12">
         <v-card class="pa-4 elevation-2">
-          <ServiceList :key="refreshKey" />
+          <ServiceList :key="refreshKey"  @notify="$emit('notify', $event)"/>
         </v-card>
       </v-col>
     </v-row>

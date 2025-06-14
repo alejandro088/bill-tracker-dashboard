@@ -1,28 +1,23 @@
 <template>
   <v-container>
-    <v-row align="center" class="mb-4">
-      <v-col cols="12" sm="6">
-        <h2 class="text-h4">
-          <v-icon icon="mdi-file-document-multiple" class="mr-2" />
-          {{ service?.name }} - Facturas
-        </h2>
-      </v-col>
-      <v-col cols="12" sm="6" class="text-sm-right">
+    <v-card class="mb-4">
+      <v-card-title class="header-card pa-4">
+        <div>
+          <h2 class="text-h5 font-weight-medium mb-1 text-white d-flex align-center">
+            <v-icon icon="mdi-file-document-multiple" class="mr-2" color="white" />
+            {{ service?.name }} - Facturas
+          </h2>
+          <div class="text-subtitle-2 text-white text-opacity-75">
+            Gestión de facturas y pagos del servicio
+          </div>
+        </div>
+        <v-spacer></v-spacer>
         <v-btn
           to="/"
-          variant="outlined"
-          size="small"
-          class="mr-2"
+          variant="text"
+          class="text-white"
+          prepend-icon="mdi-arrow-left"
         >
-          <template #prepend>
-            <v-icon>mdi-arrow-left</v-icon>
-          </template>
-          <v-tooltip activator="parent" location="top">
-            <div class="d-flex align-center gap-2">
-              <v-icon size="small">mdi-home</v-icon>
-              Volver al inicio
-            </div>
-          </v-tooltip>
           Volver
         </v-btn>
         <v-btn
@@ -43,10 +38,8 @@
           </v-tooltip>
           Cancelar suscripción
         </v-btn>
-      </v-col>
-    </v-row>
+      </v-card-title>
 
-    <v-card class="mb-4">
       <v-card-text>
         <v-row>
           <v-col cols="12" sm="4">
@@ -343,4 +336,22 @@ const onPaid = async () => {
 // Lifecycle
 onMounted(fetchData);
 </script>
+
+<style scoped>
+.header-card {
+  background: linear-gradient(135deg, #ff9f43 0%, #ff7b1e 100%) !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-card :deep(.v-btn) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.header-card :deep(.v-btn:hover) {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+</style>
 

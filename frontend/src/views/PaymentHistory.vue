@@ -1,6 +1,26 @@
 <template>
   <v-container>
-    <h2>Payment History<span v-if="name"> - {{ name }}</span></h2>
+    <v-card class="mb-4">
+      <v-card-title class="header-card pa-4">
+        <div>
+          <h2 class="text-h5 font-weight-medium mb-1 text-white">
+            Historial de Pagos<span v-if="name"> - {{ name }}</span>
+          </h2>
+          <div class="text-subtitle-2 text-white text-opacity-75">
+            Registro histórico de todos los pagos realizados
+          </div>
+        </div>
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          to="/"
+          class="text-white"
+          prepend-icon="mdi-arrow-left"
+        >
+          Volver
+        </v-btn>
+      </v-card-title>
+    </v-card>
 
     <!-- Summary Widget -->
     <payment-summary-widget :start-date="startDate" :end-date="endDate" />
@@ -300,3 +320,41 @@ const onEditDialogClose = () => {
   selectedPayment.value = null;
 };
 </script>
+
+<style scoped>
+.header-card {
+  background: linear-gradient(135deg, #ff9f43 0%, #ff7b1e 100%) !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-card :deep(.v-btn) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.header-card :deep(.v-btn:hover) {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.v-data-table {
+  background-color: white;
+}
+
+.v-data-table th {
+  background-color: #f5f5f5;
+}
+
+.v-data-table td {
+  vertical-align: middle;
+}
+
+.v-progress-linear {
+  height: 4px;
+}
+
+.v-alert {
+  margin-bottom: 16px;
+}
+</style>

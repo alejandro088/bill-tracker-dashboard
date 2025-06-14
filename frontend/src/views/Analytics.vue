@@ -1,6 +1,15 @@
 <template>
   <v-container>
-    <h2>Analytics</h2>
+    <v-card class="mb-4">
+      <v-card-title class="header-card pa-4">
+        <div>
+          <h2 class="text-h5 font-weight-medium mb-1 text-white">Análisis de gastos</h2>
+          <div class="text-subtitle-2 text-white text-opacity-75">
+            Resumen gráfico de gastos por categoría y período
+          </div>
+        </div>
+      </v-card-title>
+    </v-card>
     <v-card class="mb-4 pa-4">
       <canvas id="categoryChart"></canvas>
     </v-card>
@@ -48,5 +57,23 @@ const buildCharts = async () => {
 
 onMounted(buildCharts);
 </script>
+
+<style scoped>
+.header-card {
+  background: linear-gradient(135deg, #ff9f43 0%, #ff7b1e 100%) !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-card :deep(.v-btn) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.header-card :deep(.v-btn:hover) {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+</style>
 
 
