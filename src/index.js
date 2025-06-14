@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import billRoutes from './routes/billRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import assistantRoutes from './routes/assistantRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import summaryRoutes from './routes/summaryRoutes.js';
@@ -24,6 +25,8 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(logger);
+
+app.use('/notifications', notificationRoutes);
 
 app.use('/bills', billRoutes);
 app.use('/payments', paymentRoutes);

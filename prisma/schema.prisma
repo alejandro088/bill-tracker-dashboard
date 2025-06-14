@@ -38,6 +38,13 @@ model Payment {
   @@index([billId])
 }
 
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+}
+
 model Service {
   id              String   @id @default(uuid())
   name            String

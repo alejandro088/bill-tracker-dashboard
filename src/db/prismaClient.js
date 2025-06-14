@@ -4,6 +4,7 @@ if (process.env.NODE_ENV === 'test') {
     bill: {},
     payment: {},
     service: {},
+    notification: {},
     $connect: async () => {},
     $disconnect: async () => {}
   };

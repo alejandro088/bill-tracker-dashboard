@@ -1,6 +1,7 @@
 import prisma from './prismaClient.js';
 
 export const addPayment = async (payment) => {
+  console.log(payment);
   return prisma.payment.create({ data: payment });
 };
 
@@ -21,3 +22,17 @@ export const getAllPayments = async () =>
     include: { Bill: { include: { Service: true } } },
     orderBy: { paidAt: 'desc' }
   });
+
+export const updatePayment = async (id, payment) => {
+  console.log(id, payment);
+  return prisma.payment.update({
+    where: { id },
+    data: payment,
+  });
+};
+
+export const deletePayment = async (id) => {
+  return prisma.payment.delete({
+    where: { id },
+  });
+};

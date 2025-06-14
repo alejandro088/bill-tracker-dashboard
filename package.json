@@ -28,6 +28,8 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^7.0.3",
     "openai": "^4.104.0",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.3.5",
     "prisma": "^6.9.0",
     "uuid": "^9.0.0",
     "vue": "^3.5.16",

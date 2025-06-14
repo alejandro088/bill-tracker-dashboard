@@ -1,95 +1,238 @@
 <template>
   <v-container>
-    <h2>{{ service?.name }} - Facturas</h2>
-    <v-btn variant="text" to="/">Back</v-btn>
-    <v-btn
-      v-if="service?.autoRenew"
-      class="ml-2"
-      color="red"
-      @click="cancelSub"
-    >
-      ❌ Cancelar suscripción
-    </v-btn>
-    <div class="my-2 d-flex gap-2">
-      <v-chip color="green">💰 Paid: {{ totals.paid.toFixed(2) }}</v-chip>
-      <v-chip color="orange">⏳ Pending: {{ totals.pending.toFixed(2) }}</v-chip>
-      <v-chip color="red">⚠️ Overdue: {{ totals.overdue.toFixed(2) }}</v-chip>
-    </div>
-    <v-select
-      v-model="filter"
-      :items="statusOptions"
-      label="Status"
-      density="compact"
-      clearable
-      class="mb-2"
-    />
-    <v-progress-linear v-if="loading" indeterminate />
-    <v-alert v-else-if="error" type="error" dense>{{ error }}</v-alert>
-    <v-data-table
-      v-else
-      :headers="headers"
-      :items="filteredBills"
-      class="elevation-1"
-      hide-default-footer
-    >
-      <template #item.dueDate="{ item }">{{ format(item.dueDate) }}</template>
-      <template #item.amount="{ item }">{{ item.amount.toFixed(2) }}</template>
-      <template #item.paymentProvider="{ item }">
-        <span v-if="item.payments?.length">
-          {{ summarize(item.payments) }}
-        </span>
-        <v-tooltip v-else text="Agregar medio de pago" location="top">
-          <template #activator="{ props }">
-            <v-icon
-              v-bind="props"
-              class="cursor-pointer"
-              @click="edit(item)"
-            >mdi-pencil</v-icon>
+    <v-row align="center" class="mb-4">
+      <v-col cols="12" sm="6">
+        <h2 class="text-h4">
+          <v-icon icon="mdi-file-document-multiple" class="mr-2" />
+          {{ service?.name }} - Facturas
+        </h2>
+      </v-col>
+      <v-col cols="12" sm="6" class="text-sm-right">
+        <v-btn
+          to="/"
+          variant="outlined"
+          size="small"
+          class="mr-2"
+        >
+          <template #prepend>
+            <v-icon>mdi-arrow-left</v-icon>
           </template>
-        </v-tooltip>
+          <v-tooltip activator="parent" location="top">
+            <div class="d-flex align-center gap-2">
+              <v-icon size="small">mdi-home</v-icon>
+              Volver al inicio
+            </div>
+          </v-tooltip>
+          Volver
+        </v-btn>
+        <v-btn
+          v-if="service?.autoRenew"
+          color="error"
+          variant="outlined"
+          size="small"
+          @click="handleCancelSubscription"
+        >
+          <template #prepend>
+            <v-icon>mdi-cancel</v-icon>
+          </template>
+          <v-tooltip activator="parent" location="top">
+            <div class="d-flex align-center gap-2">
+              <v-icon size="small">mdi-alert-circle</v-icon>
+              Desactivar renovación automática
+            </div>
+          </v-tooltip>
+          Cancelar suscripción
+        </v-btn>
+      </v-col>
+    </v-row>
+
+    <v-card class="mb-4">
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" sm="4">
+            <v-card :color="STATUS_CONFIG.paid.color" variant="outlined">
+              <v-card-text class="text-center">
+                <div class="text-h6 d-flex align-center justify-center gap-2">
+                  <v-icon icon="mdi-check-circle" color="green-darken-2" />
+                  Pagado
+                </div>
+                <div class="text-h4 d-flex align-center justify-center">
+                  <v-icon icon="mdi-currency-usd" class="mr-2" />
+                  {{ totals.paid.toFixed(2) }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" sm="4">
+            <v-card :color="STATUS_CONFIG.pending.color" variant="outlined">
+              <v-card-text class="text-center">
+                <div class="text-h6 d-flex align-center justify-center gap-2">
+                  <v-icon icon="mdi-clock-outline" color="orange-darken-2" />
+                  Pendiente
+                </div>
+                <div class="text-h4 d-flex align-center justify-center">
+                  <v-icon icon="mdi-currency-usd" class="mr-2" />
+                  {{ totals.pending.toFixed(2) }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" sm="4">
+            <v-card :color="STATUS_CONFIG.overdue.color" variant="outlined">
+              <v-card-text class="text-center">
+                <div class="text-h6 d-flex align-center justify-center gap-2">
+                  <v-icon icon="mdi-alert-circle" color="red-darken-2" />
+                  Vencido
+                </div>
+                <div class="text-h4 d-flex align-center justify-center">
+                  <v-icon icon="mdi-currency-usd" class="mr-2" />
+                  {{ totals.overdue.toFixed(2) }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+    <v-row class="mb-4">
+      <v-col cols="12" sm="6">
+        <v-select
+          v-model="filter"
+          :items="STATUS_OPTIONS"
+          label="Filtrar por estado"
+          density="compact"
+          hide-details
+          clearable
+          variant="outlined"
+          prepend-inner-icon="mdi-filter"
+        />
+      </v-col>
+    </v-row>
+
+    <v-card>
+      <template v-if="loading">
+        <v-card-text class="text-center py-4">
+          <v-progress-circular indeterminate />
+        </v-card-text>
       </template>
-      <template #item.status="{ item }">
-        <v-chip :color="statusColor(item.status)" size="small" class="text-white">
-          <v-icon start>{{ statusIcon(item.status) }}</v-icon>
-          {{ item.status }}
-        </v-chip>
+
+      <template v-else-if="error">
+        <v-alert type="error" class="ma-4">{{ error }}</v-alert>
       </template>
-      <template #item.actions="{ item }">
-        <v-tooltip v-if="item.status !== 'paid'" text="Pagar" location="top">
-          <template #activator="{ props }">
+
+      <template v-else>
+        <v-data-table
+          :headers="TABLE_HEADERS"
+          :items="filteredBills"
+          class="elevation-0"
+          hover
+        >
+          <template #item.dueDate="{ item }">
+            <div class="d-flex align-center gap-2">
+              <v-icon size="small" icon="mdi-calendar" />
+              {{ formatDate(item.dueDate) }}
+            </div>
+          </template>
+
+          <template #item.amount="{ item }">
+            <div class="d-flex align-center gap-2">
+              <v-icon size="small" icon="mdi-currency-usd" />
+              <span class="font-weight-medium">{{ item.amount.toFixed(2) }}</span>
+            </div>
+          </template>
+
+          <template #item.paymentProvider="{ item }">
+            <template v-if="item.payments?.length">
+              <v-chip size="small" prepend-icon="mdi-credit-card-multiple">
+                {{ summarizePayments(item.payments) }}
+              </v-chip>
+            </template>
             <v-btn
-              v-bind="props"
-              icon
-              color="green"
+              v-else
               size="small"
-              @click="pay(item)"
+              variant="text"
+              :color="STATUS_CONFIG[item.status].color"
+              @click="handleEdit(item)"
             >
-              <v-icon>mdi-cash-check</v-icon>
+              <v-icon start>mdi-cash-plus</v-icon>
+              Agregar pago
             </v-btn>
           </template>
-        </v-tooltip>
-        <v-tooltip text="Editar" location="top">
-          <template #activator="{ props }">
-            <v-btn icon size="small" v-bind="props" @click="edit(item)">
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
+
+          <template #item.status="{ item }">
+            <v-chip
+              :color="STATUS_CONFIG[item.status].color"
+              size="small"
+              class="text-white"
+            >
+              <v-icon start>{{ STATUS_CONFIG[item.status].icon }}</v-icon>
+              {{ item.status }}
+            </v-chip>
           </template>
-        </v-tooltip>
-        <v-tooltip text="Eliminar" location="top">
-          <template #activator="{ props }">
-            <v-btn icon size="small" color="red" v-bind="props" @click="remove(item)">
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
+
+          <template #item.actions="{ item }">
+            <div class="d-flex gap-1">
+              <v-tooltip text="Pagar factura" v-if="item.status !== 'paid'">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    color="success"
+                    variant="flat"
+                    icon
+                    class="mx-1"
+                    size="small"
+                    @click="handlePay(item)"
+                  >
+                    <v-icon>mdi-cash-check</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+
+              <v-tooltip text="Editar factura">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    color="info"
+                    variant="flat"
+                    icon
+                    class="mx-1"
+                    size="small"
+                    @click="handleEdit(item)"
+                  >
+                    <v-icon>mdi-file-document-edit</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+
+              <v-tooltip text="Eliminar factura">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    color="error"
+                    variant="flat"
+                    icon
+                    class="mx-1"
+                    size="small"
+                    @click="handleRemove(item)"
+                  >
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+            </div>
           </template>
-        </v-tooltip>
+        </v-data-table>
       </template>
-    </v-data-table>
+    </v-card>
+
+    <!-- Dialogs -->
     <EditBillForm
       v-if="editingBill"
       :bill="editingBill"
-      @updated="onUpdated"
+      @updated="fetchData"
       @close="closeEdit"
     />
+
     <PayDialog
       v-if="payingBill"
       :bill="payingBill"
@@ -97,146 +240,107 @@
       @close="closePay"
       @notify="$emit('notify', $event)"
     />
+
+    <BaseConfirmDialog
+  v-model="confirmDialog"
+  title="Eliminar factura"
+  @confirm="handleConfirmRemove"
+>
+  ¿Estás seguro que querés eliminar esta factura?
+</BaseConfirmDialog>
   </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import api from '../api.js';
+import BaseConfirmDialog from '../components/BaseConfirmDialog.vue';
 import EditBillForm from '../components/EditBillForm.vue';
 import PayDialog from '../components/PayDialog.vue';
+import { useBills } from '../composables/useBills';
+import { 
+    STATUS_CONFIG, 
+    STATUS_OPTIONS, 
+    TABLE_HEADERS, 
+    formatDate, 
+    summarizePayments 
+} from '../utils/billUtils';
 
 const route = useRoute();
 const id = route.params.id;
 
-const service = ref(null);
-const bills = ref([]);
-const loading = ref(false);
-const error = ref(null);
+// Composables
+const {
+    service,
+    bills,
+    loading,
+    error,
+    totals,
+    fetchData,
+    removeBill,
+    cancelSubscription
+} = useBills(id);
+
+// Local state
 const filter = ref('');
 const editingBill = ref(null);
 const payingBill = ref(null);
-
-const statusOptions = [
-  { title: 'All', value: '' },
-  { title: 'paid', value: 'paid' },
-  { title: 'pending', value: 'pending' },
-  { title: 'overdue', value: 'overdue' }
-];
-
-const headers = [
-  { title: 'Due Date', key: 'dueDate' },
-  { title: 'Monto', key: 'amount' },
-  { title: 'Medio de pago', key: 'paymentProvider', sortable: false },
-  { title: 'Estado', key: 'status' },
-  { title: 'Acciones', key: 'actions', sortable: false }
-];
-
-const fetchData = async () => {
-  loading.value = true;
-  try {
-    const { data } = await api.get(`/services/${id}`);
-    service.value = data;
-    bills.value = data.bills || [];
-    error.value = null;
-  } catch (err) {
-    error.value = err.message;
-  } finally {
-    loading.value = false;
-  }
-};
+const confirmDialog = ref(false);
+const billToDelete = ref(null);
 
 onMounted(fetchData);
 
-const sortedBills = computed(() =>
-  [...bills.value].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-);
-
+// Computed
 const filteredBills = computed(() =>
-  filter.value ? sortedBills.value.filter((b) => b.status === filter.value) : sortedBills.value
+    filter.value ? bills.value.filter((b) => b.status === filter.value) : bills.value
 );
 
-const totals = computed(() => {
-  return bills.value.reduce(
-    (acc, b) => {
-      acc[b.status] += b.amount;
-      return acc;
-    },
-    { paid: 0, pending: 0, overdue: 0 }
-  );
-});
+// Methods
+const handleEdit = (bill) => {
+    editingBill.value = { ...bill };
+};
 
-function statusColor(status) {
-  return { paid: 'green', pending: 'orange', overdue: 'red' }[status] || 'grey';
-}
+const handlePay = (bill) => {
+    payingBill.value = bill;
+};
 
-function statusIcon(status) {
-  return (
-    {
-      paid: 'mdi-check-circle',
-      pending: 'mdi-clock-outline',
-      overdue: 'mdi-alert-circle'
-    }[status] || ''
-  );
-}
+const handleRemove = (bill) => {
+    billToDelete.value = bill;
+    confirmDialog.value = true;
+};
 
-function summarize(payments) {
-  const map = {};
-  payments.forEach((p) => {
-    if (!map[p.paymentProvider]) map[p.paymentProvider] = 0;
-    map[p.paymentProvider] += Number(p.amount);
-  });
-  return Object.entries(map)
-    .map(([prov, amt]) => `${prov} ($${amt.toFixed(2)})`)
-    .join(' + ');
-}
+const handleConfirmRemove = async () => {
+    confirmDialog.value = false;
+    if (billToDelete.value) {
+        loading.value = true;
+        const success = await removeBill(billToDelete.value.id);
+        if (success) {
+            // Notificar al usuario
+            await fetchData();
+        } else {
+            error.value = 'Error al eliminar la factura';
+        }
+        loading.value = false;
+    }
+};
 
-function format(d) {
-  return new Date(d).toLocaleDateString();
-}
+const handleCancelSubscription = async () => {
+    const success = await cancelSubscription();
+    if (success) {
+        // Notificar al usuario
+    }
+};
 
-function edit(bill) {
-  editingBill.value = { ...bill };
-}
+const closeEdit = () => editingBill.value = null;
+const closePay = () => payingBill.value = null;
+const closeConfirm = () => confirmDialog.value = false;
 
-function closeEdit() {
-  editingBill.value = null;
-}
-
-async function onUpdated() {
-  await fetchData();
-}
-
-async function pay(bill) {
-  payingBill.value = bill;
-}
-
-function closePay() {
-  payingBill.value = null;
-}
-
-async function onPaid() {
-  await fetchData();
-  closePay();
-}
-
-async function remove(bill) {
-  try {
-    await api.delete(`/bills/${bill.id}`);
+const onPaid = async () => {
     await fetchData();
-  } catch (err) {
-    error.value = err.message;
-  }
-}
+    closePay();
+};
 
-async function cancelSub() {
-  try {
-    await api.put(`/services/${id}`, { autoRenew: false });
-    service.value.autoRenew = false;
-  } catch (err) {
-    error.value = err.message;
-  }
-}
+// Lifecycle
+onMounted(fetchData);
 </script>
 

@@ -67,7 +67,8 @@
             <v-list-item-title class="text-grey">Sin notificaciones</v-list-item-title>
           </v-list-item>
           <v-list-item v-for="(n, i) in notifications" :key="i">
-            <v-list-item-title>{{ n }}</v-list-item-title>
+            <v-list-item-title>{{ n.message || n }}</v-list-item-title>
+            <v-list-item-subtitle v-if="n.createdAt">{{ new Date(n.createdAt).toLocaleString() }}</v-list-item-subtitle>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -92,10 +93,11 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import ChatbotWidget from './components/ChatbotWidget.vue'
+import api from './api.js'
 
 const route = useRoute()
 const drawer = ref(true)
@@ -106,6 +108,16 @@ const showNewNotification = ref(false)
 let timer
 let notifTimer
 
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/notifications')
+    notifications.value = data || []
+  } catch (e) {
+    // Si falla, deja el array vacío
+    notifications.value = []
+  }
+})
+
 function showToast(msg) {
   toast.value = msg
   clearTimeout(timer)
@@ -113,7 +125,7 @@ function showToast(msg) {
 }
 
 function showNotification(msg) {
-  notifications.value.unshift(msg)
+  notifications.value.unshift({ message: msg, createdAt: new Date().toISOString() })
   showToast(msg)
   showNewNotification.value = true
   clearTimeout(notifTimer)
