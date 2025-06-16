@@ -1,4 +1,5 @@
 import prisma from '../db/prismaClient.js';
+import { createNotification } from './notificationService.js';
 
 export const listServices = async (query = {}) => {
   const { category, recurrence, paymentProvider, dueSoon } = query;
@@ -34,4 +35,10 @@ export const updateService = async (id, data) => {
   const existing = await prisma.service.findUnique({ where: { id } });
   if (!existing) return null;
   return prisma.service.update({ where: { id }, data });
+};
+
+export const createService = async (data) => {
+  const service = await prisma.service.create({ data });
+  await createNotification(`Nuevo servicio registrado: ${service.name}`);
+  return service;
 };

@@ -25,12 +25,6 @@
             </template>
             <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
           </v-menu>
-          <v-select
-            v-model="paymentProvider"
-            :items="providers"
-            label="Payment Provider"
-            density="compact"
-          />
           <v-select v-model="category" :items="categories" label="Category" density="compact" />
           <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
           <v-select
@@ -65,19 +59,10 @@ const name = ref('');
 const description = ref('');
 const amount = ref(0);
 const dueDate = ref('');
-const providers = [
-  'Visa',
-  'Mastercard',
-  'MercadoPago',
-  'Google Play',
-  'MODO',
-  'PayPal'
-];
 const categories = ['utilities', 'subscriptions', 'taxes', 'others'];
 const statusOptions = ['pending', 'paid', 'overdue'];
 const category = ref('utilities');
 const status = ref('pending');
-const paymentProvider = ref(providers[0]);
 const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
 const recurrence = ref('none');
 const autoRenew = ref(false);
@@ -92,7 +77,6 @@ const setFields = (b) => {
   dueDate.value = b.dueDate.substring(0,10);
   category.value = b.category;
   status.value = b.status;
-  paymentProvider.value = b.paymentProvider || providers[0];
   recurrence.value = b.recurrence || 'none';
   autoRenew.value = b.autoRenew || false;
 };
@@ -114,12 +98,15 @@ function close() {
 const submit = async () => {
   loading.value = true;
   try {
+    // Convert date to ISO format with current time
+    const date = new Date(dueDate.value);
+    date.setHours(23, 59, 59); // Set to end of day
+    
     await api.put(`/bills/${props.bill.id}`, {
       name: name.value,
       description: description.value,
       amount: amount.value,
-      dueDate: dueDate.value,
-      paymentProvider: paymentProvider.value,
+      dueDate: date.toISOString(),
       category: category.value,
       status: status.value,
       autoRenew: autoRenew.value,

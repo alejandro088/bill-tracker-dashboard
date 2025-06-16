@@ -35,6 +35,7 @@
             :items="providers"
             label="Payment Provider"
             density="compact"
+            
           />
           <v-select v-model="category" :items="categories" label="Category" density="compact" />
           <v-select
@@ -100,7 +101,6 @@ const submit = async () => {
     if (isNaN(due)) throw new Error('Invalid due date');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (due < today) throw new Error('Due date cannot be in the past');
     await api.post('/bills', {
       name: name.value,
       description: description.value,
@@ -130,13 +130,3 @@ const submit = async () => {
   }
 };
 </script>
-
-<style scoped>
-.add-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-}
-</style>
-
-

@@ -4,38 +4,104 @@
       v-if="!open"
       class="chat-toggle"
       color="primary"
-      icon="mdi-message-outline"
+      size="large"
+      elevation="4"
       @click="open = true"
-    />
+    >
+      <template #prepend>
+        <v-icon>mdi-message-text-outline</v-icon>
+      </template>
+      <span class="chat-toggle-text">¿Necesitas ayuda?</span>
+    </v-btn>
 
     <v-card v-else class="chat-panel elevation-12">
-      <div class="d-flex justify-space-between align-center px-2 py-1">
-        <span class="font-weight-medium">Assistant</span>
-        <v-btn icon size="small" @click="open = false">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </div>
+      <v-toolbar density="compact" color="primary" class="chat-header">
+        <div class="d-flex align-center py-2 px-1">
+          <v-icon color="white" class="mr-3" size="22">mdi-robot</v-icon>
+          <span class="text-white font-weight-medium text-body-1">Asistente Financiero</span>
+        </div>
+        <template #append>
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            color="white"
+            size="small"
+            @click="open = false"
+          />
+        </template>
+      </v-toolbar>
       <div class="chat-window">
         <div
           v-for="(msg, index) in messages"
           :key="index"
           :class="['bubble', msg.from]"
         >
-          {{ msg.text }}
+          <div class="bubble-content">
+            <v-icon
+              v-if="msg.from === 'bot'"
+              size="small"
+              color="primary"
+              class="mr-2"
+            >mdi-robot</v-icon>
+            <v-icon
+              v-else
+              size="small"
+              color="grey-darken-1"
+              class="mr-2"
+            >mdi-account</v-icon>
+            {{ msg.text }}
+          </div>
+          <div class="bubble-timestamp text-caption text-grey">
+            {{ new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+          </div>
         </div>
       </div>
-      <v-switch v-model="llmMode" label="LLM Mode" density="compact" class="mb-1" />
-      <v-text-field
-        v-model="input"
-        label="Ask a question"
-        density="compact"
-        append-inner-icon="mdi-send"
-        @click:append-inner="send"
-        @keyup.enter="send"
-      />
-      <div class="d-flex justify-space-between px-2 pb-2">
-        <v-btn color="primary" @click="send">Send</v-btn>
-        <v-btn variant="text" @click="resetConversation">New conversation</v-btn>
+      
+      <v-divider />
+      
+      <div class="chat-footer pa-2">
+        <div class="d-flex align-center mb-2">
+          <v-switch
+            v-model="llmMode"
+            label="Modo IA"
+            density="compact"
+            color="primary"
+            hide-details
+            class="mr-2"
+          />
+          <v-btn
+            variant="text"
+            size="small"
+            color="grey-darken-1"
+            prepend-icon="mdi-refresh"
+            @click="resetConversation"
+          >
+            Nueva conversación
+          </v-btn>
+        </div>
+        
+        <v-text-field
+          v-model="input"
+          placeholder="Escribe tu pregunta..."
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="chat-input"
+          @keyup.enter="send"
+        >
+          <template #append-inner>
+            <v-fade-transition>
+              <v-btn
+                v-if="input"
+                color="primary"
+                icon="mdi-send"
+                variant="text"
+                size="small"
+                @click="send"
+              />
+            </v-fade-transition>
+          </template>
+        </v-text-field>
       </div>
     </v-card>
   </div>
@@ -134,36 +200,116 @@ async function manualHandleQuery(q) {
   bottom: 20px;
   right: 20px;
   z-index: 1000;
+  min-width: 180px;
+  border-radius: 24px;
 }
+
+.chat-toggle-text {
+  margin-left: 4px;
+  font-size: 0.9rem;
+}
+
 .chat-panel {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 300px;
-  max-height: 380px;
+  width: 360px;
+  height: 520px;
   display: flex;
   flex-direction: column;
   z-index: 1000;
+  border-radius: 12px;
+  overflow: hidden;
 }
+
+.chat-header {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
 .chat-window {
   flex: 1;
   overflow-y: auto;
-  border-top: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  padding: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: rgb(248, 249, 250);
 }
+
+.chat-footer {
+  background-color: white;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
 .bubble {
-  max-width: 80%;
-  margin-bottom: 6px;
-  padding: 6px 10px;
-  border-radius: 8px;
+  max-width: 85%;
+  margin-bottom: 2px;
+  display: flex;
+  flex-direction: column;
 }
+
+.bubble-content {
+  padding: 8px 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.4;
+}
+
+.bubble-timestamp {
+  margin-top: 2px;
+  padding: 0 4px;
+}
+
 .bubble.user {
-  background-color: #e0e0e0;
   align-self: flex-end;
 }
+
+.bubble.user .bubble-content {
+  background-color: rgb(var(--v-theme-primary));
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.bubble.user .bubble-timestamp {
+  align-self: flex-end;
+}
+
 .bubble.bot {
-  background-color: #d1eaff;
   align-self: flex-start;
+}
+
+.bubble.bot .bubble-content {
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom-left-radius: 4px;
+}
+
+.bubble.bot .bubble-timestamp {
+  align-self: flex-start;
+}
+
+.chat-input {
+  border-radius: 24px;
+}
+
+/* Scrollbar styles */
+.chat-window::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-window::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-window::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.chat-window::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
 }
 </style>
