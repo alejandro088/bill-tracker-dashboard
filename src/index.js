@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import billRoutes from './routes/billRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
@@ -16,6 +18,10 @@ import prisma from './db/prismaClient.js';
 
 dotenv.config();
 
+// ES modules __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 prisma.$connect().catch((e) => {
   console.error('Failed to connect to DB', e);
   process.exit(1);
@@ -23,17 +29,33 @@ prisma.$connect().catch((e) => {
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+
+// En producción, no necesitamos CORS ya que servimos el frontend desde el mismo origen
+if (process.env.NODE_ENV === 'development') {
+  app.use(cors({ origin: process.env.FRONTEND_URL }));
+}
+
 app.use(logger);
 
-app.use('/notifications', notificationRoutes);
+// API routes
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/bills', billRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/assistant', assistantRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/summary', summaryRoutes);
 
-app.use('/bills', billRoutes);
-app.use('/payments', paymentRoutes);
-app.use('/services', serviceRoutes);
-app.use('/assistant', assistantRoutes);
-app.use('/chat', chatRoutes);
-app.use('/summary', summaryRoutes);
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Manejar rutas SPA - todas las rutas no-API sirven index.html
+app.get('*', (req, res) => {
+  // No redirigir las rutas de API
+  if (!req.path.startsWith('/api/')) {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  }
+});
 
 app.use(errorHandler);
 if (process.env.NODE_ENV !== 'test') {

@@ -23,10 +23,8 @@ export const ask = async (req, res) => {
       orderBy: { paidAt: 'desc' },
       take: 50,
       select: {
-        name: true,
         amount: true,
         paidAt: true,
-        paymentProvider: true,
         recurrence: true
       }
     });

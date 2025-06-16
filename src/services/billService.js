@@ -151,6 +151,8 @@ export const getBillById = async (id) => {
 
 export const addBill = async (data) => {
     let serviceId = data.serviceId;
+    let serviceName = data.name;
+    
     if (!serviceId) {
         let service = await prisma.service.findFirst({
             where: {
@@ -168,12 +170,28 @@ export const addBill = async (data) => {
                     autoRenew: data.autoRenew ?? false,
                 },
             });
+            
+            // Notificación de nuevo servicio
+            await prisma.notification.create({
+                data: {
+                    message: `Nuevo servicio registrado: ${service.name}`,
+                    read: false
+                }
+            });
         }
         serviceId = service.id;
+        serviceName = service.name;
+    } else {
+        // Si se proporcionó serviceId, obtenemos el nombre del servicio
+        const service = await prisma.service.findUnique({
+            where: { id: serviceId },
+            select: { name: true }
+        });
+        serviceName = service?.name;
     }
 
     const { name, description, ...billData } = data;
-    return prisma.bill.create({
+    const bill = await prisma.bill.create({
         data: {
             status: 'pending',
             autoRenew: data.autoRenew ?? false,
@@ -184,6 +202,19 @@ export const addBill = async (data) => {
             category: data.category || 'other',
         },
     });
+
+    // Notificación de nueva factura
+    await prisma.notification.create({
+        data: {
+            message: `Nueva factura registrada para ${serviceName}: ${new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS'
+            }).format(bill.amount)} (vence: ${new Date(bill.dueDate).toLocaleDateString('es-ES')})`,
+            read: false
+        }
+    });
+
+    return bill;
 };
 
 /**
@@ -202,16 +233,16 @@ export const updateBill = async (id, data) => {
         const { name, description, payments, ...rest } = data;
         const updateData = { ...rest };
 
-        const justPaid = data.status === BILL_STATUS.PAID && existing.status !== BILL_STATUS.PAID;
-        if (!justPaid) {
-            return { newBill: null };
-        }
-
         // Actualizamos la bill
         const updated = await prisma.bill.update({
             where: { id },
             data: updateData,
         });
+
+        const justPaid = data.status === BILL_STATUS.PAID && existing.status !== BILL_STATUS.PAID;
+        if (!justPaid) {
+            return { newBill: null };
+        }
 
         // Procesar pagos
         await handlePayments(updated, data);
