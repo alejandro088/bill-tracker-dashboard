@@ -11,13 +11,23 @@
         <v-card-text class="pt-0">
           <v-text-field v-model="name" label="Name" density="compact" required />
           <v-text-field v-model="description" label="Description" density="compact" />
-          <v-text-field
-            v-model.number="amount"
-            label="Amount"
-            type="number"
-            density="compact"
-            required
-          />
+          <div class="d-flex">
+            <v-text-field
+              v-model.number="amount"
+              :label="'Amount ' + (currency === 'USD' ? 'USD' : 'ARS')"
+              type="number"
+              density="compact"
+              class="flex-grow-1 mr-2"
+              required
+            />
+            <v-select
+              v-model="currency"
+              :items="['ARS', 'USD']"
+              label="Currency"
+              density="compact"
+              style="min-width: 100px"
+            />
+          </div>
           <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
             <template #activator="{ props }">
               <v-text-field
@@ -35,7 +45,6 @@
             :items="providers"
             label="Payment Provider"
             density="compact"
-            
           />
           <v-select v-model="category" :items="categories" label="Category" density="compact" />
           <v-select
@@ -70,6 +79,7 @@ const emit = defineEmits(['added', 'notify']);
 const name = ref('');
 const description = ref('');
 const amount = ref(0);
+const currency = ref('ARS');
 const dueDate = ref('');
 const menu = ref(false);
 const providers = [
@@ -92,39 +102,44 @@ const dialog = ref(false);
 
 function close() {
   dialog.value = false;
+  resetForm();
+}
+
+function resetForm() {
+  name.value = '';
+  description.value = '';
+  amount.value = 0;
+  currency.value = 'ARS';
+  dueDate.value = '';
+  paymentProvider.value = providers[0];
+  category.value = 'utilities';
+  recurrence.value = 'none';
+  autoRenew.value = false;
+  error.value = null;
 }
 
 const submit = async () => {
   loading.value = true;
   try {
     const due = new Date(dueDate.value);
-    if (isNaN(due)) throw new Error('Invalid due date');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    await api.post('/bills', {
+    const bill = {
       name: name.value,
       description: description.value,
-      amount: amount.value,
+      amount: Number(amount.value),
+      currency: currency.value,
       dueDate: due.toISOString(),
       paymentProvider: paymentProvider.value,
       category: category.value,
-      autoRenew: autoRenew.value,
-      recurrence: recurrence.value
-    });
-    name.value = '';
-    description.value = '';
-    amount.value = 0;
-    dueDate.value = '';
-    paymentProvider.value = providers[0];
-    category.value = 'utilities';
-    recurrence.value = 'none';
-    autoRenew.value = false;
+      recurrence: recurrence.value,
+      autoRenew: category.value === 'subscriptions' ? autoRenew.value : false,
+    };
+
+    await api.post('/bills', bill);
+    emit('notify', `Bill added: ${name.value} (${currency.value} ${amount.value})`);
     emit('added');
-    emit('notify', 'Bill added');
-    error.value = null;
     close();
-  } catch (err) {
-    error.value = err.message;
+  } catch (e) {
+    error.value = e.message;
   } finally {
     loading.value = false;
   }

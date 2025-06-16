@@ -40,6 +40,15 @@
           clearable
         />
       </v-col>
+      <v-col cols="12" sm="2">
+        <v-select
+          v-model="currency"
+          :items="['All', 'ARS', 'USD']"
+          label="Currency"
+          density="compact"
+          clearable
+        />
+      </v-col>
     </v-row>
 
     <v-data-table
@@ -54,6 +63,9 @@
       </template>
       <template #item.invoiceCount="{ item }">
         Invoices: {{ item.invoiceCount }}
+      </template>
+      <template #item.amount="{ item }">
+        {{ formatAmountWithCurrency(item.amount, item.currency) }}
       </template>
       <template #item.paymentProvider="{ item }">
         <span v-if="item.payments?.length">{{ summarize(item.payments) }}</span>
@@ -98,79 +110,70 @@
       :key="editingBill.id"
       :bill="editingBill"
       @updated="onUpdated"
-      @close="closeEdit"
+      @close="editingBill = null"
+      @notify="$emit('notify', $event)"
     />
+
+    <PayDialog
+      :bill="payingBill"
+      @paid="onPaid"
+      @close="payingBill = null"
+      @notify="$emit('notify', $event)"
+    />
+
     <ManualInvoiceForm
-      v-if="newBill"
-      :bill="newBill"
-      @created="onCreated"
-      @close="closeNew"
+      :service="newInvoiceService"
+      @created="onInvoiceCreated"
+      @close="newInvoiceService = null"
+      @notify="$emit('notify', $event)"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue';
-import api from '../api.js';
+import { ref, computed } from 'vue';
+import { formatAmount, formatAmountWithCurrency, statusColor } from '../utils/formatters';
 import EditBillForm from './EditBillForm.vue';
+import PayDialog from './PayDialog.vue';
 import ManualInvoiceForm from './ManualInvoiceForm.vue';
-import { useRouter } from 'vue-router';
+import api from '../api';
 
-const emit = defineEmits(['notify']);
+defineProps({
+  loading: Boolean,
+  bills: {
+    type: Array,
+    default: () => []
+  }
+});
 
-const bills = ref([]);
-const total = ref(0);
-const page = ref(1);
-const limit = 1000;
+const emit = defineEmits(['updated', 'notify']);
+
 const search = ref('');
-const category = ref('');
-const status = ref('');
-const providers = ['Visa', 'Mastercard', 'MercadoPago', 'Google Play', 'MODO', 'PayPal'];
-const paymentProvider = ref('');
-const recurrenceOptions = [
-  { title: 'All', value: '' },
-  { title: 'Weekly', value: 'weekly' },
-  { title: 'Monthly', value: 'monthly' },
-  { title: 'Bimonthly', value: 'bimonthly' },
-  { title: 'Yearly', value: 'yearly' },
-  { title: 'None', value: 'none' }
-];
-const recurrence = ref('');
-const sort = ref('dueDate');
-const loading = ref(false);
-const error = ref(null);
+const category = ref(null);
+const status = ref(null);
+const paymentProvider = ref(null);
+const recurrence = ref(null);
+const currency = ref('All');
+const page = ref(1);
 const editingBill = ref(null);
-const newBill = ref(null);
-const router = useRouter();
-
-const categoryOptions = [
-  { title: 'All Categories', value: '' },
-  { title: 'Utilities', value: 'utilities' },
-  { title: 'Subscriptions', value: 'subscriptions' },
-  { title: 'Taxes', value: 'taxes' },
-  { title: 'Others', value: 'others' }
-];
-
-const statusOptions = [
-  { title: 'All Statuses', value: '' },
-  { title: 'paid', value: 'paid' },
-  { title: 'pending', value: 'pending' },
-  { title: 'overdue', value: 'overdue' }
-];
+const payingBill = ref(null);
+const newInvoiceService = ref(null);
 
 const headers = [
   { title: 'Name', key: 'name' },
-  { title: 'Description', key: 'description' },
-  { title: 'Category', key: 'category' },
-  { title: 'Invoices', key: 'invoiceCount' },
+  { title: 'Amount', key: 'amount', align: 'end' },
   { title: 'Due Date', key: 'dueDate' },
-  { title: 'Amount', key: 'amount' },
-  { title: 'Payment Provider', key: 'paymentProvider' },
-  { title: 'Recurrence', key: 'recurrence' },
+  { title: 'Category', key: 'category' },
+  { title: 'Provider', key: 'paymentProvider' },
   { title: 'Status', key: 'status' },
-  { title: 'Auto Renew', key: 'autoRenew', sortable: false },
+  { title: 'Auto', key: 'autoRenew', align: 'center' },
   { title: 'Actions', key: 'actions', sortable: false }
 ];
+
+const categoryOptions = ['utilities', 'subscriptions', 'taxes', 'others'];
+const statusOptions = ['paid', 'pending', 'overdue'];
+const providers = ['Visa', 'Mastercard', 'MercadoPago', 'Google Play', 'MODO', 'PayPal'];
+const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
 
 const fetchBills = async () => {
   loading.value = true;
@@ -206,23 +209,45 @@ watch(paymentProvider, (val) => {
   });
 });
 
-const totalPages = computed(() => Math.ceil(total.value / limit) || 1);
+const filteredBills = computed(() => {
+  let result = props.bills;
 
-const groupedBills = computed(() => {
-  const map = new Map();
-  bills.value.forEach((bill) => {
-    const key = bill.serviceId || `${bill.name}|${bill.category}`;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(bill);
-  });
-  const result = [];
-  for (const group of map.values()) {
-    group.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
-    const latest = group[0];
-    result.push({ ...latest, invoiceCount: group.length });
+  if (search.value) {
+    const searchLower = search.value.toLowerCase();
+    result = result.filter(bill => 
+      bill.name.toLowerCase().includes(searchLower) ||
+      bill.description?.toLowerCase().includes(searchLower)
+    );
   }
+
+  if (category.value) {
+    result = result.filter(bill => bill.category === category.value);
+  }
+
+  if (status.value) {
+    result = result.filter(bill => bill.status === status.value);
+  }
+
+  if (paymentProvider.value) {
+    result = result.filter(bill => bill.paymentProvider === paymentProvider.value);
+  }
+
+  if (recurrence.value) {
+    result = result.filter(bill => bill.recurrence === recurrence.value);
+  }
+
+  if (currency.value && currency.value !== 'All') {
+    result = result.filter(bill => bill.currency === currency.value);
+  }
+
   return result;
 });
+
+const groupedBills = computed(() => {
+  return filteredBills.value.slice((page.value - 1) * 10, page.value * 10);
+});
+
+const totalPages = computed(() => Math.ceil(filteredBills.value.length / 10));
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString();

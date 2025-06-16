@@ -5,7 +5,7 @@ import {
   updateBill,
   deleteBill,
   getUpcomingBills,
-  getSummary
+  getSummaryWithCurrency
 } from '../services/billService.js';
 
 export const getAll = async (req, res, next) => {
@@ -54,17 +54,19 @@ export const remove = async (req, res, next) => {
   }
 };
 
-export const upcoming = async (req, res, next) => {
+export const getUpcoming = async (req, res, next) => {
   try {
-    res.json(await getUpcomingBills());
+    const bills = await getUpcomingBills();
+    res.json(bills);
   } catch (err) {
     next(err);
   }
 };
 
-export const summary = async (req, res, next) => {
+export const getSummaryStats = async (req, res, next) => {
   try {
-    res.json(await getSummary());
+    const summary = await getSummaryWithCurrency();
+    res.json(summary);
   } catch (err) {
     next(err);
   }

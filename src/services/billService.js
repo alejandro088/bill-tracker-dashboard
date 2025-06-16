@@ -40,6 +40,7 @@ const handleAutoRenewal = async (bill) => {
         data: {
             serviceId: bill.serviceId,
             amount: bill.amount,
+            currency: bill.currency,
             category: bill.category,
             dueDate: due,
             status: BILL_STATUS.PENDING,
@@ -135,18 +136,13 @@ export const listBills = async (query = {}) => {
 };
 
 export const getBillById = async (id) => {
-    const bill = await prisma.bill.findUnique({
+    return prisma.bill.findUnique({
         where: { id },
-        include: { Service: true, payments: true },
+        include: {
+            Service: true,
+            payments: true
+        }
     });
-    if (!bill) return null;
-    return {
-        ...bill,
-        name: bill.Service?.name,
-        description: bill.Service?.description,
-        payments: bill.payments,
-        Service: undefined,
-    };
 };
 
 export const addBill = async (data) => {
@@ -356,3 +352,39 @@ export const getSummary = async () => {
     });
     return summary;
 };
+
+// Nueva función para obtener el resumen por moneda
+const getSummaryWithCurrency = async () => {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
+  
+  const bills = await prisma.bill.findMany({
+    where: {
+      OR: [
+        { status: BILL_STATUS.PAID, paidAt: { gte: startDate } },
+        { status: BILL_STATUS.PENDING },
+        { status: BILL_STATUS.OVERDUE }
+      ]
+    }
+  });
+
+  const summary = {
+    ars: { paid: 0, pending: 0, overdue: 0 },
+    usd: { paid: 0, pending: 0, overdue: 0 }
+  };
+
+  bills.forEach(bill => {
+    const currency = bill.currency.toLowerCase();
+    if (bill.status === BILL_STATUS.PAID && bill.paidAt >= startDate) {
+      summary[currency].paid += bill.amount;
+    } else if (bill.status === BILL_STATUS.PENDING) {
+      summary[currency].pending += bill.amount;
+    } else if (bill.status === BILL_STATUS.OVERDUE) {
+      summary[currency].overdue += bill.amount;
+    }
+  });
+
+  return summary;
+};
+
+export { getSummaryWithCurrency };

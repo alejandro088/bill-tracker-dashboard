@@ -7,10 +7,19 @@
           <v-text-field
             v-model.number="p.amount"
             type="number"
-            label="Monto"
+            :label="'Monto ' + (p.currency === 'USD' ? 'USD' : 'ARS')"
             density="compact"
             class="mr-2"
             style="max-width:100px"
+          />
+          <v-select
+            v-model="p.currency"
+            :items="['ARS', 'USD']"
+            label="Moneda"
+            density="compact"
+            class="mr-2"
+            style="max-width:100px"
+            @update:model-value="updateExchangeRate(i)"
           />
           <v-select
             v-model="p.paymentProvider"
@@ -27,13 +36,16 @@
           <v-icon>mdi-plus</v-icon>
         </v-btn>
         <div class="text-right font-weight-bold">
-          Total: {{ total.toFixed(2) }} / {{ props.bill?.amount.toFixed(2) }}
+          Total en {{ props.bill?.currency }}: {{ totalInBillCurrency.toFixed(2) }} / {{ props.bill?.amount.toFixed(2) }}
+        </div>
+        <div v-if="hasMultipleCurrencies" class="text-right text-caption">
+          Tasa de cambio USD/ARS: {{ exchangeRate }}
         </div>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="close">Cancelar</v-btn>
-        <v-btn variant="text" color="green" @click="confirm" :disabled="total !== props.bill?.amount">
+        <v-btn variant="text" color="green" @click="confirm" :disabled="!isValidTotal">
           Confirmar
         </v-btn>
       </v-card-actions>
@@ -51,20 +63,72 @@ const emit = defineEmits(['paid', 'close', 'notify']);
 const dialog = ref(false);
 const providers = ['Visa', 'Mastercard', 'MODO', 'MercadoPago', 'Google Play', 'PayPal'];
 const payments = ref([]);
+const exchangeRate = ref(0);
+
+// Obtener tasa de cambio actual (esto debería venir de una API)
+async function fetchExchangeRate() {
+  try {
+    // Aquí deberías llamar a tu API de tipo de cambio
+    // Por ahora usamos un valor fijo de ejemplo
+    exchangeRate.value = 500;
+  } catch (error) {
+    console.error('Error al obtener tipo de cambio:', error);
+  }
+}
 
 watch(
   () => props.bill,
-  (b) => {
+  async (b) => {
     dialog.value = !!b;
-    payments.value = b ? [{ amount: b.amount, paymentProvider: '' }] : [];
+    if (b) {
+      await fetchExchangeRate();
+      payments.value = [{ 
+        amount: b.amount, 
+        currency: b.currency,
+        paymentProvider: '',
+        exchangeRate: exchangeRate.value
+      }];
+    } else {
+      payments.value = [];
+    }
   },
   { immediate: true }
 );
 
-const total = computed(() => payments.value.reduce((s, p) => s + Number(p.amount || 0), 0));
+const hasMultipleCurrencies = computed(() => {
+  const currencies = new Set(payments.value.map(p => p.currency));
+  return currencies.size > 1;
+});
+
+async function updateExchangeRate(index) {
+  await fetchExchangeRate();
+  payments.value[index].exchangeRate = exchangeRate.value;
+}
+
+const totalInBillCurrency = computed(() => {
+  return payments.value.reduce((sum, p) => {
+    if (p.currency === props.bill.currency) {
+      return sum + Number(p.amount || 0);
+    } else if (p.currency === 'USD' && props.bill.currency === 'ARS') {
+      return sum + (Number(p.amount || 0) * p.exchangeRate);
+    } else if (p.currency === 'ARS' && props.bill.currency === 'USD') {
+      return sum + (Number(p.amount || 0) / p.exchangeRate);
+    }
+    return sum;
+  }, 0);
+});
+
+const isValidTotal = computed(() => {
+  return Math.abs(totalInBillCurrency.value - props.bill.amount) < 0.01;
+});
 
 function addLine() {
-  payments.value.push({ amount: 0, paymentProvider: '' });
+  payments.value.push({ 
+    amount: 0, 
+    currency: props.bill.currency,
+    paymentProvider: '',
+    exchangeRate: exchangeRate.value
+  });
 }
 
 function remove(i) {
@@ -76,17 +140,17 @@ function close() {
   emit('close');
 }
 
-function formatAmount(a) {
-  return `$${Number(a).toFixed(2)}`;
+function formatAmount(amount, currency) {
+  return currency === 'USD' ? `USD ${Number(amount).toFixed(2)}` : `$${Number(amount).toFixed(2)}`;
 }
 
 async function confirm() {
-  if (total.value !== props.bill.amount) return;
+  if (!isValidTotal.value) return;
   await api.put(`/bills/${props.bill.id}`, {
     status: 'paid',
     payments: payments.value
   });
-  emit('notify', `Factura pagada: ${props.bill?.name || ''} (${formatAmount(props.bill?.amount)})`);
+  emit('notify', `Factura pagada: ${props.bill?.name || ''} (${formatAmount(props.bill?.amount, props.bill?.currency)})`);
   emit('paid');
   close();
 }
