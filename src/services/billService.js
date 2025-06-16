@@ -374,13 +374,17 @@ const getSummaryWithCurrency = async () => {
   };
 
   bills.forEach(bill => {
+    // La moneda siempre será 'ARS' o 'USD' gracias al ENUM y valor por defecto
+    console.log(bill)
     const currency = bill.currency.toLowerCase();
+    const amount = bill.amount || 0;
+
     if (bill.status === BILL_STATUS.PAID && bill.paidAt >= startDate) {
-      summary[currency].paid += bill.amount;
+      summary[currency].paid += amount;
     } else if (bill.status === BILL_STATUS.PENDING) {
-      summary[currency].pending += bill.amount;
+      summary[currency].pending += amount;
     } else if (bill.status === BILL_STATUS.OVERDUE) {
-      summary[currency].overdue += bill.amount;
+      summary[currency].overdue += amount;
     }
   });
 

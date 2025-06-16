@@ -21,66 +21,104 @@
                 <BillForm @added="refresh" @notify="notify" />
             </v-card-title>
         </v-card>
-        <v-row class="mb-2" align="center">
-            <v-col cols="12" md="4">
+        <v-row class="mb-4">
+            <v-col cols="12" md="3">
+                <div class="filter-label">
+                    <v-icon size="18" class="mr-2">mdi-magnify</v-icon>
+                    <span>Buscar</span>
+                </div>
                 <v-text-field
                     v-model="search"
-                    prepend-inner-icon="mdi-magnify"
-                    label="Buscar servicio"
-                    dense
+                    placeholder="Buscar servicio"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
                     clearable
                     @input="onSearch"
                 />
             </v-col>
             <v-col cols="12" md="2">
+                <div class="filter-label">
+                    <v-icon size="18" class="mr-2">mdi-shape</v-icon>
+                    <span>Categoría</span>
+                </div>
                 <v-select
                     v-model="category"
                     :items="categoryOptions"
                     item-title="title"
                     item-value="value"
-                    label="Categoría"
+                    placeholder="Todas"
                     density="compact"
+                    variant="outlined"
+                    hide-details
                     clearable
-                    @update:model-value="
-                        (value) => (category = value === null ? '' : value)
-                    "
+                    @update:model-value="(value) => (category = value === null ? '' : value)"
                 />
             </v-col>
             <v-col cols="12" md="2">
+                <div class="filter-label">
+                    <v-icon size="18" class="mr-2">mdi-currency-usd</v-icon>
+                    <span>Moneda</span>
+                </div>
+                <v-select
+                    v-model="currency"
+                    :items="[
+                        { title: 'Todas', value: '' },
+                        { title: 'USD', value: 'USD' },
+                        { title: 'ARS', value: 'ARS' }
+                    ]"
+                    placeholder="Todas"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    clearable
+                />
+            </v-col>
+            <v-col cols="12" md="2">
+                <div class="filter-label">
+                    <v-icon size="18" class="mr-2">mdi-credit-card</v-icon>
+                    <span>Proveedor</span>
+                </div>
                 <v-select
                     v-model="paymentProvider"
                     :items="providers"
                     item-title="title"
                     item-value="value"
-                    label="Proveedor"
+                    placeholder="Todos"
                     density="compact"
+                    variant="outlined"
+                    hide-details
                     clearable
-                    @update:model-value="
-                        (value) =>
-                            (paymentProvider = value === null ? '' : value)
-                    "
+                    @update:model-value="(value) => (paymentProvider = value === null ? '' : value)"
                 />
             </v-col>
             <v-col cols="12" md="2">
+                <div class="filter-label">
+                    <v-icon size="18" class="mr-2">mdi-calendar-refresh</v-icon>
+                    <span>Recurrencia</span>
+                </div>
                 <v-select
                     v-model="recurrence"
                     :items="recurrenceOptions"
                     item-title="title"
                     item-value="value"
-                    label="Recurrencia"
+                    placeholder="Todas"
                     density="compact"
+                    variant="outlined"
+                    hide-details
                     clearable
-                    @update:model-value="
-                        (value) => (recurrence = value === null ? '' : value)
-                    "
+                    @update:model-value="(value) => (recurrence = value === null ? '' : value)"
                 />
             </v-col>
-            <v-col cols="12" md="2" class="d-flex align-center">
+        </v-row>
+        <v-row class="mb-4">
+            <v-col cols="12" class="d-flex align-center">
                 <v-switch
                     v-model="dueSoon"
                     density="compact"
-                    label="Próximos 7 días"
-                    class="ml-2"
+                    label="Mostrar sólo servicios con vencimientos en los próximos 7 días"
+                    color="warning"
+                    hide-details
                 />
             </v-col>
         </v-row>
@@ -96,47 +134,63 @@
             loading-text="Cargando servicios..."
             no-data-text="No hay servicios registrados"
             :items-per-page="8"
-            :footer-props="{
-                'items-per-page-text': 'Servicios por página',
-                'items-per-page-options': [8, 16, 32],
-                showFirstLastPage: true,
-            }"
         >
+            <!-- Template para la columna de nombre -->
             <template #item.name="{ item }">
-                <v-tooltip :text="item.description || 'Sin descripción'">
-                    <template #activator="{ props }">
-                        <div v-bind="props" class="d-flex align-center">
-                            <span class="font-weight-medium">{{
-                                item.name
-                            }}</span>
-                            <v-icon
-                                v-if="item.autoRenew"
-                                size="small"
-                                color="primary"
-                                class="ml-2"
-                            >
-                                mdi-autorenew
-                            </v-icon>
-                        </div>
-                    </template>
-                </v-tooltip>
+                <div class="d-flex align-center">
+                    <span class="font-weight-medium">{{ item.name }}</span>
+                    <v-chip
+                        size="x-small"
+                        :color="item.defaultCurrency === 'USD' ? 'green' : 'primary'"
+                        class="ml-2"
+                        variant="flat"
+                    >
+                        {{ item.defaultCurrency }}
+                    </v-chip>
+                    <v-icon
+                        v-if="item.autoRenew"
+                        size="small"
+                        color="warning"
+                        class="ml-2"
+                    >
+                        mdi-autorenew
+                    </v-icon>
+                </div>
             </template>
 
+            <!-- Template para la última factura -->
+            <template #item.lastBill="{ item }">
+                <v-chip
+                    v-if="item.lastBill"
+                    :color="statusColor(item.lastBill.status)"
+                    size="small"
+                    class="bill-chip"
+                >
+                    <v-icon start size="16">{{
+                        statusIcon(item.lastBill.status)
+                    }}</v-icon>
+                    {{
+                        formatAmountWithCurrency(
+                            item.lastBill.amount,
+                            item.lastBill.currency || item.defaultCurrency
+                        )
+                    }}
+                </v-chip>
+                <span v-else class="text-grey">Sin facturas</span>
+            </template>
+
+            <!-- Template para la categoría -->
             <template #item.category="{ item }">
-                <v-tooltip :text="getCategoryDescription(item.category)">
+                <v-tooltip :text="getCategoryInfo(item.category)">
                     <template #activator="{ props }">
                         <v-chip
                             v-bind="props"
-                            size="small"
                             :color="getCategoryColor(item.category)"
-                            variant="flat"
+                            size="small"
                             class="text-capitalize"
+                            variant="flat"
                         >
-                            <v-icon
-                                start
-                                size="16"
-                                :icon="getCategoryIcon(item.category)"
-                            ></v-icon>
+                            <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.category) }}</v-icon>
                             {{ item.category }}
                         </v-chip>
                     </template>
@@ -159,49 +213,6 @@
                         </div>
                     </template>
                 </v-tooltip>
-            </template>
-
-            <template #item.lastBill="{ item }">
-                <v-tooltip
-                    v-if="item.lastBill"
-                    :text="getBillTooltip(item.lastBill)"
-                >
-                    <template #activator="{ props }">
-                        <v-chip
-                            v-bind="props"
-                            :color="statusColor(item.lastBill.status)"
-                            class="status-chip"
-                            size="small"
-                            variant="elevated"
-                        >
-                            <v-icon start size="18">{{
-                                statusIcon(item.lastBill.status)
-                            }}</v-icon>
-                            <span class="font-weight-medium">
-                                {{ formatAmount(item.lastBill.amount) }}
-                                <v-icon
-                                    v-if="item.trend"
-                                    :color="
-                                        item.trend === 'up'
-                                            ? 'error'
-                                            : 'success'
-                                    "
-                                    size="16"
-                                    class="ml-1"
-                                >
-                                    {{
-                                        item.trend === 'up'
-                                            ? 'mdi-trending-up'
-                                            : 'mdi-trending-down'
-                                    }}
-                                </v-icon>
-                            </span>
-                        </v-chip>
-                    </template>
-                </v-tooltip>
-                <v-chip v-else color="grey" size="small" variant="flat"
-                    >Sin facturas</v-chip
-                >
             </template>
 
             <template #item.recurrence="{ item }">
@@ -298,6 +309,7 @@ import api from '../api.js';
 import ManualInvoiceForm from './ManualInvoiceForm.vue';
 import QuickBillDialog from './QuickBillDialog.vue';
 import BillForm from './BillForm.vue';
+import { statusColor, statusIcon, formatAmountWithCurrency } from '../utils/formatters';
 
 const emit = defineEmits(['notify']);
 
@@ -321,33 +333,7 @@ const newBill = ref(null);
 const selectedBill = ref(null);
 const dueSoon = ref(localStorage.getItem('svc_dueSoon') === '1');
 const search = ref('');
-
-const statusColor = (status) => {
-    const colors = {
-        paid: 'success',
-        pending: 'warning',
-        overdue: 'error',
-    };
-    return colors[status] || 'grey';
-};
-
-const statusIcon = (status) => {
-    const icons = {
-        paid: 'mdi-check-circle',
-        pending: 'mdi-clock-outline',
-        overdue: 'mdi-alert-circle',
-    };
-    return icons[status] || 'mdi-help-circle';
-};
-
-const formatAmount = (amount) => {
-    if (!amount) return '-';
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 2,
-    }).format(amount);
-};
+const currency = ref('');
 
 const providers = [
     { title: 'Todos', value: '' },
@@ -557,34 +543,34 @@ function dueTooltip(date) {
     return `${prefix} ${formatDate(d)}`;
 }
 
-const getCategoryColor = (category) => {
-    const colors = {
-        subscriptions: 'primary',
-        utilities: 'orange',
-        taxes: 'red',
-        others: 'grey',
-    };
-    return colors[category] || 'grey';
-};
-
 const getCategoryIcon = (category) => {
     const icons = {
-        subscriptions: 'mdi-refresh',
-        utilities: 'mdi-lightning-bolt',
-        taxes: 'mdi-cash',
-        others: 'mdi-tag',
+        'subscriptions': 'mdi-refresh',
+        'utilities': 'mdi-lightning-bolt',
+        'taxes': 'mdi-file-document',
+        'others': 'mdi-folder'
     };
-    return icons[category] || 'mdi-tag';
+    return icons[category] || 'mdi-help-circle';
 };
 
-const getCategoryDescription = (category) => {
+const getCategoryInfo = (category) => {
     const descriptions = {
-        subscriptions: 'Servicios con renovación automática',
-        utilities: 'Servicios básicos (luz, gas, agua)',
-        taxes: 'Impuestos y tasas',
-        others: 'Otros servicios',
+        'subscriptions': 'Servicios con renovación automática o periódica',
+        'utilities': 'Servicios básicos como luz, gas, agua, etc.',
+        'taxes': 'Impuestos y tasas gubernamentales',
+        'others': 'Otros tipos de servicios'
     };
-    return descriptions[category] || 'Categoría sin descripción';
+    return descriptions[category] || 'Categoría no especificada';
+};
+
+const getCategoryColor = (category) => {
+    const colors = {
+        'subscriptions': 'indigo',
+        'utilities': 'orange',
+        'taxes': 'red',
+        'others': 'grey'
+    };
+    return colors[category] || 'grey';
 };
 
 const getProviderIcon = (provider) => {
@@ -684,6 +670,11 @@ const getBillTooltip = (bill) => {
 </script>
 
 <style scoped>
+.bill-chip {
+    min-width: 120px;
+    justify-content: center;
+}
+
 .service-table {
     border-radius: 8px;
     overflow: hidden;
@@ -746,6 +737,31 @@ const getBillTooltip = (bill) => {
 .trend-icon {
     font-size: 14px;
     margin-left: 4px;
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+}
+
+.filter-label .v-icon {
+    opacity: 0.7;
+}
+
+:deep(.v-field) {
+    border-radius: 8px;
+    background-color: #f8fafc;
+}
+
+:deep(.v-field:hover) {
+    background-color: #f0f4ff;
+}
+
+:deep(.v-field.v-field--focused) {
+    background-color: white !important;
 }
 
 @media (max-width: 600px) {

@@ -2,7 +2,31 @@
 
 ## [Unreleased]
 
-### [2025-06-14] - Mejoras en la Interfaz de Usuario General
+### [2025-06-16] - Mejoras en Filtros y Monedas
+#### Added
+- Soporte completo para múltiples monedas (USD y ARS) en todos los componentes
+- Nuevo filtro de moneda en la lista de servicios
+- Chips de moneda junto al nombre del servicio
+- Conversión automática de moneda en diálogo de pagos usando dolarapi.com
+- Visualización clara de la moneda en todas las tablas
+
+#### Changed
+- Rediseño completo de los filtros en ServiceList:
+  - Nueva estructura visual con etiquetas e íconos
+  - Estilo unificado para todos los filtros
+  - Mejor organización y espaciado
+  - Efectos hover y focus mejorados
+- Mejorada la presentación de montos con su moneda correspondiente
+- Optimización del switch "Próximos 7 días" movido a una fila separada
+- Actualización del tooltip de categoría con mejor información
+
+#### Technical
+- Refactorización de los componentes de filtrado
+- Implementación de estilos consistentes usando Vuetify
+- Mejora en la accesibilidad de los filtros
+- Optimización de la estructura del código
+
+## [2025-06-14] - Mejoras en la Interfaz de Usuario General
 #### Added
 - Nuevo diseño de encabezados con fondo degradado naranja
 - Diseño mejorado para tablas de datos con estilos consistentes

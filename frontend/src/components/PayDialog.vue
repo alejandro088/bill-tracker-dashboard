@@ -38,8 +38,14 @@
         <div class="text-right font-weight-bold">
           Total en {{ props.bill?.currency }}: {{ totalInBillCurrency.toFixed(2) }} / {{ props.bill?.amount.toFixed(2) }}
         </div>
-        <div v-if="hasMultipleCurrencies" class="text-right text-caption">
-          Tasa de cambio USD/ARS: {{ exchangeRate }}
+        <div v-if="hasMultipleCurrencies" class="text-right">
+          <div class="text-subtitle-2">Tasa de cambio USD/ARS: {{ exchangeRate.toFixed(2) }}</div>
+          <div class="text-caption" v-if="lastUpdate">
+            Última actualización: {{ new Date(lastUpdate).toLocaleString() }}
+          </div>
+        </div>
+        <div v-if="lastUpdate" class="text-right text-caption">
+          Última actualización: {{ lastUpdate.toLocaleString() }}
         </div>
       </v-card-text>
       <v-card-actions>
@@ -64,15 +70,29 @@ const dialog = ref(false);
 const providers = ['Visa', 'Mastercard', 'MODO', 'MercadoPago', 'Google Play', 'PayPal'];
 const payments = ref([]);
 const exchangeRate = ref(0);
+const lastUpdate = ref(null);
 
-// Obtener tasa de cambio actual (esto debería venir de una API)
+// Obtener tasa de cambio actual desde dolarapi.com
 async function fetchExchangeRate() {
   try {
-    // Aquí deberías llamar a tu API de tipo de cambio
-    // Por ahora usamos un valor fijo de ejemplo
-    exchangeRate.value = 500;
+    const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
+    if (!response.ok) {
+      throw new Error('Error al obtener el tipo de cambio');
+    }
+    const data = await response.json();
+    // Usamos el valor de venta para las conversiones
+    exchangeRate.value = data.venta;
+    
+    // Guardar la última actualización
+    lastUpdate.value = new Date(data.fechaActualizacion);
   } catch (error) {
     console.error('Error al obtener tipo de cambio:', error);
+    // En caso de error, usar un valor de respaldo
+    exchangeRate.value = 500;
+    emit('notify', {
+      type: 'warning',
+      message: 'No se pudo obtener el tipo de cambio actualizado. Usando valor de respaldo.'
+    });
   }
 }
 

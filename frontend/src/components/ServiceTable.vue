@@ -10,6 +10,14 @@
         <template #activator="{ props }">
           <div v-bind="props" class="d-flex align-center">
             <span class="font-weight-medium">{{ item.name }}</span>
+            <v-chip
+              size="x-small"
+              :color="item.defaultCurrency === 'USD' ? 'green' : 'blue'"
+              class="ml-2"
+              variant="flat"
+            >
+              {{ item.defaultCurrency }}
+            </v-chip>
             <v-icon 
               v-if="item.autoRenew" 
               size="small" 
@@ -31,9 +39,20 @@
         size="small"
       >
         <v-icon start size="18">{{ statusIcon(item.lastBill.status) }}</v-icon>
-        {{ formatAmount(item.lastBill.amount) }}
+        {{ formatAmountWithCurrency(item.lastBill.amount, item.lastBill.currency || item.defaultCurrency) }}
       </v-chip>
       <v-chip v-else color="grey" size="small">Sin facturas</v-chip>
+    </template>
+
+    <template #item.category="{ item }">
+      <v-chip
+        :color="getCategoryColor(item.category)"
+        size="small"
+        class="text-capitalize"
+        variant="flat"
+      >
+        {{ item.category }}
+      </v-chip>
     </template>
 
     <template #item.actions="{ item }">
@@ -52,7 +71,7 @@
 <script setup>
 import { defineProps, defineEmits } from 'vue';
 import ServiceActions from './ServiceActions.vue';
-import { statusColor, statusIcon, formatAmount } from '../utils/formatters';
+import { statusColor, statusIcon, formatAmountWithCurrency } from '../utils/formatters';
 
 const props = defineProps({
   services: {
@@ -73,4 +92,21 @@ const headers = [
   { title: 'Última Factura', align: 'center', key: 'lastBill' },
   { title: 'Acciones', align: 'end', key: 'actions', sortable: false }
 ];
+
+const getCategoryColor = (category) => {
+  const colors = {
+    'Subscriptions': 'indigo',
+    'Utilities': 'orange',
+    'taxes': 'red',
+    'others': 'grey'
+  };
+  return colors[category] || 'grey';
+};
 </script>
+
+<style scoped>
+.status-chip {
+  min-width: 120px;
+  justify-content: center;
+}
+</style>

@@ -122,17 +122,19 @@
                 </v-row>
             </v-card-text>
         </v-card>
-        <v-row class="mb-4">
-            <v-col cols="12" sm="6">
+        <v-row class="mb-2" align="center">
+            <v-col cols="12" sm="4" md="3">
                 <v-select
                     v-model="filter"
                     :items="STATUS_OPTIONS"
-                    label="Filtrar por estado"
+                    label="Estado"
                     density="compact"
                     hide-details
                     clearable
+                    class="filter-select"
                     variant="outlined"
                     prepend-inner-icon="mdi-filter"
+                    @update:model-value="(value) => (filter = value === null ? '' : value)"
                 />
             </v-col>
         </v-row>
@@ -398,7 +400,16 @@ const confirmDelete = async () => {
     } catch (err) {
         console.log(err);
     }
-    billToDelete.value = null;
+};
+
+const handleCancelSubscription = async () => {
+    try {
+        await cancelSubscription();
+        emit('notify', 'Suscripción cancelada exitosamente');
+    } catch (error) {
+        console.error('Error al cancelar suscripción:', error);
+        emit('notify', 'Error al cancelar la suscripción');
+    }
 };
 
 const handleBillUpdated = async () => {
@@ -574,5 +585,11 @@ const getStatusTooltip = (bill) => {
 
 :deep(.card-value) {
     margin: 8px 0;
+}
+
+.filter-select {
+    min-width: 200px;
+    max-width: 250px;
+    margin-right: 16px;
 }
 </style>

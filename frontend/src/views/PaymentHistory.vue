@@ -31,6 +31,7 @@
           :items="categories"
           label="Category"
           density="compact"
+          variant="outlined"
           clearable
         />
       </v-col>
@@ -40,6 +41,7 @@
           :items="providers"
           label="Provider"
           density="compact"
+          variant="outlined"
           clearable
         />
       </v-col>
@@ -52,6 +54,7 @@
               readonly
               v-bind="props"
               density="compact"
+              variant="outlined"
             />
           </template>
           <v-date-picker v-model="startDate" @update:modelValue="menuStart = false" />
@@ -66,6 +69,7 @@
               readonly
               v-bind="props"
               density="compact"
+              variant="outlined"
             />
           </template>
           <v-date-picker v-model="endDate" @update:modelValue="menuEnd = false" />

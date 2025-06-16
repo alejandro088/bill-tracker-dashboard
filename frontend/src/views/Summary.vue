@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <h2>Resumen Mensual</h2>
-    <v-select class="mb-4" v-model="year" :items="years" label="Año" density="compact" />
+    <v-select class="mb-4" v-model="year" :items="years" label="Año" density="compact" variant="outlined"/>
     <v-data-table :headers="headers" :items="summary" class="elevation-1 mb-4" hide-default-footer />
     <v-card class="pa-4">
       <canvas id="stacked" />

@@ -4,8 +4,8 @@ import * as controller from '../controllers/billController.js';
 const router = Router();
 
 router.get('/', controller.getAll);
-router.get('/upcoming', controller.upcoming);
-router.get('/summary', controller.summary);
+router.get('/upcoming', controller.getUpcoming);
+router.get('/summary', controller.getSummaryStats);
 router.get('/:id', controller.getById);
 router.post('/', controller.create);
 router.put('/:id', controller.update);

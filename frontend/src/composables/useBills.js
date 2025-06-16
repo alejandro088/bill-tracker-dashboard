@@ -48,8 +48,10 @@ export function useBills(serviceId) {
 
     const cancelSubscription = async () => {
         try {
-            await api.put(`/services/${serviceId}`, { autoRenew: false });
-            service.value.autoRenew = false;
+            await api.put(`/services/${serviceId}`, {
+                autoRenew: false
+            });
+            await fetchData(); // Recargar los datos para reflejar el cambio
             return true;
         } catch (err) {
             error.value = err.message;
@@ -59,10 +61,9 @@ export function useBills(serviceId) {
 
     return {
         service,
-        bills,
+        bills: sortedBills,
         loading,
         error,
-        sortedBills,
         totals,
         fetchData,
         removeBill,
