@@ -1,8 +1,15 @@
 import prisma from './prismaClient.js';
 
 export const addPayment = async (payment) => {
-  console.log(payment);
-  return prisma.payment.create({ data: payment });
+  const { billId, amount, paidAt, paymentProvider } = payment;
+  return prisma.payment.create({
+    data: {
+      Bill: { connect: { id: billId } },
+      amount,
+      paidAt,
+      paymentProvider
+    }
+  });
 };
 
 export const getPaymentsByName = async (name) => {
@@ -24,10 +31,14 @@ export const getAllPayments = async () =>
   });
 
 export const updatePayment = async (id, payment) => {
-  console.log(id, payment);
+  const { amount, paidAt, paymentProvider } = payment;
   return prisma.payment.update({
     where: { id },
-    data: payment,
+    data: {
+      amount,
+      paidAt,
+      paymentProvider
+    }
   });
 };
 
