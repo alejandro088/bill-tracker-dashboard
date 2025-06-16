@@ -16,12 +16,18 @@
           label="Payment Provider"
           density="compact"
         />
-        <v-text-field
-          v-model="payment.paidAt"
-          label="Paid Date"
-          type="date"
-          density="compact"
-        />
+        <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
+            <template #activator="{ props }">
+              <v-text-field
+                v-model="payment.paidAt"
+                label="Paid Date"
+                readonly
+                v-bind="props"
+                density="compact"
+              />
+            </template>
+            <v-date-picker v-model="payment.paidAt" @update:modelValue="menu = false" />
+          </v-menu>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -42,6 +48,7 @@ const props = defineProps({ payment: Object });
 const emit = defineEmits(['edited', 'close']);
 
 const dialog = ref(false);
+const menu = ref(false);
 const providers = ['Visa', 'Mastercard', 'MODO', 'MercadoPago', 'Google Play', 'PayPal'];
 
 const payment = ref({
@@ -54,7 +61,16 @@ watch(
   () => props.payment,
   (p) => {
     dialog.value = !!p;
-    payment.value = p ? { ...p } : { amount: 0, paymentProvider: '', paidAt: '' };
+    if (p) {
+      // Formatear la fecha ISO a YYYY-MM-DD para el input type="date"
+      const paidAt = p.paidAt ? new Date(p.paidAt).toISOString().split('T')[0] : '';
+      payment.value = { 
+        ...p,
+        paidAt 
+      };
+    } else {
+      payment.value = { amount: 0, paymentProvider: '', paidAt: '' };
+    }
   },
   { immediate: true }
 );
@@ -66,8 +82,13 @@ function close() {
 
 async function confirm() {
   try {
-    await api.put(`/payments/${payment.value.id}`, payment.value);
-    emit('edited', payment.value);
+    // Convertir la fecha a formato ISO
+    const paymentData = {
+      ...payment.value,
+      paidAt: payment.value.paidAt ? new Date(payment.value.paidAt).toISOString() : null
+    };
+    await api.put(`/payments/${payment.value.id}`, paymentData);
+    emit('edited', paymentData);
     close();
   } catch (error) {
     console.error('Error editing payment:', error);
