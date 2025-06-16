@@ -53,25 +53,8 @@
         prepend-inner-icon="mdi-magnify"
         class="search-bar"
       />
-      <v-menu offset-y>
-        <template #activator="{ props }">
-          <v-btn icon class="mx-2" v-bind="props">
-            <v-badge :content="notifications.length" color="red" overlap v-if="notifications.length">
-              <v-icon>mdi-bell</v-icon>
-            </v-badge>
-            <v-icon v-else>mdi-bell</v-icon>
-          </v-btn>
-        </template>
-        <v-list style="min-width: 250px; max-width: 350px;">
-          <v-list-item v-if="!notifications.length">
-            <v-list-item-title class="text-grey">Sin notificaciones</v-list-item-title>
-          </v-list-item>
-          <v-list-item v-for="(n, i) in notifications" :key="i">
-            <v-list-item-title>{{ n.message || n }}</v-list-item-title>
-            <v-list-item-subtitle v-if="n.createdAt">{{ new Date(n.createdAt).toLocaleString() }}</v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-      </v-menu>
+      
+      <NotificationMenu :notifications="notifications" />
       <v-btn icon class="mx-2">
         <v-icon>mdi-account-circle</v-icon>
       </v-btn>
@@ -97,7 +80,9 @@ import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import ChatbotWidget from './components/ChatbotWidget.vue'
+import NotificationMenu from './components/NotificationMenu.vue'
 import api from './api.js'
+import { formatDateRelative } from './utils/formatters'
 
 const route = useRoute()
 const drawer = ref(true)
@@ -112,6 +97,13 @@ onMounted(async () => {
   try {
     const { data } = await api.get('/notifications')
     notifications.value = data || []
+
+    // Aplicar valores por defecto
+    notifications.value = data.map(n => ({
+      ...n,
+      type: n.type || 'info',
+      title: n.title || 'Notificación'
+    }));
   } catch (e) {
     // Si falla, deja el array vacío
     notifications.value = []
@@ -130,6 +122,28 @@ function showNotification(msg) {
   showNewNotification.value = true
   clearTimeout(notifTimer)
   notifTimer = setTimeout(() => (showNewNotification.value = false), 3500)
+}
+
+const getNotificationColor = (type) => {
+  const colors = {
+    'bill': 'primary',
+    'payment': 'success',
+    'reminder': 'warning',
+    'alert': 'error',
+    'info': 'info'
+  }
+  return colors[type] || 'grey'
+}
+
+const getNotificationIcon = (type) => {
+  const icons = {
+    'bill': 'mdi-file-document',
+    'payment': 'mdi-cash',
+    'reminder': 'mdi-clock',
+    'alert': 'mdi-alert',
+    'info': 'mdi-information'
+  }
+  return icons[type] || 'mdi-bell'
 }
 </script>
 
@@ -176,7 +190,7 @@ function showNotification(msg) {
   background: #1976d2 !important;
   color: #fff !important;
 }
-..sidebar v-list-item__prepend > .v-icon {
+.sidebar v-list-item__prepend > .v-icon {
   color: #fff !important;
 }
 .app-bar {
@@ -213,5 +227,99 @@ function showNotification(msg) {
   10% { opacity: 1; transform: translateY(0); }
   90% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(20px); }
+}
+
+.notifications-menu {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.notifications-list {
+  max-height: 400px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--v-theme-on-surface), 0.12);
+    border-radius: 4px;
+  }
+}
+
+.notification-item {
+  transition: background-color 0.2s ease;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 85px;
+  gap: 4px;
+  
+  &.unread {
+    background-color: rgb(var(--v-theme-surface-variant));
+  }
+  
+  &:hover {
+    background-color: rgb(var(--v-theme-surface-variant));
+  }
+
+  &::v-deep(.v-list-item__content) {
+    padding: 0;
+  }
+
+  .notification-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(var(--v-theme-on-surface));
+    padding: 0;
+  }
+
+  .notification-message {
+    font-size: 0.875rem;
+    color: rgba(var(--v-theme-on-surface), 0.7);
+    min-height: 20px;
+    padding: 0;
+  }
+
+  .notification-date {
+    font-size: 0.75rem;
+    color: rgba(var(--v-theme-on-surface), 0.6);
+    margin-top: auto;
+    padding: 0;
+  }
+}
+
+.empty-notifications {
+  opacity: 0.7;
+  
+  .v-icon {
+    display: block;
+    margin: 0 auto;
+    font-size: 24px;
+  }
+}
+
+.view-more {
+  &:hover {
+    background-color: rgba(var(--v-theme-primary), 0.04);
+  }
+  
+  .view-more-text {
+    color: rgb(var(--v-theme-primary));
+    font-weight: 500;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  
+  &:hover .view-more-text {
+    color: rgb(var(--v-theme-primary));
+  }
 }
 </style>
