@@ -40,7 +40,10 @@ model Payment {
 
 model Notification {
   id        Int      @id @default(autoincrement())
+  type      String   @default("info")
+  title     String
   message   String
+  actionUrl String?
   createdAt DateTime @default(now())
   read      Boolean  @default(false)
 }
