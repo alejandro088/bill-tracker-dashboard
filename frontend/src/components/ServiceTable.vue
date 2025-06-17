@@ -16,23 +16,41 @@
             <!-- Template para la columna de nombre -->
             <template #item.name="{ item }">
                 <div class="d-flex align-center">
-                    <span class="font-weight-medium">{{ item.name }}</span>
-                    <v-chip
-                        size="x-small"
-                        :color="item.defaultCurrency === 'USD' ? 'green' : 'primary'"
-                        class="ml-2"
-                        variant="flat"
-                    >
-                        {{ item.defaultCurrency }}
-                    </v-chip>
-                    <v-icon
-                        v-if="item.autoRenew"
-                        size="small"
-                        color="warning"
-                        class="ml-2"
-                    >
-                        mdi-autorenew
-                    </v-icon>
+                    <ServiceIcon :service="item" class="mr-3" />
+                    <div class="d-flex flex-column">
+                        <div class="d-flex align-center">
+                            <span class="font-weight-medium">{{ item.name }}</span>
+                            <v-chip
+                                size="x-small"
+                                :color="item.defaultCurrency === 'USD' ? 'green' : 'primary'"
+                                class="ml-2"
+                                variant="flat"
+                            >
+                                {{ item.defaultCurrency }}
+                            </v-chip>
+                            <v-icon
+                                v-if="item.autoRenew"
+                                size="small"
+                                color="warning"
+                                class="ml-2"
+                            >
+                                mdi-autorenew
+                            </v-icon>
+                        </div>
+                        <div v-if="item.url" class="url-container">
+                            <v-btn
+                                :href="item.url"
+                                target="_blank"
+                                variant="text"
+                                size="x-small"
+                                class="px-0 text-grey text-decoration-none"
+                                density="comfortable"
+                            >
+                                <v-icon size="small" start>mdi-link</v-icon>
+                                {{ formatUrl(item.url) }}
+                            </v-btn>
+                        </div>
+                    </div>
                 </div>
             </template>
 
@@ -188,6 +206,7 @@
 
 <script setup>
 import { statusColor, statusIcon, formatAmountWithCurrency } from '../utils/formatters';
+import ServiceIcon from './ServiceIcon.vue';
 
 const props = defineProps({
     services: {
@@ -368,4 +387,29 @@ const getRecurrenceIcon = (recurrence) => {
             return 'mdi-calendar-remove';
     }
 };
+
+const formatUrl = (url) => {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.hostname;
+    } catch (e) {
+        return url;
+    }
+};
 </script>
+
+<style scoped>
+.url-container {
+    margin-top: 2px;
+}
+
+.url-container .v-btn {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    min-width: 0;
+}
+
+.url-container .v-btn:hover {
+    opacity: 1;
+}
+</style>

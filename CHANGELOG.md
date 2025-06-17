@@ -90,6 +90,32 @@
 - Mejor manejo de estados y efectos secundarios
 - Implementación de patrones de diseño más robustos
 
+### [2025-06-16] - Identidad Visual de Servicios
+#### Added
+- Nuevo componente ServiceIcon para mostrar iconos de servicios
+- Soporte para favicons automáticos usando Google Favicon Service
+- Iconos predefinidos para servicios populares (Netflix, YouTube, ChatGPT, etc.)
+- Campos url e iconKey en el modelo Service
+- Selector de servicios populares en el formulario de edición
+
+#### Changed
+- Mejorada la visualización de servicios en la tabla con iconos personalizados
+- Actualizado el formulario de edición para incluir URL y selección de servicio popular
+
+### [2025-06-16] - Mejoras en Íconos y Servicios
+#### Added
+- Soporte para íconos personalizados vía URL cuando no se usa un servicio popular
+  - Campo customIconUrl en el modelo Service para guardar la URL del ícono
+  - Campo adicional en el formulario de edición cuando no se selecciona un servicio popular
+  - Soporte en ServiceIcon para mostrar íconos personalizados
+
+### [2025-06-16] - Mejoras en visualización de URLs de servicios
+#### Added
+- Visualización de URLs de servicios en la tabla principal
+  - Enlaces clickeables que abren el servicio en una nueva pestaña
+  - Visualización del dominio debajo del nombre del servicio
+  - Diseño compacto y elegante con ícono de enlace
+
 ## [2025-06-13]
 - Removed "Tendencia de Pagos" chart from Payment History view.
 - Corrected the "Due Date" column in the Payment History table to display the `Bill.dueDate` field.
@@ -97,3 +123,14 @@
 - Changed the "Bill Name" column to display the `Bill.Service.name` field.
 - Added pagination to the Payment History table.
 - Updated the category filter to point to `Bill.category`.
+
+### [2025-06-16] - Mejoras en íconos de servicios
+#### Added
+- Nuevo buscador de íconos en el formulario de edición de servicios
+  - Interfaz visual para buscar y seleccionar íconos de Material Design
+  - Más de 60 íconos comunes disponibles
+  - Búsqueda en tiempo real de íconos
+  - Vista previa de íconos antes de seleccionar
+- Soporte para íconos personalizados vía URL o selección de ícono
+  - Nuevo campo customIconKey en la base de datos
+  - Visualización mejorada de íconos en la tabla de servicios
