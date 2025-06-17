@@ -25,8 +25,9 @@ const popularServices = {
     youtube: { icon: 'mdi-youtube', color: 'error' },
     chatgpt: { icon: 'mdi-robot', color: 'success' },
     spotify: { icon: 'mdi-spotify', color: 'success' },
-    amazon: { icon: 'mdi-amazon', color: 'warning' },
-    disney: { icon: 'mdi-disney', color: 'info' },
+    amazon: { icon: 'mdi-shopping', color: 'warning' },
+    amazonprime: { icon: 'mdi-video', color: 'warning' },
+    disney: { icon: 'mdi-disney-plus', color: 'info' },
     github: { icon: 'mdi-github', color: 'grey-darken-3' },
     google: { icon: 'mdi-google', color: 'primary' },
     microsoft: { icon: 'mdi-microsoft', color: 'info' },
@@ -39,6 +40,9 @@ const serviceIcon = computed(() => {
     if (props.service.iconKey && popularServices[props.service.iconKey.toLowerCase()]) {
         return popularServices[props.service.iconKey.toLowerCase()].icon;
     }
+    if (props.service.customIconKey) {
+        return props.service.customIconKey;
+    }
     return null;
 });
 
@@ -47,6 +51,16 @@ const iconColor = computed(() => {
         return popularServices[props.service.iconKey.toLowerCase()].color;
     }
     return 'grey';
+});
+
+onMounted(() => {
+    if (props.service.customIconUrl) {
+        faviconUrl.value = props.service.customIconUrl;
+    } else if (props.service.url && !props.service.iconKey) {
+        // Solo intentamos obtener el favicon si no hay un ícono personalizado o uno predefinido
+        const domain = new URL(props.service.url).hostname;
+        faviconUrl.value = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    }
 });
 
 const defaultColor = computed(() => {

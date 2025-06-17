@@ -62,6 +62,8 @@ model Service {
   description     String?
   url             String?  // URL del servicio para favicons automáticos
   iconKey         String?  // Clave para servicios populares (ej: "netflix", "youtube", "chatgpt")
+  customIconUrl   String?  // URL para íconos personalizados cuando no es un servicio popular
+  customIconKey   String?  // Clave para íconos personalizados
   category        String
   paymentProvider String?
   recurrence      String   @default("none")
