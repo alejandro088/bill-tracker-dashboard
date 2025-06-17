@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+### [2025-06-16] - Mejoras en la Modularización y Edición de Servicios
+#### Added
+- Nuevo botón de edición en la tabla de servicios
+- Nuevo componente EditServiceForm para editar servicios
+  - Formulario modal con validación de campos
+  - Edición de nombre, moneda, categoría, proveedor y recurrencia
+  - Switch para renovación automática
+  - Integración con la API para actualizar servicios
+
+#### Changed
+- Modularización mejorada de ServiceList manteniendo la estructura original:
+  - ServiceHeader: encabezado y botón de nuevo servicio
+  - ServiceFilters: filtros de búsqueda y selección
+  - ServiceDueSoonSwitch: switch de próximos vencimientos
+  - ServiceTable: tabla principal con todas las columnas originales
+- Mejor separación de responsabilidades (smart vs dumb components)
+- Optimización de la gestión de estado y eventos
+
 ### [2025-06-16] - Mejoras en Filtros y Monedas
 #### Added
 - Soporte completo para múltiples monedas (USD y ARS) en todos los componentes

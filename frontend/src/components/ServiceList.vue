@@ -18,6 +18,7 @@
             :error="error"
             @add-bill="newInvoice"
             @archive="archive"
+            @edit="editService"
         />
 
         <ManualInvoiceForm
@@ -32,6 +33,12 @@
             @updated="fetchServices"
             @close="closeQuick"
         />
+        <EditServiceForm
+            v-if="selectedService"
+            :service="selectedService"
+            @updated="fetchServices"
+            @close="closeEdit"
+        />
     </div>
 </template>
 
@@ -44,6 +51,7 @@ import ServiceHeader from './ServiceHeader.vue';
 import ServiceFilters from './ServiceFilters.vue';
 import ServiceDueSoonSwitch from './ServiceDueSoonSwitch.vue';
 import ServiceTable from './ServiceTable.vue';
+import EditServiceForm from './EditServiceForm.vue';
 
 const emit = defineEmits(['notify']);
 
@@ -68,6 +76,7 @@ const selectedBill = ref(null);
 const dueSoon = ref(localStorage.getItem('svc_dueSoon') === '1');
 const search = ref('');
 const currency = ref('');
+const selectedService = ref(null);
 
 // Watchers for localStorage
 watch(category, (val) => localStorage.setItem('svc_category', val));
@@ -79,7 +88,7 @@ const fetchServices = async () => {
     loading.value = true;
     error.value = null;
     try {
-        const response = await api.get('/api/services');
+        const response = await api.get('/services');
         services.value = response.data;
     } catch (err) {
         error.value = 'Error al cargar los servicios: ' + err.message;
@@ -155,6 +164,10 @@ const closeQuick = () => {
     selectedBill.value = null;
 };
 
+const closeEdit = () => {
+    selectedService.value = null;
+};
+
 const archive = async (service) => {
     try {
         await api.patch(`/api/services/${service.id}/archive`);
@@ -166,6 +179,10 @@ const archive = async (service) => {
             text: 'Error al archivar el servicio: ' + err.message
         });
     }
+};
+
+const editService = async (service) => {
+    selectedService.value = service;
 };
 
 onMounted(fetchServices);

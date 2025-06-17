@@ -6,7 +6,7 @@
             v-else
             :headers="headers"
             :items="services"
-            class="elevation-2 service-table rounded-lg"
+            class="elevation-1 service-table rounded-lg"
             :hover="true"
             :loading="loading"
             loading-text="Cargando servicios..."
@@ -132,6 +132,22 @@
                         </template>
                     </v-tooltip>
 
+                    <v-tooltip text="Editar servicio">
+                        <template #activator="{ props }">
+                            <v-btn
+                                v-bind="props"
+                                color="warning"
+                                variant="flat"
+                                icon
+                                size="small"
+                                class="mx-1"
+                                @click="$emit('edit', item)"
+                            >
+                                <v-icon>mdi-pencil</v-icon>
+                            </v-btn>
+                        </template>
+                    </v-tooltip>
+
                     <v-tooltip text="Agregar factura">
                         <template #activator="{ props }">
                             <v-btn
@@ -187,7 +203,7 @@ const props = defineProps({
     }
 });
 
-defineEmits(['add-bill', 'archive']);
+defineEmits(['add-bill', 'archive', 'edit']);
 
 const headers = [
     {
