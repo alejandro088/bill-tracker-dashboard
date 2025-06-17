@@ -6,18 +6,65 @@
             </v-card-title>
 
             <v-card-text class="pt-4">
-                <v-form @submit.prevent="save" ref="form">
-                    <v-row>
-                        <v-col cols="12" md="8">
-                            <v-text-field
-                                v-model="formData.name"
-                                label="Nombre del servicio"
-                                :rules="[v => !!v || 'El nombre es requerido']"
-                                required
-                                variant="outlined"
-                                density="comfortable"
-                            />
-                        </v-col>
+                <v-form @submit.prevent="save" ref="form">            <v-row>
+                <v-col cols="12" md="8">
+                    <v-text-field
+                        v-model="formData.name"
+                        label="Nombre del servicio"
+                        :rules="[v => !!v || 'El nombre es requerido']"
+                        required
+                        variant="outlined"
+                        density="comfortable"
+                    />
+                </v-col>
+                <v-col cols="12" md="8">
+                    <v-text-field
+                        v-model="formData.url"
+                        label="URL del servicio"
+                        hint="La URL se usará para obtener el favicon automáticamente"
+                        persistent-hint
+                        variant="outlined"
+                        density="comfortable"
+                    />
+                </v-col>
+                <v-col cols="12" md="4">
+                    <v-select
+                        v-model="formData.iconKey"
+                        :items="[
+                            { title: 'Ninguno', value: '' },
+                            { title: 'Netflix', value: 'netflix' },
+                            { title: 'YouTube', value: 'youtube' },
+                            { title: 'ChatGPT', value: 'chatgpt' },
+                            { title: 'Spotify', value: 'spotify' },
+                            { title: 'Amazon', value: 'amazon' },
+                            { title: 'Disney+', value: 'disney' },
+                            { title: 'GitHub', value: 'github' },
+                            { title: 'Google', value: 'google' },
+                            { title: 'Microsoft', value: 'microsoft' },
+                            { title: 'Apple', value: 'apple' },
+                            { title: 'Dropbox', value: 'dropbox' },
+                            { title: 'Slack', value: 'slack' }
+                        ]"
+                        label="Servicio popular"
+                        hint="Seleccione si es un servicio conocido"
+                        persistent-hint
+                        variant="outlined"
+                        density="comfortable"
+                    >
+                        <template #selection="{ item }">
+                            <ServiceIcon :service="{ name: item.title, iconKey: item.value }" class="mr-2" />
+                            {{ item.title }}
+                        </template>
+                        <template #item="{ item, props }">
+                            <v-list-item v-bind="props">
+                                <template #prepend>
+                                    <ServiceIcon :service="{ name: item.title, iconKey: item.value }" />
+                                </template>
+                                <v-list-item-title>{{ item.title }}</v-list-item-title>
+                            </v-list-item>
+                        </template>
+                    </v-select>
+                </v-col>
                         <v-col cols="12" md="4">
                             <v-select
                                 v-model="formData.defaultCurrency"
@@ -122,6 +169,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import api from '../api.js';
+import ServiceIcon from './ServiceIcon.vue';
 
 const props = defineProps({
     service: {

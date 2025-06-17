@@ -16,6 +16,7 @@
             <!-- Template para la columna de nombre -->
             <template #item.name="{ item }">
                 <div class="d-flex align-center">
+                    <ServiceIcon :service="item" class="mr-3" />
                     <span class="font-weight-medium">{{ item.name }}</span>
                     <v-chip
                         size="x-small"
@@ -188,6 +189,7 @@
 
 <script setup>
 import { statusColor, statusIcon, formatAmountWithCurrency } from '../utils/formatters';
+import ServiceIcon from './ServiceIcon.vue';
 
 const props = defineProps({
     services: {

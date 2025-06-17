@@ -60,6 +60,8 @@ model Service {
   id              String   @id @default(uuid())
   name            String
   description     String?
+  url             String?  // URL del servicio para favicons automáticos
+  iconKey         String?  // Clave para servicios populares (ej: "netflix", "youtube", "chatgpt")
   category        String
   paymentProvider String?
   recurrence      String   @default("none")

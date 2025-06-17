@@ -90,6 +90,18 @@
 - Mejor manejo de estados y efectos secundarios
 - Implementación de patrones de diseño más robustos
 
+### [2025-06-16] - Identidad Visual de Servicios
+#### Added
+- Nuevo componente ServiceIcon para mostrar iconos de servicios
+- Soporte para favicons automáticos usando Google Favicon Service
+- Iconos predefinidos para servicios populares (Netflix, YouTube, ChatGPT, etc.)
+- Campos url e iconKey en el modelo Service
+- Selector de servicios populares en el formulario de edición
+
+#### Changed
+- Mejorada la visualización de servicios en la tabla con iconos personalizados
+- Actualizado el formulario de edición para incluir URL y selección de servicio popular
+
 ## [2025-06-13]
 - Removed "Tendencia de Pagos" chart from Payment History view.
 - Corrected the "Due Date" column in the Payment History table to display the `Bill.dueDate` field.
