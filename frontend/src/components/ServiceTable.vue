@@ -141,6 +141,7 @@
                                 icon
                                 size="small"
                                 class="mx-1"
+                                data-test="edit-button"
                                 @click="$emit('edit', item)"
                             >
                                 <v-icon>mdi-pencil</v-icon>

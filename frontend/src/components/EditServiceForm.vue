@@ -101,12 +101,14 @@
                 <v-btn
                     color="grey-darken-1"
                     variant="text"
+                    data-test="cancel-button"
                     @click="closeDialog"
                 >
                     Cancelar
                 </v-btn>
                 <v-btn
                     color="primary"
+                    data-test="save-button"
                     @click="save"
                     :loading="loading"
                 >
