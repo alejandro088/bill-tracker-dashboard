@@ -1,6 +1,76 @@
 # Changelog
 
+## [2025-06-17] - Correcciones y Mejoras en la Vista de Análisis
+
+### Fixed
+- Corregidos tipos inválidos en componentes BaseCard
+- Eliminada definición CSS duplicada de header-card
+- Mejorada la indentación y espaciado del código
+- Completadas secciones faltantes en los templates
+
+### Changed
+- Actualizada la validación de tipos en componentes BaseCard
+- Mejorada la estructura del código siguiendo estándares
+- Optimizada la organización del CSS
+
+## [2025-06-17] - Mejoras en la Vista de Análisis
+
+### Added
+- Nuevos filtros interactivos para año, moneda y categoría
+- Tarjetas de resumen con métricas clave:
+  - Total pagado con tendencia
+  - Promedio mensual de gastos
+  - Mayor gasto individual
+  - Tasa de ahorro
+- Gráficos mejorados:
+  - Gráfico de línea para tendencia mensual
+  - Gráfico de dona para distribución por categoría
+  - Tooltips informativos
+- Nueva tabla de desglose por categoría
+- Mejor formateo de moneda y números
+- Diseño responsivo mejorado
+- Paleta de colores consistente por categoría
+
+### Changed
+- Rediseño completo de la vista de análisis
+- Mejorada la visualización de datos
+- Optimizado el rendimiento de los gráficos
+- Actualización en tiempo real al cambiar filtros
+
+
 ## [Unreleased]
+
+### [2025-06-17] - Mejoras en la Vista de Resumen Mensual
+#### Added
+- Nuevo componente MonthlySummaryTable para mejor visualización y reutilización
+  - Íconos intuitivos para cada estado
+  - Efectos hover para mejor interactividad
+  - Header de mes expandible con totales por moneda
+  - Botón para ver detalles del mes
+- Modal de detalles de mes con gráfico de distribución
+- Vista de resumen anual con modos tarjeta y lista
+- Barra de progreso para visualización de estados
+- Botón de actualización manual de datos
+
+#### Changed
+- Rediseño completo del layout de la vista Summary
+  - Separación en paneles para mejor organización
+  - División clara entre tabla mensual y estadísticas
+  - Mejoras visuales en la presentación de datos
+- Optimización de gráficos y visualizaciones
+  - Colores consistentes para monedas (USD/ARS)
+  - Mejor legibilidad de datos y etiquetas
+  - Gráficos interactivos y responsivos
+
+#### Enhanced
+- Mejor experiencia de usuario
+  - Feedback visual en interacciones
+  - Carga y actualización de datos más clara
+  - Consistencia en estilos y animaciones
+- Visualización de datos financieros
+  - Formato mejorado para cantidades
+  - Chips distintivos para monedas
+  - Indicadores visuales de estado
 
 ### [2025-06-16] - Mejoras en la Modularización y Edición de Servicios
 #### Added
