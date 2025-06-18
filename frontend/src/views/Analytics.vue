@@ -216,6 +216,7 @@ import api from '../api.js';
 // Estado
 const loading = ref(false);
 const bills = ref([]);
+const payments = ref([]);  // Agregamos el estado de payments
 const year = ref(new Date().getFullYear());
 const currency = ref('Todas');
 const category = ref('Todas');
@@ -245,6 +246,26 @@ const filteredBills = computed(() => {
     return matchesYear && matchesCurrency && matchesCategory;
   });
 });
+
+const filteredPayments = computed(() => {
+  if (!payments.value) return []
+  
+  return payments.value.filter(payment => {
+    // Filtrar por año
+    if (year.value && new Date(payment.date).getFullYear() !== year.value) {
+      return false
+    }
+    // Filtrar por moneda
+    if (currency.value !== 'Todas' && payment.currency !== currency.value) {
+      return false
+    }
+    // Filtrar por categoría
+    if (category.value !== 'Todas' && payment.category !== category.value) {
+      return false
+    }
+    return true
+  })
+})
 
 const totalPaid = computed(() => {
   return filteredBills.value.reduce((sum, bill) => sum + bill.amount, 0);
@@ -325,14 +346,23 @@ const getCategoryColor = (category) => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const { data } = await api.get('/bills', { 
-      params: { 
-        status: 'paid',
-        limit: 1000,
-        year: year.value
-      }
-    });
-    bills.value = data.data;
+    const [billsResponse, paymentsResponse] = await Promise.all([
+      api.get('/bills', { 
+        params: { 
+          status: 'paid',
+          limit: 1000,
+          year: year.value
+        }
+      }),
+      api.get('/payments', {
+        params: {
+          year: year.value
+        }
+      })
+    ]);
+    
+    bills.value = billsResponse.data.data;
+    payments.value = paymentsResponse.data.data;
     updateCharts();
   } catch (error) {
     console.error('Error fetching data:', error);
