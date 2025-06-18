@@ -1,11 +1,49 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import api from '../api'
+
+// Funciones de validación
+const isValidPayment = (payment) => {
+  return (
+    payment &&
+    typeof payment === 'object' &&
+    payment.date instanceof Date &&
+    !isNaN(payment.date) &&
+    typeof payment.amount === 'number' &&
+    !isNaN(payment.amount) &&
+    typeof payment.currency === 'string' &&
+    ['ARS', 'USD'].includes(payment.currency) &&
+    typeof payment.category === 'string'
+  )
+}
+
+const parsePayment = (payment) => {
+  try {
+    if (!payment || typeof payment !== 'object') {
+      console.warn('Invalid payment object:', payment)
+      return null
+    }
+
+    // Asegurarse de usar paidAt o date, y obtener la categoría del servicio
+    const date = payment.paidAt || payment.date
+    const category = payment.Bill?.Service?.category || 'others'
+
+    return {
+      ...payment,
+      date: date ? new Date(date) : null,
+      category
+    }
+  } catch (error) {
+    console.error('Error parsing payment:', error)
+    return null
+  }
+}
 
 export function useAnalytics() {
   // Estado
   const loading = ref(false)
   const bills = ref([])
   const payments = ref([])
+  const error = ref(null)
   const year = ref(new Date().getFullYear())
   const currency = ref('Todas')
   const category = ref('Todas')
@@ -29,21 +67,24 @@ export function useAnalytics() {
   })
 
   const filteredPayments = computed(() => {
-    if (!payments.value) return []
-    
-    return payments.value.filter(payment => {
-      if (year.value && new Date(payment.date).getFullYear() !== year.value) {
-        return false
-      }
-      if (currency.value !== 'Todas' && payment.currency !== currency.value) {
-        return false
-      }
-      if (category.value !== 'Todas' && payment.category !== category.value) {
-        return false
-      }
-      return true
-    })
+    if (!payments.value || !Array.isArray(payments.value)) {
+      console.warn('Invalid payments value:', payments.value)
+      return []
+    }
+
+    // Como los filtros ya se aplican en el backend, solo necesitamos validar y parsear
+    return payments.value
+      .map(payment => {
+        const parsed = parsePayment(payment)
+        return parsed && isValidPayment(parsed) ? parsed : null
+      })
+      .filter(Boolean)
   })
+
+  // Debug info
+  console.log('Total payments:', payments.value?.length)
+  console.log('Filtered payments:', filteredPayments.value?.length)
+  console.log('Current filters:', { year: year.value, currency: currency.value, category: category.value })
 
   const totalPaid = computed(() => {
     const totals = { ARS: 0, USD: 0 }
@@ -89,6 +130,8 @@ export function useAnalytics() {
   // Métodos
   const fetchData = async () => {
     loading.value = true
+    error.value = null
+    
     try {
       const [billsResponse, paymentsResponse] = await Promise.all([
         api.get('/bills', { 
@@ -100,20 +143,43 @@ export function useAnalytics() {
         }),
         api.get('/payments', {
           params: {
-            year: year.value
+            year: year.value,
+            currency: currency.value !== 'Todas' ? currency.value : undefined,
+            category: category.value !== 'Todas' ? category.value : undefined
           }
         })
       ])
       
-      bills.value = billsResponse.data.data
-      payments.value = paymentsResponse.data.data
+      // Validar que la respuesta contenga los datos esperados
+      if (!billsResponse?.data?.data || !Array.isArray(billsResponse.data.data)) {
+        throw new Error('Invalid bills data received from server')
+      }
+      
+      if (!paymentsResponse?.data || !Array.isArray(paymentsResponse.data)) {
+        throw new Error('Invalid payments data received from server')
+      }
 
-      // Implementar caché
-      sessionStorage.setItem('analytics_bills', JSON.stringify(bills.value))
-      sessionStorage.setItem('analytics_payments', JSON.stringify(payments.value))
-      sessionStorage.setItem('analytics_last_fetch', Date.now().toString())
+      // Log para debug
+      console.log('Raw payments from server:', paymentsResponse.data)
+
+      // Procesar y validar los pagos
+      const validPayments = paymentsResponse.data
+        .map(parsePayment)
+        .filter(payment => payment !== null && isValidPayment(payment))
+
+      console.log('Valid payments after processing:', validPayments)
+
+      if (validPayments.length === 0 && paymentsResponse.data.length > 0) {
+        throw new Error('No se encontraron pagos válidos en la respuesta del servidor')
+      }
+
+      bills.value = billsResponse.data.data
+      payments.value = validPayments
     } catch (error) {
       console.error('Error fetching data:', error)
+      error.value = error.message
+      bills.value = []
+      payments.value = []
     } finally {
       loading.value = false
     }
@@ -131,23 +197,10 @@ export function useAnalytics() {
     return categoryColors[category] || '#9e9e9e'
   }
 
-  // Cargar datos en caché al iniciar
-  const initFromCache = () => {
-    const cachedBills = sessionStorage.getItem('analytics_bills')
-    const cachedPayments = sessionStorage.getItem('analytics_payments')
-    const lastFetch = sessionStorage.getItem('analytics_last_fetch')
-
-    if (cachedBills && cachedPayments && lastFetch) {
-      const cacheAge = Date.now() - Number(lastFetch)
-      // Usar caché si tiene menos de 5 minutos
-      if (cacheAge < 5 * 60 * 1000) {
-        bills.value = JSON.parse(cachedBills)
-        payments.value = JSON.parse(cachedPayments)
-        return true
-      }
-    }
-    return false
-  }
+  // Recargar datos cuando cambien los filtros
+  watch([year, currency, category], () => {
+    fetchData()
+  })
 
   return {
     // Estado
@@ -155,6 +208,7 @@ export function useAnalytics() {
     year,
     currency,
     category,
+    error,
     // Computed
     filteredBills,
     filteredPayments,
@@ -166,7 +220,6 @@ export function useAnalytics() {
     fetchData,
     formatAmount,
     getCategoryColor,
-    initFromCache,
     // Constantes
     categoryColors
   }

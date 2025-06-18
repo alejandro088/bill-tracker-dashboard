@@ -1,5 +1,16 @@
 <template>
   <v-container>
+    <!-- Error Alert -->
+    <v-alert
+      v-if="error"
+      type="error"
+      title="Error"
+      :text="error"
+      class="mb-4"
+      closable
+      @click:close="error = null"
+    />
+
     <v-card class="mb-4">
       <v-card-title class="header-card pa-4">
         <div class="d-flex justify-space-between align-center w-100">
@@ -64,17 +75,21 @@
           </template>
           <template #title>Total Pagado</template>
           <template #value>
-            <div class="d-flex align-center">
-              <span class="currency">$</span>
-              <span class="amount">{{ formatAmount(totalPaid) }}</span>
+            <div class="d-flex flex-column gap-1">
+              <div class="d-flex align-center">
+                <span class="amount">{{ formatAmount(totalPaid.ARS, 'ARS') }}</span>
+              </div>
+              <div class="d-flex align-center">
+                <span class="amount">{{ formatAmount(totalPaid.USD, 'USD') }}</span>
+              </div>
             </div>
           </template>
           <template #footer>
             <div class="d-flex align-center">
-              <v-icon size="small" :color="totalTrend > 0 ? 'success' : 'error'" class="me-1">
+              <v-icon size="small" :color="totalTrend > 0 ? 'error' : 'success'" class="me-1">
                 {{ totalTrend > 0 ? 'mdi-arrow-up' : 'mdi-arrow-down' }}
               </v-icon>
-              {{ Math.abs(totalTrend) }}% vs período anterior
+              {{ Math.abs(totalTrend) }}% vs mes anterior
             </div>
           </template>
         </base-card>
@@ -87,9 +102,13 @@
           </template>
           <template #title>Promedio Mensual</template>
           <template #value>
-            <div class="d-flex align-center">
-              <span class="currency">$</span>
-              <span class="amount">{{ formatAmount(monthlyAverage) }}</span>
+            <div class="d-flex flex-column gap-1">
+              <div class="d-flex align-center">
+                {{ formatAmount(monthlyAverage.ARS, 'ARS') }}
+              </div>
+              <div class="d-flex align-center">
+                {{ formatAmount(monthlyAverage.USD, 'USD') }}
+              </div>
             </div>
           </template>
           <template #footer>
@@ -109,14 +128,13 @@
           <template #title>Mayor Gasto</template>
           <template #value>
             <div class="d-flex align-center">
-              <span class="currency">$</span>
-              <span class="amount">{{ formatAmount(highestExpense) }}</span>
+              {{ formatAmount(highestExpense.amount, highestExpense.currency) }}
             </div>
           </template>
           <template #footer>
             <div class="d-flex align-center text-caption">
               <v-icon size="small" class="me-1">mdi-tag</v-icon>
-              {{ highestExpenseCategory }}
+              {{ highestExpense.category }}
             </div>
           </template>
         </base-card>
@@ -207,210 +225,165 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
-import Chart from 'chart.js/auto';
-import BaseCard from '../components/BaseCard.vue';
-import ExportButton from '../components/ExportButton.vue';
-import api from '../api.js';
+import { ref, onMounted, watch, computed } from 'vue'
+import Chart from 'chart.js/auto'
+import BaseCard from '../components/BaseCard.vue'
+import ExportButton from '../components/ExportButton.vue'
+import { useAnalytics } from '../composables/useAnalytics'
 
-// Estado
-const loading = ref(false);
-const bills = ref([]);
-const payments = ref([]);  // Agregamos el estado de payments
-const year = ref(new Date().getFullYear());
-const currency = ref('Todas');
-const category = ref('Todas');
-const monthChart = ref(null);
-const categoryChart = ref(null);
+const {
+  loading,
+  error,
+  year,
+  currency,
+  category,
+  filteredBills,
+  filteredPayments,
+  totalPaid,
+  monthlyAverage,
+  highestExpense,
+  expensesByCategory,
+  fetchData,
+  formatAmount,
+  getCategoryColor,
+  initFromCache
+} = useAnalytics()
 
-let monthChartInstance = null;
-let categoryChartInstance = null;
+console.log('filteredPayments', filteredPayments.value)
 
-const categoryOptions = ['utilities', 'subscriptions', 'taxes', 'others'];
-const availableYears = Array.from({ length: 5 }, (_, i) => year.value - i);
+const monthChart = ref(null)
+const categoryChart = ref(null)
+let monthChartInstance = null
+let categoryChartInstance = null
 
-const categoryColors = {
-  utilities: '#1976d2',
-  subscriptions: '#9c27b0',
-  taxes: '#e53935',
-  others: '#fb8c00'
-};
+const categoryOptions = ['utilities', 'subscriptions', 'taxes', 'others']
+const availableYears = Array.from({ length: 5 }, (_, i) => year.value - i)
 
-// Computed Properties
-const filteredBills = computed(() => {
-  return bills.value.filter(bill => {
-    const billYear = new Date(bill.dueDate).getFullYear();
-    const matchesYear = billYear === year.value;
-    const matchesCurrency = currency.value === 'Todas' || bill.currency === currency.value;
-    const matchesCategory = category.value === 'Todas' || bill.category === category.value;
-    return matchesYear && matchesCurrency && matchesCategory;
-  });
-});
-
-const filteredPayments = computed(() => {
-  if (!payments.value) return []
-  
-  return payments.value.filter(payment => {
-    // Filtrar por año
-    if (year.value && new Date(payment.date).getFullYear() !== year.value) {
-      return false
-    }
-    // Filtrar por moneda
-    if (currency.value !== 'Todas' && payment.currency !== currency.value) {
-      return false
-    }
-    // Filtrar por categoría
-    if (category.value !== 'Todas' && payment.category !== category.value) {
-      return false
-    }
-    return true
-  })
+// Computed para la interfaz
+const savingsRate = computed(() => {
+  const totalInARS = totalPaid.value.ARS + (totalPaid.value.USD * 850) // TODO: Obtener tasa de conversión real
+  const totalIncome = 100000 // TODO: Obtener de la configuración
+  return Math.round((1 - (totalInARS / totalIncome)) * 100)
 })
 
-const totalPaid = computed(() => {
-  return filteredBills.value.reduce((sum, bill) => sum + bill.amount, 0);
-});
-
-const monthlyAverage = computed(() => {
-  return totalPaid.value / 12;
-});
-
-const highestExpense = computed(() => {
-  return Math.max(...filteredBills.value.map(bill => bill.amount));
-});
-
-const highestExpenseCategory = computed(() => {
-  const bill = filteredBills.value.find(b => b.amount === highestExpense.value);
-  return bill?.category || 'N/A';
-});
-
-const savingsRate = computed(() => {
-  const totalIncome = 100000; // TODO: Obtener de la configuración
-  return Math.round((1 - (totalPaid.value / totalIncome)) * 100);
-});
-
 const savingsRateType = computed(() => {
-  if (savingsRate.value >= 30) return 'success';
-  if (savingsRate.value >= 20) return 'warning';
-  return 'error';
-});
+  if (savingsRate.value >= 30) return 'success'
+  if (savingsRate.value >= 20) return 'warning'
+  return 'error'
+})
 
 const savingsRateLabel = computed(() => {
-  if (savingsRate.value >= 30) return 'Excelente';
-  if (savingsRate.value >= 20) return 'Bueno';
-  return 'Necesita mejorar';
-});
+  if (savingsRate.value >= 30) return 'Excelente'
+  if (savingsRate.value >= 20) return 'Bueno'
+  return 'Necesita mejorar'
+})
 
 const totalTrend = computed(() => {
-  // Calcular tendencia vs mes anterior
-  return 5; // TODO: Implementar cálculo real
-});
+  // Calcular la tendencia como el cambio porcentual en el total de gastos
+  // entre el mes actual y el mes anterior
+  const currentMonth = new Date().getMonth()
+  const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
 
-const expenseItems = computed(() => {
-  const grouped = {};
+  let currentMonthTotal = { ARS: 0, USD: 0 }
+  let previousMonthTotal = { ARS: 0, USD: 0 }
+
   filteredBills.value.forEach(bill => {
-    if (!grouped[bill.category]) {
-      grouped[bill.category] = { amount: 0, count: 0 };
+    const billMonth = new Date(bill.dueDate).getMonth()
+    if (billMonth === currentMonth) {
+      currentMonthTotal[bill.currency] += bill.amount
+    } else if (billMonth === previousMonth) {
+      previousMonthTotal[bill.currency] += bill.amount
     }
-    grouped[bill.category].amount += bill.amount;
-    grouped[bill.category].count++;
-  });
+  })
 
-  return Object.entries(grouped).map(([category, data]) => ({
-    category,
-    amount: data.amount,
-    count: data.count,
-    percentage: Math.round((data.amount / totalPaid.value) * 100)
-  }));
-});
+  // Convertir todo a ARS para el cálculo (usando una tasa fija por ahora)
+  const currentTotalARS = currentMonthTotal.ARS + (currentMonthTotal.USD * 850)
+  const previousTotalARS = previousMonthTotal.ARS + (previousMonthTotal.USD * 850)
+
+  if (previousTotalARS === 0) return 0
+
+  return Math.round(((currentTotalARS - previousTotalARS) / previousTotalARS) * 100)
+})
 
 const tableHeaders = [
   { title: 'Categoría', key: 'category', width: '200px' },
   { title: 'Cantidad', key: 'count', width: '100px' },
-  { title: 'Monto Total', key: 'amount', width: '150px' },
+  { title: 'ARS', key: 'amountARS', width: '150px' },
+  { title: 'USD', key: 'amountUSD', width: '150px' },
   { title: '% del Total', key: 'percentage' }
-];
+]
 
-// Methods
-const formatAmount = (amount) => {
-  return amount.toLocaleString('es-AR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-};
+const expenseItems = computed(() => {
+  const items = []
+  const totalARS = totalPaid.value.ARS
+  const totalUSD = totalPaid.value.USD
 
-const getCategoryColor = (category) => {
-  return categoryColors[category] || '#9e9e9e';
-};
+  Object.entries(expensesByCategory.value).forEach(([category, data]) => {
+    items.push({
+      category,
+      count: data.count,
+      amountARS: formatAmount(data.ARS, 'ARS'),
+      amountUSD: formatAmount(data.USD, 'USD'),
+      percentage: Math.round(((data.ARS / totalARS) + (data.USD / totalUSD)) * 50) // Promedio de porcentajes
+    })
+  })
 
-const fetchData = async () => {
-  loading.value = true;
-  try {
-    const [billsResponse, paymentsResponse] = await Promise.all([
-      api.get('/bills', { 
-        params: { 
-          status: 'paid',
-          limit: 1000,
-          year: year.value
-        }
-      }),
-      api.get('/payments', {
-        params: {
-          year: year.value
-        }
-      })
-    ]);
-    
-    bills.value = billsResponse.data.data;
-    payments.value = paymentsResponse.data.data;
-    updateCharts();
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  } finally {
-    loading.value = false;
-  }
-};
+  return items
+})
 
 const updateCharts = () => {
-  if (monthChartInstance) monthChartInstance.destroy();
-  if (categoryChartInstance) categoryChartInstance.destroy();
+  if (monthChartInstance) monthChartInstance.destroy()
+  if (categoryChartInstance) categoryChartInstance.destroy()
 
-  const monthlyData = Array(12).fill(0);
-  const categoryData = {};
+  const monthlyDataARS = Array(12).fill(0)
+  const monthlyDataUSD = Array(12).fill(0)
 
   filteredBills.value.forEach(bill => {
-    // Datos mensuales
-    const month = new Date(bill.dueDate).getMonth();
-    monthlyData[month] += bill.amount;
-
-    // Datos por categoría
-    if (!categoryData[bill.category]) categoryData[bill.category] = 0;
-    categoryData[bill.category] += bill.amount;
-  });
+    const month = new Date(bill.dueDate).getMonth()
+    if (bill.currency === 'ARS') {
+      monthlyDataARS[month] += bill.amount
+    } else {
+      monthlyDataUSD[month] += bill.amount
+    }
+  })
 
   // Gráfico de línea mensual
   monthChartInstance = new Chart(monthChart.value, {
     type: 'line',
     data: {
       labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-      datasets: [{
-        label: 'Gastos Mensuales',
-        data: monthlyData,
-        borderColor: '#1976d2',
-        backgroundColor: 'rgba(25, 118, 210, 0.1)',
-        tension: 0.4,
-        fill: true
-      }]
+      datasets: [
+        {
+          label: 'ARS',
+          data: monthlyDataARS,
+          borderColor: '#1976d2',
+          backgroundColor: 'rgba(25, 118, 210, 0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'USD',
+          data: monthlyDataUSD,
+          borderColor: '#2196f3',
+          backgroundColor: 'rgba(33, 150, 243, 0.1)',
+          tension: 0.4,
+          fill: true
+        }
+      ]
     },
     options: {
       responsive: true,
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
       plugins: {
-        legend: {
-          display: false
-        },
         tooltip: {
           callbacks: {
-            label: (context) => `$${formatAmount(context.raw)}`
+            label: (context) => {
+              const currency = context.dataset.label
+              return `${currency} ${formatAmount(context.raw, currency)}`
+            }
           }
         }
       },
@@ -418,22 +391,38 @@ const updateCharts = () => {
         y: {
           beginAtZero: true,
           ticks: {
-            callback: value => `$${formatAmount(value)}`
+            callback: value => formatAmount(value, 'ARS')
           }
         }
       }
     }
-  });
+  })
 
   // Gráfico de torta por categoría
+  const categoryDataARS = {}
+  const categoryDataUSD = {}
+
+  Object.entries(expensesByCategory.value).forEach(([category, data]) => {
+    categoryDataARS[category] = data.ARS
+    categoryDataUSD[category] = data.USD
+  })
+
   categoryChartInstance = new Chart(categoryChart.value, {
     type: 'doughnut',
     data: {
-      labels: Object.keys(categoryData),
-      datasets: [{
-        data: Object.values(categoryData),
-        backgroundColor: Object.keys(categoryData).map(cat => getCategoryColor(cat))
-      }]
+      labels: Object.keys(categoryDataARS),
+      datasets: [
+        {
+          label: 'ARS',
+          data: Object.values(categoryDataARS),
+          backgroundColor: Object.keys(categoryDataARS).map(cat => getCategoryColor(cat))
+        },
+        {
+          label: 'USD',
+          data: Object.values(categoryDataUSD),
+          backgroundColor: Object.keys(categoryDataUSD).map(cat => getCategoryColor(cat))
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -444,21 +433,28 @@ const updateCharts = () => {
         tooltip: {
           callbacks: {
             label: (context) => {
-              const percentage = Math.round((context.raw / totalPaid.value) * 100);
-              return `${context.label}: $${formatAmount(context.raw)} (${percentage}%)`;
+              const currency = context.dataset.label
+              const total = currency === 'ARS' ? totalPaid.value.ARS : totalPaid.value.USD
+              const percentage = Math.round((context.raw / total) * 100)
+              return `${context.label}: ${formatAmount(context.raw, currency)} (${percentage}%)`
             }
           }
         }
       }
     }
-  });
-};
+  })
+}
 
 // Watchers
-watch([year, currency, category], fetchData);
+watch([year, currency, category], () => {
+  fetchData().then(updateCharts)
+})
 
 // Lifecycle
-onMounted(fetchData);
+onMounted(async () => {
+  await fetchData()
+  updateCharts()
+})
 </script>
 
 <style scoped>

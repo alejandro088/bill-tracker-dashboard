@@ -8,8 +8,34 @@ import {
 
 export const addPayment = async (payment) => addPaymentToDb(payment);
 
-export const listPayments = async (name) =>
-  name ? getPaymentsByName(name) : getAllPayments();
+export const listPayments = async (filters = {}) => {
+  const { name, year, currency, category } = filters;
+  
+  // Obtener pagos base (por nombre o todos)
+  const payments = name ? await getPaymentsByName(name) : await getAllPayments();
+  
+  // Aplicar filtros
+  return payments.filter(payment => {
+    // Filtro por año
+    if (year) {
+      const paymentYear = new Date(payment.paidAt).getFullYear();
+      if (paymentYear !== parseInt(year)) return false;
+    }
+    
+    // Filtro por moneda
+    if (currency && currency !== 'Todas') {
+      if (payment.currency !== currency) return false;
+    }
+    
+    // Filtro por categoría
+    if (category && category !== 'Todas') {
+      const paymentCategory = payment.Bill?.Service?.category;
+      if (paymentCategory !== category) return false;
+    }
+    
+    return true;
+  });
+};
 
 export const getPaymentSummary = async (startDate, endDate) => {
   const payments = await getAllPayments();

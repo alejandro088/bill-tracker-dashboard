@@ -1,15 +1,16 @@
-&lt;template&gt;
-  &lt;v-btn
+<template>
+  <v-btn
     color="primary"
+    variant="elevated"
     prepend-icon="mdi-download"
     :loading="loading"
     @click="exportData"
-  &gt;
+  >
     {{ label }}
-  &lt;/v-btn&gt;
-&lt;/template&gt;
+  </v-btn>
+</template>
 
-&lt;script setup&gt;
+<script setup>
 import { ref } from 'vue'
 import exportFromJSON from 'export-from-json'
 
@@ -32,6 +33,7 @@ const loading = ref(false)
 
 const exportData = async () => {
   try {
+    console.log(props.data)
     loading.value = true
     const fileName = `${props.filename}_${new Date().toISOString().split('T')[0]}`
     exportFromJSON({
@@ -45,4 +47,4 @@ const exportData = async () => {
     loading.value = false
   }
 }
-&lt;/script&gt;
+</script>

@@ -2,7 +2,14 @@ import { listPayments, getPaymentSummary, getPaymentTrends, deletePayment as del
 
 export const history = async (req, res, next) => {
   try {
-    res.json(await listPayments(req.params.name));
+    const filters = {
+      name: req.params.name,
+      year: req.query.year,
+      currency: req.query.currency,
+      category: req.query.category
+    };
+    const payments = await listPayments(filters);
+    res.json(payments);
   } catch (err) {
     next(err);
   }

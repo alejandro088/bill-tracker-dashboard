@@ -1,5 +1,60 @@
 # Changelog
 
+## [2025-06-18] - Optimización de Filtrado de Pagos
+
+### Changed
+- Movida la lógica de filtrado de pagos al backend para mejor rendimiento
+- Refactorizado el servicio paymentService.js para soportar múltiples filtros
+- Optimizado useAnalytics.js para usar filtrado del servidor
+- Mejorado el rendimiento al reducir la cantidad de datos transferidos
+
+### Added
+- Agregado soporte para filtros de año, moneda y categoría en el backend
+- Añadido efecto para recargar datos cuando cambian los filtros
+
+### Fixed
+- Eliminada la duplicación de lógica de filtrado entre frontend y backend
+- Mejorado el rendimiento al evitar procesar todos los pagos en el cliente
+
+## [2025-06-18] - Corrección en el Filtrado de Pagos
+
+### Fixed
+- Corregido el filtrado de pagos en la vista Analytics que retornaba un array vacío
+- Mejorada la validación y parseo de pagos del servidor
+- Agregado soporte para obtener la categoría desde el servicio asociado
+- Corregido el manejo de fechas usando paidAt como fecha principal
+
+### Added
+- Agregados logs de depuración para facilitar la detección de problemas
+- Mejorada la validación de datos para mostrar errores más descriptivos
+
+## [2025-06-18] - Corrección de Errores en Vista Analytics
+
+### Fixed
+- Corregido error de propiedad "error" no definida en Analytics.vue
+- Mejorado el manejo y visualización de errores en la vista de Analytics
+- Agregada destructuración correcta de la variable error desde useAnalytics
+
+### Changed
+- Actualizado el composable useAnalytics para exponer el estado de error
+- Mejorada la UX mostrando alertas de error en la interfaz
+
+## [2025-06-18] - Mejora en la Validación de Datos de Pagos
+
+### Added
+- Nueva validación robusta para datos de pagos en useAnalytics.js
+- Manejo de errores mejorado en la vista Analytics
+- Alertas visuales para errores de validación de datos
+
+### Changed
+- Refactorizado useAnalytics.js para validar cada pago individualmente
+- Mejorado el manejo de fechas inválidas en los datos de pagos
+- Actualizada la vista Analytics para mostrar errores de manera amigable
+
+### Fixed
+- Corregido el error "Invalid payments data received from server"
+- Mejorado el manejo de casos donde los pagos tienen datos faltantes o inválidos
+
 ## [2025-06-17] - Mejora en el Formulario de Pago
 
 ### Added
@@ -233,6 +288,10 @@
   - Visualización mejorada de íconos en la tabla de servicios
 
 ## [Unreleased]
+### Fixed
+- Corregida la visualización del mayor gasto en Analytics usando la categoría correcta
+- Mejorada la visualización de montos en ARS y USD en las tarjetas de resumen
+
 ### Added
 - Nuevo composable useAnalytics para manejar la lógica de análisis de gastos
 - Caché de datos de análisis para mejorar el rendimiento
@@ -242,3 +301,9 @@
 ### Changed
 - Refactorizado componente Analytics.vue para usar el nuevo composable
 - Mejorada la visualización de gráficos con soporte para múltiples monedas
+- Eliminado el sistema de caché en Analytics para simplificar la lógica y evitar problemas de datos inconsistentes
+
+### Fixed
+- Mejorado el manejo de errores al cargar datos del caché en Analytics
+- Añadida validación de datos recibidos del servidor
+- Implementada limpieza automática de caché corrupto o expirado

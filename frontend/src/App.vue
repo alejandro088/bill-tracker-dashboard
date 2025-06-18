@@ -78,7 +78,6 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useDisplay } from 'vuetify'
 import ChatbotWidget from './components/ChatbotWidget.vue'
 import NotificationMenu from './components/NotificationMenu.vue'
 import api from './api.js'
