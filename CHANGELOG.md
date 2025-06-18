@@ -1,5 +1,32 @@
 # Changelog
 
+## [2025-06-17] - Mejora en el Formulario de Pago
+
+### Added
+- Agregado selector de fecha al formulario de pago
+- Nueva funcionalidad para registrar la fecha exacta del pago realizado
+
+### Changed
+- Mejorado el proceso de registro de pagos para incluir la fecha seleccionada
+- Actualizada la interfaz del formulario de pago con un campo de fecha intuitivo
+
+## [2025-06-17] - Corrección en el Registro de Pagos
+
+### Fixed
+- Corregido problema con la actualización de la fecha de pago (paidAt) en facturas
+- Mejorado el manejo de fechas en el registro de pagos
+- Agregada validación para asegurar la correcta actualización de la fecha
+
+### Added
+- Nueva validación que arroja error si la fecha de pago no se actualiza correctamente
+- Inclusión de datos de pago en la respuesta para mejor seguimiento
+
+## [2025-06-17] - Mejora en el Registro de Pagos
+
+### Changed
+- Modificada función addPayment para actualizar automáticamente el estado de la factura al registrar un pago
+- Agregada transacción para asegurar la integridad de los datos al registrar pagos
+
 ## [2025-06-17] - Correcciones y Mejoras en la Vista de Análisis
 
 ### Fixed
