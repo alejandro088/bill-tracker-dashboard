@@ -2,14 +2,21 @@
   <v-container>
     <v-card class="mb-4">
       <v-card-title class="header-card pa-4">
-        <div>
-          <h2 class="text-h5 font-weight-medium mb-1 text-white d-flex align-center">
-            <v-icon icon="mdi-chart-box" class="mr-2" color="white" />
-            Análisis de gastos
-          </h2>
-          <div class="text-subtitle-2 text-white text-opacity-75">
-            Resumen gráfico de gastos por categoría y período
+        <div class="d-flex justify-space-between align-center w-100">
+          <div>
+            <h2 class="text-h5 font-weight-medium mb-1 text-white d-flex align-center">
+              <v-icon icon="mdi-chart-box" class="mr-2" color="white" />
+              Análisis de gastos
+            </h2>
+            <div class="text-subtitle-2 text-white text-opacity-75">
+              Resumen gráfico de gastos por categoría y período
+            </div>
           </div>
+          <ExportButton
+            :data="filteredPayments"
+            filename="analisis-gastos"
+            label="Exportar datos"
+          />
         </div>
       </v-card-title>
     </v-card>
@@ -203,6 +210,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import BaseCard from '../components/BaseCard.vue';
+import ExportButton from '@/components/ExportButton.vue';
 import api from '../api.js';
 
 // Estado
