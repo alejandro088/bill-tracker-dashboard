@@ -210,7 +210,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import Chart from 'chart.js/auto';
 import BaseCard from '../components/BaseCard.vue';
-import ExportButton from '@/components/ExportButton.vue';
+import ExportButton from '../components/ExportButton.vue';
 import api from '../api.js';
 
 // Estado
