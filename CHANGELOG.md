@@ -231,3 +231,14 @@
 - Soporte para íconos personalizados vía URL o selección de ícono
   - Nuevo campo customIconKey en la base de datos
   - Visualización mejorada de íconos en la tabla de servicios
+
+## [Unreleased]
+### Added
+- Nuevo composable useAnalytics para manejar la lógica de análisis de gastos
+- Caché de datos de análisis para mejorar el rendimiento
+- Soporte mejorado para múltiples monedas en gráficos y tablas
+- Visualización separada de gastos en ARS y USD
+
+### Changed
+- Refactorizado componente Analytics.vue para usar el nuevo composable
+- Mejorada la visualización de gráficos con soporte para múltiples monedas
