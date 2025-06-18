@@ -3,6 +3,25 @@
     <v-card>
       <v-card-title>Pagar factura</v-card-title>
       <v-card-text>
+        <!-- Selector de fecha -->
+        <v-menu v-model="showDatePicker" :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-text-field
+              v-model="paymentDate"
+              label="Fecha de pago"
+              prepend-icon="mdi-calendar"
+              readonly
+              v-bind="props"
+              density="compact"
+              class="mb-4"
+            />
+          </template>
+          <v-date-picker
+            v-model="paymentDate"
+            @update:model-value="showDatePicker = false"
+          />
+        </v-menu>
+        
         <div v-for="(p, i) in payments" :key="i" class="d-flex align-center mb-2">
           <v-text-field
             v-model.number="p.amount"
@@ -71,6 +90,8 @@ const providers = ['Visa', 'Mastercard', 'MODO', 'MercadoPago', 'Google Play', '
 const payments = ref([]);
 const exchangeRate = ref(0);
 const lastUpdate = ref(null);
+const paymentDate = ref(new Date().toISOString().split('T')[0]);
+const showDatePicker = ref(false);
 
 // Obtener tasa de cambio actual desde dolarapi.com
 async function fetchExchangeRate() {
@@ -102,6 +123,7 @@ watch(
     dialog.value = !!b;
     if (b) {
       await fetchExchangeRate();
+      paymentDate.value = new Date().toISOString().split('T')[0];
       payments.value = [{ 
         amount: b.amount, 
         currency: b.currency,
@@ -166,10 +188,19 @@ function formatAmount(amount, currency) {
 
 async function confirm() {
   if (!isValidTotal.value) return;
+  
+  // Convertir la fecha seleccionada a ISO string
+  const paidAt = new Date(paymentDate.value + 'T00:00:00').toISOString();
+  
   await api.put(`/bills/${props.bill.id}`, {
     status: 'paid',
-    payments: payments.value
+    paidAt,
+    payments: payments.value.map(p => ({
+      ...p,
+      paidAt
+    }))
   });
+  
   emit('notify', `Factura pagada: ${props.bill?.name || ''} (${formatAmount(props.bill?.amount, props.bill?.currency)})`);
   emit('paid');
   close();
