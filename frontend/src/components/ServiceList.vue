@@ -170,7 +170,7 @@ const closeEdit = () => {
 
 const archive = async (service) => {
     try {
-        await api.patch(`/api/services/${service.id}/archive`);
+        await api.patch(`/services/${service.id}/archive`);
         notify('Servicio archivado exitosamente');
         fetchServices();
     } catch (err) {

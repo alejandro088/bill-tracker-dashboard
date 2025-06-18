@@ -33,6 +33,16 @@ export const update = async (req, res, next) => {
   }
 };
 
+export const archive = async (req, res, next) => {
+  try {
+    const service = await updateService(req.params.id, { archived: true });
+    if (!service) return res.status(404).json({ message: 'Service not found' });
+    res.json(service);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const create = async (req, res, next) => {
   try {
     const service = await createService(req.body);
