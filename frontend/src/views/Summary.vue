@@ -271,52 +271,6 @@ async function fetchSummary() {
   } finally {
     loading.value = false;
   }
-  buildChart();
-}
-
-function buildChart() {
-  const ctx = document.getElementById('summary-chart');
-  const months = [...new Set(summary.value.map(s => s.month))].map(m => formatMonth(m));
-  const currencies = [...new Set(summary.value.map(s => s.currency || 'ARS'))];
-  
-  const datasets = currencies.map(currency => {
-    const data = months.map(month => {
-      const monthData = summary.value.find(s => formatMonth(s.month) === month && s.currency === currency);
-      return monthData ? monthData.total : 0;
-    });
-
-    return {
-      label: currency,
-      data,
-      backgroundColor: currency === 'USD' ? '#4CAF50' : '#2196F3',
-      borderColor: currency === 'USD' ? '#388E3C' : '#1976D2',
-      borderWidth: 1
-    };
-  });
-
-  if (chart) {
-    chart.destroy();
-  }
-
-  chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: months,
-      datasets
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: {
-          stacked: chartType.value === 'stacked'
-        },
-        y: {
-          stacked: chartType.value === 'stacked',
-          beginAtZero: true
-        }
-      }
-    }
-  });
 }
 
 function buildMonthDetailsChart() {
@@ -363,7 +317,6 @@ function buildMonthDetailsChart() {
 }
 
 // Watchers
-watch(chartType, buildChart);
 watch(year, fetchSummary);
 
 // Lifecycle
