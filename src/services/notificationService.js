@@ -2,10 +2,11 @@ import prisma from '../db/prismaClient.js';
 
 export async function createNotification(message) {
   return await prisma.notification.create({
-    data: {
-      message,
-      read: false
-    }
+      data: {
+          message,
+          read: false,
+          title: 'New Invoice'
+      },
   });
 }
 

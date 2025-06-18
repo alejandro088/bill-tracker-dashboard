@@ -171,7 +171,8 @@ export const addBill = async (data) => {
             await prisma.notification.create({
                 data: {
                     message: `Nuevo servicio registrado: ${service.name}`,
-                    read: false
+                    read: false,
+                    title: 'Nuevo Servicio',
                 }
             });
         }
@@ -204,9 +205,11 @@ export const addBill = async (data) => {
         data: {
             message: `Nueva factura registrada para ${serviceName}: ${new Intl.NumberFormat('es-AR', {
                 style: 'currency',
-                currency: 'ARS'
+                currency: 'ARS',
             }).format(bill.amount)} (vence: ${new Date(bill.dueDate).toLocaleDateString('es-ES')})`,
-            read: false
+            read: false,
+            title: 'Nueva Factura',
+
         }
     });
 
@@ -283,6 +286,7 @@ const createPaymentNotification = async (bill) => {
     await prisma.notification.create({
         data: {
             message: `Factura pagada: ${bill.serviceId} ($${bill.amount})`,
+            title: 'Factura Pagada',
         },
     });
 };
@@ -366,6 +370,7 @@ const getSummaryWithCurrency = async () => {
         { status: BILL_STATUS.OVERDUE }
       ]
     }
+
   });
 
   const summary = {
@@ -387,6 +392,8 @@ const getSummaryWithCurrency = async () => {
       summary[currency].overdue += amount;
     }
   });
+
+  console.log(summary)
 
   return summary;
 };
