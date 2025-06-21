@@ -158,12 +158,7 @@
                             <v-col cols="12" md="4">
                                 <v-select
                                     v-model="formData.category"
-                                    :items="[
-                                        { title: 'Servicios', value: 'utilities' },
-                                        { title: 'Suscripciones', value: 'subscriptions' },
-                                        { title: 'Impuestos', value: 'taxes' },
-                                        { title: 'Otros', value: 'others' }
-                                    ]"
+                                    :items="CATEGORY_OPTIONS"
                                     item-title="title"
                                     item-value="value"
                                     label="Categoría"
@@ -176,7 +171,7 @@
                             <v-col cols="12" md="4">
                                 <v-select
                                     v-model="formData.defaultCurrency"
-                                    :items="['ARS', 'USD']"
+                                    :items="CURRENCY_LIST"
                                     label="Moneda"
                                     required
                                     :rules="[v => !!v || 'La moneda es requerida']"
@@ -187,26 +182,17 @@
                             <v-col cols="12" md="4">
                                 <v-select
                                     v-model="formData.paymentProvider"
-                                    :items="[
-                                        'Visa',
-                                        'Mastercard',
-                                        'American Express',
-                                        'MercadoPago',
-                                        'PayPal',
-                                        'Débito automático',
-                                        'Transferencia bancaria',
-                                        'Efectivo',
-                                        'Google Play',
-                                        'Otro'
-                                    ]"
-                                    label="Proveedor de pago"
+                                    :items="PAYMENT_METHOD_LIST"
+                                    label="Método de pago"
+                                    required
+                                    :rules="[v => !!v || 'El método de pago es requerido']"
                                     variant="outlined"
                                     density="comfortable"
                                 />
                             </v-col>
                         </v-row>
                     </v-col>
-
+                    
                     <!-- Sección de configuración de facturación -->
                     <v-col cols="12">
                         <div class="text-subtitle-2 mb-2">Configuración de facturación</div>
@@ -241,30 +227,28 @@
                 </v-form>
             </v-card-text>
 
-            <v-card-actions class="pa-4">
-                <v-spacer />
-                <v-btn
-                    color="grey"
-                    variant="text"
-                    @click="show = false"
-                >
-                    Cancelar
-                </v-btn>
-                <v-btn
-                    color="primary"
-                    @click="save"
-                >
-                    Guardar
-                </v-btn>
+            <v-card-actions class="pa-4 pt-0">
+                <v-spacer></v-spacer>
+                <v-btn text @click="show = false">Cancelar</v-btn>
+                <v-btn color="primary" :loading="loading" @click="save">Guardar</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import api from '../api.js';
-import ServiceIcon from './ServiceIcon.vue';
+import { ref, watch, computed, toRefs } from 'vue'
+import api from '../api'
+import ServiceIcon from './ServiceIcon.vue'
+import { 
+    CURRENCIES, 
+    CURRENCY_LIST,
+    DEFAULT_CURRENCY,
+    PAYMENT_METHOD_LIST,
+    CATEGORIES,
+    CATEGORY_OPTIONS,
+    DEFAULT_CATEGORY
+} from '../constants'
 
 const props = defineProps({
     service: {

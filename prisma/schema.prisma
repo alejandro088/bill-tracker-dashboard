@@ -34,14 +34,16 @@ model Bill {
 
 model Payment {
   id              String   @id @default(uuid())
-  billId          String
+  billId          String?
   amount          Float
   currency        Currency @default(ARS)
   exchangeRate    Float?   // Tasa de cambio al momento del pago (si aplica)
   paidAt          DateTime
   paymentProvider String
+  category        String   @default("others")
+  description     String?
 
-  Bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  Bill Bill? @relation(fields: [billId], references: [id], onDelete: Cascade)
 
   @@index([billId])
 }

@@ -1,5 +1,38 @@
 # Changelog
 
+## [2025-06-21] - Pagos Únicos
+
+### Added
+- Agregado soporte para crear pagos únicos sin fecha de vencimiento
+- Nuevo componente OneTimePaymentDialog para registrar pagos de supermercado, panadería, etc.
+- Nueva ruta API para pagos únicos (/api/payments/one-time)
+- Actualizada base de datos para soportar pagos sin factura asociada
+
+### Changed
+- Modificado el servicio de pagos para soportar pagos únicos
+- Actualizada la vista de resumen mensual para incluir pagos únicos
+
+## [2025-06-19] - Centralización de Constantes
+
+### Changed
+- Creado archivo central de constantes para monedas, medios de pago y categorías
+- Refactorizados componentes para usar las constantes centralizadas
+- Actualizado BillForm.vue, EditServiceForm.vue y Analytics.vue para usar las constantes
+- Agregadas etiquetas y traducciones para las categorías
+- Agregados colores para las categorías en gráficos y UI
+
+### Fixed
+- Eliminado el hardcodeo de categorías, monedas y medios de pago en los componentes
+- Mejorada la consistencia en la visualización de categorías y monedas
+- Agregado soporte para formateo de monedas usando Intl.NumberFormat
+
+### Added
+- Nuevo archivo constants/index.js con constantes centralizadas
+- Helpers para formateo de monedas y obtención de íconos
+- Helpers para obtención de colores de categorías
+- Valores por defecto para monedas, categorías y medios de pago
+- Soporte para traducciones de categorías
+
 ## [2025-06-18] - Optimización de Filtrado de Pagos
 
 ### Changed

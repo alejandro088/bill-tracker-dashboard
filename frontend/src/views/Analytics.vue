@@ -47,7 +47,7 @@
       <v-col cols="12" sm="4">
         <v-select
           v-model="currency"
-          :items="['Todas', 'ARS', 'USD']"
+          :items="CURRENCY_FILTER_OPTIONS"
           label="Moneda"
           density="compact"
           hide-details
@@ -57,7 +57,7 @@
       <v-col cols="12" sm="4">
         <v-select
           v-model="category"
-          :items="['Todas', ...categoryOptions]"
+          :items="CATEGORY_FILTER_OPTIONS"
           label="Categoría"
           density="compact"
           hide-details
@@ -77,10 +77,10 @@
           <template #value>
             <div class="d-flex flex-column gap-1">
               <div class="d-flex align-center">
-                <span class="amount">{{ formatAmount(totalPaid.ARS, 'ARS') }}</span>
+                <span class="amount">{{ formatAmount(totalPaid[CURRENCIES.ARS], CURRENCIES.ARS) }}</span>
               </div>
               <div class="d-flex align-center">
-                <span class="amount">{{ formatAmount(totalPaid.USD, 'USD') }}</span>
+                <span class="amount">{{ formatAmount(totalPaid[CURRENCIES.USD], CURRENCIES.USD) }}</span>
               </div>
             </div>
           </template>
@@ -104,10 +104,10 @@
           <template #value>
             <div class="d-flex flex-column gap-1">
               <div class="d-flex align-center">
-                {{ formatAmount(monthlyAverage.ARS, 'ARS') }}
+                {{ formatAmount(monthlyAverage[CURRENCIES.ARS], CURRENCIES.ARS) }}
               </div>
               <div class="d-flex align-center">
-                {{ formatAmount(monthlyAverage.USD, 'USD') }}
+                {{ formatAmount(monthlyAverage[CURRENCIES.USD], CURRENCIES.USD) }}
               </div>
             </div>
           </template>
@@ -225,11 +225,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
-import Chart from 'chart.js/auto'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Chart } from 'chart.js/auto'
+import { useAnalytics } from '../composables/useAnalytics'
 import BaseCard from '../components/BaseCard.vue'
 import ExportButton from '../components/ExportButton.vue'
-import { useAnalytics } from '../composables/useAnalytics'
+import { 
+  CURRENCIES, 
+  CURRENCY_FILTER_OPTIONS, 
+  formatAmount,
+  CATEGORY_FILTER_OPTIONS,
+  getCategoryColor as getCategoryColorFromData,
+  CATEGORY_LABELS
+} from '../constants'
 
 const {
   loading,
@@ -243,21 +251,26 @@ const {
   monthlyAverage,
   highestExpense,
   expensesByCategory,
-  fetchData,
-  formatAmount,
   getCategoryColor,
-  initFromCache
+  fetchData
 } = useAnalytics()
 
-console.log('filteredPayments', filteredPayments.value)
-
+// Referencias a los canvas de los gráficos
 const monthChart = ref(null)
 const categoryChart = ref(null)
 let monthChartInstance = null
 let categoryChartInstance = null
 
-const categoryOptions = ['utilities', 'subscriptions', 'taxes', 'others']
-const availableYears = Array.from({ length: 5 }, (_, i) => year.value - i)
+// Años disponibles para filtrar
+const currentYear = new Date().getFullYear()
+const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - i)
+
+// Categorías disponibles con sus etiquetas
+const categoryOptions = Object.entries(CATEGORY_LABELS)
+  .map(([value, label]) => ({
+    title: label,
+    value
+  }))
 
 // Computed para la interfaz
 const savingsRate = computed(() => {
@@ -340,7 +353,7 @@ const updateCharts = () => {
 
   filteredBills.value.forEach(bill => {
     const month = new Date(bill.dueDate).getMonth()
-    if (bill.currency === 'ARS') {
+    if (bill.currency === CURRENCIES.ARS) {
       monthlyDataARS[month] += bill.amount
     } else {
       monthlyDataUSD[month] += bill.amount
@@ -354,7 +367,7 @@ const updateCharts = () => {
       labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
       datasets: [
         {
-          label: 'ARS',
+          label: CURRENCIES.ARS,
           data: monthlyDataARS,
           borderColor: '#1976d2',
           backgroundColor: 'rgba(25, 118, 210, 0.1)',
@@ -362,7 +375,7 @@ const updateCharts = () => {
           fill: true
         },
         {
-          label: 'USD',
+          label: CURRENCIES.USD,
           data: monthlyDataUSD,
           borderColor: '#2196f3',
           backgroundColor: 'rgba(33, 150, 243, 0.1)',
@@ -391,7 +404,7 @@ const updateCharts = () => {
         y: {
           beginAtZero: true,
           ticks: {
-            callback: value => formatAmount(value, 'ARS')
+            callback: value => formatAmount(value, CURRENCIES.ARS)
           }
         }
       }
@@ -403,8 +416,8 @@ const updateCharts = () => {
   const categoryDataUSD = {}
 
   Object.entries(expensesByCategory.value).forEach(([category, data]) => {
-    categoryDataARS[category] = data.ARS
-    categoryDataUSD[category] = data.USD
+    categoryDataARS[category] = data[CURRENCIES.ARS]
+    categoryDataUSD[category] = data[CURRENCIES.USD]
   })
 
   categoryChartInstance = new Chart(categoryChart.value, {
@@ -413,12 +426,12 @@ const updateCharts = () => {
       labels: Object.keys(categoryDataARS),
       datasets: [
         {
-          label: 'ARS',
+          label: CURRENCIES.ARS,
           data: Object.values(categoryDataARS),
           backgroundColor: Object.keys(categoryDataARS).map(cat => getCategoryColor(cat))
         },
         {
-          label: 'USD',
+          label: CURRENCIES.USD,
           data: Object.values(categoryDataUSD),
           backgroundColor: Object.keys(categoryDataUSD).map(cat => getCategoryColor(cat))
         }
@@ -434,7 +447,7 @@ const updateCharts = () => {
           callbacks: {
             label: (context) => {
               const currency = context.dataset.label
-              const total = currency === 'ARS' ? totalPaid.value.ARS : totalPaid.value.USD
+              const total = currency === CURRENCIES.ARS ? totalPaid.value[CURRENCIES.ARS] : totalPaid.value[CURRENCIES.USD]
               const percentage = Math.round((context.raw / total) * 100)
               return `${context.label}: ${formatAmount(context.raw, currency)} (${percentage}%)`
             }

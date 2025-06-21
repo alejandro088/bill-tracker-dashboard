@@ -1,4 +1,4 @@
-import { listPayments, getPaymentSummary, getPaymentTrends, deletePayment as deletePaymentService, editPayment as editPaymentService   } from '../services/paymentService.js';
+import { listPayments, getPaymentSummary, getPaymentTrends, deletePayment as deletePaymentService, editPayment as editPaymentService, addOneTimePayment } from '../services/paymentService.js';
 
 export const history = async (req, res, next) => {
   try {
@@ -49,6 +49,15 @@ export const trends = async (req, res, next) => {
     const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
     const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
     res.json(await getPaymentTrends(startDate, endDate));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createOneTimePayment = async (req, res, next) => {
+  try {
+    const payment = req.body;
+    res.json(await addOneTimePayment(payment));
   } catch (err) {
     next(err);
   }

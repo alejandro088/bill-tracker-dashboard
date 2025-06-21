@@ -8,6 +8,21 @@ import {
 
 export const addPayment = async (payment) => addPaymentToDb(payment);
 
+export const addOneTimePayment = async (paymentData) => {
+  const { amount, currency, paymentProvider, category, description } = paymentData;
+  
+  const payment = {
+    amount,
+    currency,
+    paymentProvider,
+    category,
+    description,
+    paidAt: new Date(),
+  };
+  
+  return await addPaymentToDb(payment);
+};
+
 export const listPayments = async (filters = {}) => {
   const { name, year, currency, category } = filters;
   
@@ -29,7 +44,8 @@ export const listPayments = async (filters = {}) => {
     
     // Filtro por categoría
     if (category && category !== 'Todas') {
-      const paymentCategory = payment.Bill?.Service?.category;
+      // Para pagos únicos, usar la categoría directa del pago
+      const paymentCategory = payment.Bill?.Service?.category || payment.category;
       if (paymentCategory !== category) return false;
     }
     
