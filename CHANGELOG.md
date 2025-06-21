@@ -322,21 +322,6 @@
 
 ## [Unreleased]
 ### Fixed
-- Corregida la visualización del mayor gasto en Analytics usando la categoría correcta
-- Mejorada la visualización de montos en ARS y USD en las tarjetas de resumen
-
-### Added
-- Nuevo composable useAnalytics para manejar la lógica de análisis de gastos
-- Caché de datos de análisis para mejorar el rendimiento
-- Soporte mejorado para múltiples monedas en gráficos y tablas
-- Visualización separada de gastos en ARS y USD
-
-### Changed
-- Refactorizado componente Analytics.vue para usar el nuevo composable
-- Mejorada la visualización de gráficos con soporte para múltiples monedas
-- Eliminado el sistema de caché en Analytics para simplificar la lógica y evitar problemas de datos inconsistentes
-
-### Fixed
-- Mejorado el manejo de errores al cargar datos del caché en Analytics
-- Añadida validación de datos recibidos del servidor
-- Implementada limpieza automática de caché corrupto o expirado
+- Se corrigió el manejo de la prop `type` en el componente `BaseCard` dentro de `Analytics.vue` para evitar errores de validación.
+- Se ajustó el acceso a propiedades de `Bill` en `PaymentHistory.vue` para manejar correctamente pagos únicos y evitar errores cuando `Bill` es `null`.
+- Se actualizaron los filtros y headers en `PaymentHistory.vue` para soportar pagos únicos de manera consistente.

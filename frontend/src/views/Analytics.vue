@@ -69,7 +69,7 @@
     <!-- Cards de Resumen -->
     <v-row class="mb-4">
       <v-col cols="12" md="3">
-        <base-card type="default">
+        <base-card type="success">
           <template #icon>
             <v-icon size="large">mdi-cash-multiple</v-icon>
           </template>
@@ -86,7 +86,7 @@
           </template>
           <template #footer>
             <div class="d-flex align-center">
-              <v-icon size="small" :color="totalTrend > 0 ? 'error' : 'success'" class="me-1">
+              <v-icon size="small" :color="totalTrend > 0 ? 'danger' : 'success'" class="me-1">
                 {{ totalTrend > 0 ? 'mdi-arrow-up' : 'mdi-arrow-down' }}
               </v-icon>
               {{ Math.abs(totalTrend) }}% vs mes anterior
@@ -96,7 +96,7 @@
       </v-col>
 
       <v-col cols="12" md="3">
-        <base-card type="default">
+        <base-card type="success">
           <template #icon>
             <v-icon size="large">mdi-chart-line</v-icon>
           </template>
@@ -141,7 +141,7 @@
       </v-col>
 
       <v-col cols="12" md="3">
-        <base-card :type="savingsRateType">
+        <base-card type="success">
           <template #icon>
             <v-icon size="large">mdi-trending-up</v-icon>
           </template>

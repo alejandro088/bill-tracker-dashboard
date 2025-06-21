@@ -124,8 +124,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
-import axios from 'axios';
+import { computed } from 'vue';
 import OneTimePaymentDialog from './OneTimePaymentDialog.vue';
 
 const props = defineProps({
@@ -144,23 +143,8 @@ const headers = [
   { title: 'Cantidad', key: 'count', sortable: true, align: 'center', width: '100px' }
 ];
 
-const items = ref(props.items);
-
-const fetchData = async () => {
-  try {
-    const response = await axios.get('/api/payments');
-    items.value = response.data;
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
-};
-
-onMounted(() => {
-  fetchData();
-});
-
 const groupedItems = computed(() => {
-  return items.value.map(item => ({
+  return props.items.map(item => ({
     ...item,
     month: formatMonth(item.month)
   }));
@@ -206,7 +190,7 @@ function formatAmount(amount, currency) {
 }
 
 function getMonthTotals(month) {
-  const monthItems = items.value.filter(item => formatMonth(item.month) === month);
+  const monthItems = props.items.filter(item => formatMonth(item.month) === month);
   const totals = {};
   
   monthItems.forEach(item => {
@@ -221,6 +205,12 @@ function getMonthTotals(month) {
     currency,
     amount
   }));
+}
+
+function fetchData() {
+  // Aquí puedes implementar la lógica para recargar los datos
+  // Por ejemplo, haciendo una llamada a la API para obtener los pagos actualizados
+  console.log('Recargando datos...');
 }
 </script>
 

@@ -1,87 +1,87 @@
-<template>
-  <v-dialog v-model="dialog" max-width="500px">
-    <template v-slot:activator="{ props }">
-      <v-btn
+&lt;template>
+  &lt;v-dialog v-model="dialog" max-width="500px">
+    &lt;template v-slot:activator="{ props }">
+      &lt;v-btn
         color="primary"
         v-bind="props"
         prepend-icon="mdi-plus"
       >
         Pago Único
-      </v-btn>
-    </template>
+      &lt;/v-btn>
+    &lt;/template>
 
-    <v-card>
-      <v-card-title>
-        <span class="text-h5">Crear Pago Único</span>
-      </v-card-title>
+    &lt;v-card>
+      &lt;v-card-title>
+        &lt;span class="text-h5">Crear Pago Único&lt;/span>
+      &lt;/v-card-title>
 
-      <v-card-text>
-        <v-form ref="form" v-model="valid">
-          <v-container>
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field
+      &lt;v-card-text>
+        &lt;v-form ref="form" v-model="valid">
+          &lt;v-container>
+            &lt;v-row>
+              &lt;v-col cols="12" sm="6">
+                &lt;v-text-field
                   v-model="payment.amount"
                   label="Monto"
                   type="number"
                   required
                   :rules="[v => !!v || 'El monto es requerido']"
-                ></v-text-field>
-              </v-col>
+                >&lt;/v-text-field>
+              &lt;/v-col>
               
-              <v-col cols="12" sm="6">
-                <v-select
+              &lt;v-col cols="12" sm="6">
+                &lt;v-select
                   v-model="payment.currency"
                   :items="currencies"
                   label="Moneda"
                   required
                   :rules="[v => !!v || 'La moneda es requerida']"
-                ></v-select>
-              </v-col>
+                >&lt;/v-select>
+              &lt;/v-col>
 
-              <v-col cols="12">
-                <v-select
+              &lt;v-col cols="12">
+                &lt;v-select
                   v-model="payment.category"
                   :items="categories"
                   label="Categoría"
                   required
                   :rules="[v => !!v || 'La categoría es requerida']"
-                ></v-select>
-              </v-col>
+                >&lt;/v-select>
+              &lt;/v-col>
 
-              <v-col cols="12">
-                <v-text-field
+              &lt;v-col cols="12">
+                &lt;v-text-field
                   v-model="payment.description"
                   label="Descripción"
                   required
                   :rules="[v => !!v || 'La descripción es requerida']"
-                ></v-text-field>
-              </v-col>
+                >&lt;/v-text-field>
+              &lt;/v-col>
 
-              <v-col cols="12">
-                <v-select
+              &lt;v-col cols="12">
+                &lt;v-select
                   v-model="payment.paymentProvider"
                   :items="paymentProviders"
                   label="Método de pago"
                   required
                   :rules="[v => !!v || 'El método de pago es requerido']"
-                ></v-select>
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-form>
-      </v-card-text>
+                >&lt;/v-select>
+              &lt;/v-col>
+            &lt;/v-row>
+          &lt;/v-container>
+        &lt;/v-form>
+      &lt;/v-card-text>
 
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="error" @click="close">Cancelar</v-btn>
-        <v-btn color="primary" :disabled="!valid" @click="save">Guardar</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-</template>
+      &lt;v-card-actions>
+        &lt;v-spacer>&lt;/v-spacer>
+        &lt;v-btn color="error" @click="close">Cancelar&lt;/v-btn>
+        &lt;v-btn color="primary" :disabled="!valid" @click="save">Guardar&lt;/v-btn>
+      &lt;/v-card-actions>
+    &lt;/v-card>
+  &lt;/v-dialog>
+&lt;/template>
 
-<script setup>
+&lt;script setup>
 import { ref, reactive, defineEmits } from 'vue'
 import axios from 'axios'
 import { 
@@ -125,4 +125,4 @@ const save = async () => {
     console.error('Error al crear el pago:', error)
   }
 }
-</script>
+&lt;/script>

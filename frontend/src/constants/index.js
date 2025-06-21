@@ -99,3 +99,15 @@ export const DEFAULT_CATEGORY = CATEGORIES.UTILITIES
 
 // All categories including 'All' option for filters
 export const CATEGORY_FILTER_OPTIONS = ['Todas', ...Object.values(CATEGORIES)]
+
+// One-time payment categories
+export const ONE_TIME_PAYMENT_CATEGORIES = {
+    GROCERIES: 'Supermercado',
+    BAKERY: 'Panadería',
+    VEGETABLES: 'Verdulería',
+    PHARMACY: 'Farmacia',
+    TRANSPORT: 'Transporte',
+    OTHERS: 'Otros'
+};
+
+export const ONE_TIME_PAYMENT_CATEGORY_LIST = Object.values(ONE_TIME_PAYMENT_CATEGORIES);
