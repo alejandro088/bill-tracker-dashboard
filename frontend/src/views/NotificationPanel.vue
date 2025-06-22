@@ -120,13 +120,15 @@
             <v-divider></v-divider>
           </div>
           
-          <v-list class="notifications-list pa-0">
+          <v-list class="notifications-list pa-0" lines="three">
             <v-list-item
               v-for="notification in group"
               :key="notification.id"
               :value="notification.id"
               :class="{ 'unread': !notification.read }"
               class="notification-item"
+              :ripple="true"
+              :lines="false"
               @click="handleNotificationClick(notification)"
             >
               <div class="notification-content">
@@ -303,27 +305,40 @@ const hasActiveFilters = computed(() => {
   return activeFilters.value.length > 0 || showUnreadOnly.value || searchQuery.value;
 });
 
+// Notificaciones filtradas según los criterios activos
+// Ya no es necesario filtrar aquí porque la API lo hace
+const filteredNotifications = computed(() => {
+  return notifications.value;
+});
+
 // Agrupar notificaciones por fecha
 const groupedNotifications = computed(() => {
   const groups = {};
   
+  if (!filteredNotifications.value || !Array.isArray(filteredNotifications.value)) {
+    return {};
+  }
+  
   filteredNotifications.value.forEach(notification => {
-    const date = new Date(notification.createdAt).toISOString().split('T')[0];
-    if (!groups[date]) {
-      groups[date] = [];
+    if (!notification || !notification.createdAt) {
+      console.warn('Notificación sin fecha detectada:', notification);
+      return;
     }
-    groups[date].push(notification);
+    try {
+      const date = new Date(notification.createdAt).toISOString().split('T')[0];
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(notification);
+    } catch (error) {
+      console.error('Error procesando notificación:', notification, error);
+    }
   });
   
   // Ordenar las fechas de más reciente a más antigua
   return Object.fromEntries(
     Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
   );
-});
-
-// Notificaciones filtradas según los criterios activos
-const filteredNotifications = computed(() => {
-  return notifications.value;
 });
 
 // Debounce para la búsqueda
@@ -333,15 +348,30 @@ const debouncedSearch = debounce(() => {
 
 // Formatear fecha para los grupos
 const formatGroupDate = (dateString) => {
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  
-  if (dateString === today) {
-    return 'Hoy';
-  } else if (dateString === yesterday) {
-    return 'Ayer';
-  } else {
-    return formatDateFn(new Date(dateString));
+  try {
+    if (!dateString) {
+      return 'Fecha desconocida';
+    }
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      console.warn('Fecha inválida:', dateString);
+      return 'Fecha inválida';
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    
+    if (dateString === today) {
+      return 'Hoy';
+    } else if (dateString === yesterday) {
+      return 'Ayer';
+    } else {
+      return formatDateFn(date);
+    }
+  } catch (error) {
+    console.error('Error formateando fecha:', dateString, error);
+    return 'Error de formato';
   }
 };
 
@@ -617,21 +647,33 @@ onMounted(fetchNotifications);
 }
 
 .notification-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .date-header {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-header .v-divider {
+  flex-grow: 1;
 }
 
 .date-label {
   position: relative;
   background-color: var(--v-theme-background);
-  padding: 0 0.5rem;
+  padding: 4px 10px;
   font-size: 0.875rem;
   font-weight: 500;
   color: rgba(var(--v-theme-on-surface), 0.7);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .notification-item {
@@ -641,6 +683,9 @@ onMounted(fetchNotifications);
   flex-direction: column;
   gap: 0.75rem;
   transition: background-color 0.3s ease;
+  height: auto !important; /* Aseguramos que la altura sea automática */
+  min-height: 82px; /* Altura mínima para asegurar consistencia */
+  overflow: visible; /* Permitimos que el contenido fluya */
 }
 
 .notification-item.unread {

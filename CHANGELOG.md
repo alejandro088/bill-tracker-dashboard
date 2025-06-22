@@ -1,5 +1,13 @@
 # Changelog
 
+## [2025-06-22] - Corrección de visualización en el panel de notificaciones
+
+### Fixed
+- Corregido problema donde las notificaciones agrupadas por fecha se cortaban o no se mostraban correctamente
+- Mejorada la validación de fechas para prevenir errores en la agrupación
+- Ajustada la visualización de los elementos de la lista para garantizar que todo el contenido sea visible
+- Mejorada la apariencia visual de los encabezados de fecha
+
 ## [2025-06-22] - Correcciones en el panel de notificaciones
 
 ### Fixed
