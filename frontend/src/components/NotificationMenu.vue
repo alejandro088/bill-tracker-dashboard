@@ -46,7 +46,7 @@
 
                 <template v-else>
                     <v-list-item
-                        v-for="(notification, i) in unreadNotifications.slice(0, 5)"
+                        v-for="(notification, i) in unreadNotifications"
                         :key="notification.id"
                         :value="notification"
                         class="notification-item unread"
@@ -259,6 +259,12 @@ onMounted(fetchUnreadNotifications);
   font-size: 0.75rem;
   color: rgba(var(--v-theme-on-surface), 0.6);
   margin-top: auto;
+}
+
+.notifications-list {
+  max-height: 360px;
+  overflow-y: auto !important;
+  overflow-x: hidden;
 }
 
 .notifications-list {

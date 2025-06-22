@@ -23,7 +23,7 @@
     </v-card>
 
     <!-- Summary Widget -->
-    <payment-summary-widget :start-date="startDate" :end-date="endDate" />
+    
     <v-row class="mb-2" v-if="!name" align="center">
       <v-col cols="12" sm="3">
         <v-select
@@ -97,26 +97,8 @@
           Actualizar Proveedores
         </v-btn>
       </v-col>
-      <v-col cols="12" sm="3">
-        <v-btn
-          variant="text"
-          color="success"
-          @click="showAddCategoryDialog = true"
-          prepend-icon="mdi-plus"
-        >
-          Nueva Categoría
-        </v-btn>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-btn
-          variant="text"
-          color="success"
-          @click="showAddProviderDialog = true"
-          prepend-icon="mdi-plus"
-        >
-          Nuevo Proveedor
-        </v-btn>
-      </v-col>
+      
+      
     </v-row>
     <v-progress-linear v-if="loading" indeterminate />
     <v-alert v-else-if="error" type="error" dense>{{ error }}</v-alert>
@@ -144,8 +126,17 @@
       </template>
       <template #item.amount="{ item }">
         <div class="d-flex align-center gap-2">
-          <v-icon size="small" color="grey-darken-1">mdi-currency-usd</v-icon>
-          {{ item.amount.toFixed(2) }}
+          <v-icon size="small" :color="item.currency === 'USD' ? 'success' : 'primary'">
+            {{ item.currency === 'USD' ? 'mdi-currency-usd' : 'mdi-cash' }}
+          </v-icon>
+          <v-chip
+            size="small"
+            :color="item.currency === 'USD' ? 'success' : 'primary'"
+            variant="flat"
+            class="font-weight-medium"
+          >
+            {{ item.currency === 'USD' ? 'USD' : '$' }} {{ item.amount.toFixed(2) }}
+          </v-chip>
         </div>
       </template>
       <template #item.name="{ item }">{{ item.Bill ? item.Bill.Service.name : item.description }}</template>
@@ -218,117 +209,6 @@
       </template>
     </base-confirm-dialog>
 
-    <!-- Diálogo para agregar nueva categoría -->
-    <v-dialog v-model="showAddCategoryDialog" max-width="500px">
-      <v-card>
-        <v-card-title>Nueva Categoría</v-card-title>
-        <v-card-text>
-          <v-container>
-            <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newCategory.name"
-                  label="Nombre"
-                  required
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newCategory.description"
-                  label="Descripción"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newCategory.color"
-                  label="Color (HEX)"
-                  hint="Ejemplo: #FF5733"
-                  persistent-hint
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newCategory.icon"
-                  label="Ícono"
-                  hint="Nombre del ícono (mdi-)"
-                  persistent-hint
-                ></v-text-field>
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="blue-darken-1"
-            variant="text"
-            @click="showAddCategoryDialog = false"
-          >
-            Cancelar
-          </v-btn>
-          <v-btn
-            color="success"
-            variant="text"
-            @click="createCategory"
-            :loading="savingCategory"
-          >
-            Guardar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Diálogo para agregar nuevo método de pago -->
-    <v-dialog v-model="showAddProviderDialog" max-width="500px">
-      <v-card>
-        <v-card-title>Nuevo Método de Pago</v-card-title>
-        <v-card-text>
-          <v-container>
-            <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newProvider.name"
-                  label="Nombre"
-                  required
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newProvider.description"
-                  label="Descripción"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="newProvider.icon"
-                  label="Ícono"
-                  hint="Nombre del ícono (mdi-)"
-                  persistent-hint
-                ></v-text-field>
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="blue-darken-1"
-            variant="text"
-            @click="showAddProviderDialog = false"
-          >
-            Cancelar
-          </v-btn>
-          <v-btn
-            color="success"
-            variant="text"
-            @click="createProvider"
-            :loading="savingProvider"
-          >
-            Guardar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
@@ -336,7 +216,6 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../api.js';
-import PaymentSummaryWidget from '../components/PaymentSummaryWidget.vue';
 import PaymentCharts from '../components/PaymentCharts.vue';
 import EditPaymentDialog from '../components/EditPaymentDialog.vue';
 import BaseConfirmDialog from '../components/BaseConfirmDialog.vue';
@@ -494,9 +373,7 @@ const filteredPayments = computed(() => {
     data = data.filter((p) => p.Bill?.Service.categoryId === category.value);
 
   if (provider.value)
-    data = data.filter(
-      (p) => p.paymentMethodId && p.paymentMethodId === provider.value
-    );
+    data = data.filter((p) => p.paymentMethodId === provider.value);
 
   if (startDate.value)
     data = data.filter((p) => new Date(p.paidAt) >= new Date(startDate.value));
@@ -547,69 +424,36 @@ const onEditDialogClose = () => {
   selectedPayment.value = null;
 };
 
-// Variables para los diálogos de nueva categoría y proveedor
-const showAddCategoryDialog = ref(false);
-const showAddProviderDialog = ref(false);
-const newCategory = ref({
-  name: '',
-  description: '',
-  color: '',
-  icon: ''
-});
-const newProvider = ref({
-  name: '',
-  description: '',
-  icon: ''
-});
-const savingCategory = ref(false);
-const savingProvider = ref(false);
-
-// Función para crear una nueva categoría
-const createCategory = async () => {
-  if (!newCategory.value.name) {
-    error.value = 'El nombre de la categoría es obligatorio';
-    return;
-  }
-  
-  savingCategory.value = true;
+const exportToExcel = async () => {
+  exporting.value = true;
   try {
-    await api.post('/categories', newCategory.value);
-    await fetchCategories();
-    showAddCategoryDialog.value = false;
-    newCategory.value = {
-      name: '',
-      description: '',
-      color: '',
-      icon: ''
-    };
-  } catch (err) {
-    error.value = 'Error al crear la categoría: ' + err.message;
-  } finally {
-    savingCategory.value = false;
-  }
-};
+    const response = await api.get('/payments/export', {
+      params: {
+        startDate: startDate.value,
+        endDate: endDate.value,
+        category: category.value,
+        provider: provider.value
+      },
+      responseType: 'blob' // Importante para manejar el archivo como un blob
+    });
 
-// Función para crear un nuevo método de pago
-const createProvider = async () => {
-  if (!newProvider.value.name) {
-    error.value = 'El nombre del método de pago es obligatorio';
-    return;
-  }
-  
-  savingProvider.value = true;
-  try {
-    await api.post('/payment-methods', newProvider.value);
-    await fetchProviders();
-    showAddProviderDialog.value = false;
-    newProvider.value = {
-      name: '',
-      description: '',
-      icon: ''
-    };
+    // Crear un enlace temporal para descargar el archivo
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `historial_pagos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+
+    // Limpiar el enlace temporal
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
   } catch (err) {
-    error.value = 'Error al crear el método de pago: ' + err.message;
+    error.value = err.message;
   } finally {
-    savingProvider.value = false;
+    exporting.value = false;
   }
 };
 </script>

@@ -57,6 +57,56 @@ export const trends = async (req, res, next) => {
 export const createOneTimePayment = async (req, res, next) => {
   try {
     const payment = req.body;
+    
+    // Verificar si el método de pago tiene una cuenta asociada con saldo suficiente
+    if (payment.paymentMethodId) {
+      const prisma = (await import('../db/prismaClient.js')).default;
+      const paymentMethod = await prisma.paymentMethods.findUnique({
+        where: { id: payment.paymentMethodId },
+        include: { Account: true }
+      });
+      
+      // Si el método de pago tiene una cuenta asociada, verificar el saldo
+      if (paymentMethod?.Account && paymentMethod.Account.balance !== null) {
+        const account = paymentMethod.Account;
+        
+        // Comprobar si hay saldo suficiente
+        if (account.currency === payment.currency) {
+          // Monedas iguales, comparación directa
+          if (account.balance < payment.amount) {
+            return res.status(400).json({
+              error: 'Saldo insuficiente',
+              message: `La cuenta "${account.name}" no tiene saldo suficiente para realizar este pago.`
+            });
+          }
+        } else {
+          // Monedas diferentes, necesitamos convertir
+          let exchangeRate = 500; // Tasa por defecto ARS/USD
+          
+          if (payment.currency === 'USD' && account.currency === 'ARS') {
+            // Calcular cuántos ARS necesitamos
+            const amountInARS = payment.amount * exchangeRate;
+            if (account.balance < amountInARS) {
+              return res.status(400).json({
+                error: 'Saldo insuficiente',
+                message: `La cuenta "${account.name}" no tiene saldo suficiente para realizar este pago.`
+              });
+            }
+          } else if (payment.currency === 'ARS' && account.currency === 'USD') {
+            // Calcular cuántos USD necesitamos
+            const amountInUSD = payment.amount / exchangeRate;
+            if (account.balance < amountInUSD) {
+              return res.status(400).json({
+                error: 'Saldo insuficiente',
+                message: `La cuenta "${account.name}" no tiene saldo suficiente para realizar este pago.`
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    // Si llegamos aquí, podemos proceder con el pago
     res.json(await addOneTimePayment(payment));
   } catch (err) {
     next(err);

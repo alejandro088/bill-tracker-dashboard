@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
 // Obtener solo notificaciones no leídas
 router.get('/unread', async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
+    const { limit = 100 } = req.query;
     const take = parseInt(limit);
     
     const notifications = await prisma.notification.findMany({

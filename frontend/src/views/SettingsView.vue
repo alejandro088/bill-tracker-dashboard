@@ -32,6 +32,10 @@
         <v-icon start>mdi-credit-card-multiple</v-icon>
         Métodos de Pago
       </v-tab>
+      <v-tab value="accounts">
+        <v-icon start>mdi-bank</v-icon>
+        Cuentas
+      </v-tab>
     </v-tabs>
 
     <v-window v-model="activeTab">
@@ -143,6 +147,11 @@
             </v-data-table>
           </v-card-text>
         </v-card>
+      </v-window-item>
+      
+      <!-- Pestaña de Cuentas -->
+      <v-window-item value="accounts">
+        <AccountManager />
       </v-window-item>
     </v-window>
 
@@ -325,6 +334,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import api from '../api.js';
+import AccountManager from '../components/AccountManager.vue';
 
 // Estado de las pestañas
 const activeTab = ref('categories');

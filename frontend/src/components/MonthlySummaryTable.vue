@@ -1,8 +1,5 @@
 <template>
   <div>
-    <div class="d-flex mb-4">
-      <one-time-payment-dialog @payment-created="fetchData" />
-    </div>
 
     <v-data-table
       :headers="headers"
@@ -125,7 +122,6 @@
 
 <script setup>
 import { computed } from 'vue';
-import OneTimePaymentDialog from './OneTimePaymentDialog.vue';
 
 const props = defineProps({
   items: {

@@ -271,7 +271,8 @@ const handlePayments = async (bill, data) => {
                   },
               ];
 
-    await prisma.payment.createMany({
+    // Crear los pagos
+    const createdPayments = await prisma.payment.createMany({
         data: paymentsArr.map((p) => ({
             billId: bill.id,
             amount: p.amount,
@@ -282,6 +283,52 @@ const handlePayments = async (bill, data) => {
         })),
         skipDuplicates: true,
     });
+    
+    // Actualizar los saldos de las cuentas asociadas a los métodos de pago
+    for (const payment of paymentsArr) {
+        if (!payment.paymentMethodId) continue;
+        
+        // Buscar el método de pago y la cuenta asociada
+        const paymentMethod = await prisma.paymentMethods.findUnique({
+            where: { id: payment.paymentMethodId },
+            include: { Account: true }
+        });
+        
+        // Si el método de pago no tiene cuenta asociada, no hacemos nada
+        if (!paymentMethod || !paymentMethod.Account) continue;
+        
+        const account = paymentMethod.Account;
+        
+        // Si la cuenta no tiene saldo registrado, no podemos actualizar
+        if (account.balance === null) continue;
+        
+        const currency = payment.currency || bill.currency;
+        
+        // Si las monedas coinciden, simplemente restamos
+        if (account.currency === currency) {
+            await prisma.account.update({
+                where: { id: account.id },
+                data: { balance: account.balance - payment.amount }
+            });
+        } else {
+            // Si las monedas son diferentes, usamos la tasa de cambio proporcionada o una por defecto
+            let exchangeRate = payment.exchangeRate || 500; // Tasa por defecto ARS/USD
+            
+            let newBalance;
+            if (currency === 'USD' && account.currency === 'ARS') {
+                // Convertir USD a ARS y restar
+                newBalance = account.balance - (payment.amount * exchangeRate);
+            } else if (currency === 'ARS' && account.currency === 'USD') {
+                // Convertir ARS a USD y restar
+                newBalance = account.balance - (payment.amount / exchangeRate);
+            }
+            
+            await prisma.account.update({
+                where: { id: account.id },
+                data: { balance: newBalance }
+            });
+        }
+    }
 };
 
 const createPaymentNotification = async (bill) => {

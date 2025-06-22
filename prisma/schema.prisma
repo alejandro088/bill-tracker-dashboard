@@ -110,7 +110,28 @@ model PaymentMethods {
   icon       String?
   payments    Payment[]
   services    Service[]
+  accountId   String?
+  
+  Account     Account? @relation(fields: [accountId], references: [id])
 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([accountId])
+}
+
+model Account {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  type        String   // Tipo de cuenta: "Banco", "Efectivo", "Tarjeta de Crédito", etc.
+  balance     Float?   // Saldo actual (opcional)
+  currency    Currency @default(ARS)
+  icon        String?
+  color       String?
+  
+  paymentMethods PaymentMethods[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

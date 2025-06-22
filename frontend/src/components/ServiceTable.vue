@@ -87,26 +87,8 @@
                             variant="flat"
                         >
                             <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.category) }}</v-icon>
-                            {{ item.category }}
+                            {{ getCategoryName(item.category) }}
                         </v-chip>
-                    </template>
-                </v-tooltip>
-            </template>
-
-            <template #item.paymentProvider="{ item }">
-                <v-tooltip :text="getProviderInfo(item.paymentProvider)">
-                    <template #activator="{ props }">
-                        <div
-                            v-bind="props"
-                            class="d-flex align-center justify-center"
-                        >
-                            <v-icon
-                                size="20"
-                                :icon="getProviderIcon(item.paymentProvider)"
-                                class="mr-1"
-                            ></v-icon>
-                            {{ item.paymentProvider }}
-                        </div>
                     </template>
                 </v-tooltip>
             </template>
@@ -205,6 +187,8 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import api from '../api.js';
 import { statusColor, statusIcon, formatAmountWithCurrency } from '../utils/formatters';
 import ServiceIcon from './ServiceIcon.vue';
 
@@ -239,12 +223,6 @@ const headers = [
         sortable: true,
     },
     {
-        title: 'Proveedor',
-        key: 'paymentProvider',
-        align: 'center',
-        sortable: true,
-    },
-    {
         title: 'Recurrencia',
         key: 'recurrence',
         align: 'center',
@@ -264,80 +242,73 @@ const headers = [
     },
 ];
 
-const getCategoryInfo = (category) => {
-    switch (category) {
-        case 'utilities':
-            return 'Servicios básicos como luz, agua, gas, etc.';
-        case 'subscriptions':
-            return 'Suscripciones a servicios digitales';
-        case 'taxes':
-            return 'Impuestos y tasas gubernamentales';
-        default:
-            return 'Otros tipos de servicios';
+const getCategoryInfo = (categoryId) => {
+    if (!categoryId) return 'Sin categoría definida';
+
+    console.log(categoryId)
+    console.log(categories.value)
+    
+    const category = categories.value.find(c => c.name === categoryId);
+    if (category) {
+        return category.description || category.name;
     }
+    
+    return 'Categoría no encontrada';
 };
 
-const getCategoryColor = (category) => {
-    switch (category) {
-        case 'utilities':
-            return 'blue';
-        case 'subscriptions':
-            return 'purple';
-        case 'taxes':
-            return 'red';
-        default:
-            return 'grey';
+const getCategoryColor = (categoryId) => {
+    if (!categoryId) return 'grey';
+    
+    const category = categories.value.find(c => c.id === categoryId);
+    if (category && category.color) {
+        return category.color;
     }
+    
+    // Colores por defecto
+    if (categoryId === 'utilities') return 'blue';
+    if (categoryId === 'subscriptions') return 'purple';
+    if (categoryId === 'taxes') return 'red';
+    
+    return 'grey';
 };
 
-const getCategoryIcon = (category) => {
-    switch (category) {
-        case 'utilities':
-            return 'mdi-flash';
-        case 'subscriptions':
-            return 'mdi-shopping';
-        case 'taxes':
-            return 'mdi-bank';
-        default:
-            return 'mdi-help-circle';
+const getCategoryIcon = (categoryId) => {
+    if (!categoryId) return 'mdi-help-circle';
+    
+    const category = categories.value.find(c => c.id === categoryId);
+    if (category && category.icon) {
+        return category.icon;
     }
+    
+    // Iconos por defecto
+    if (categoryId === 'utilities') return 'mdi-flash';
+    if (categoryId === 'subscriptions') return 'mdi-shopping';
+    if (categoryId === 'taxes') return 'mdi-bank';
+    
+    return 'mdi-help-circle';
 };
 
-const getProviderInfo = (provider) => {
-    switch (provider) {
-        case 'Visa':
-            return 'Pago con tarjeta Visa';
-        case 'Mastercard':
-            return 'Pago con tarjeta Mastercard';
-        case 'MercadoPago':
-            return 'Pago a través de MercadoPago';
-        case 'Google Play':
-            return 'Pago a través de Google Play';
-        case 'MODO':
-            return 'Pago con MODO';
-        case 'PayPal':
-            return 'Pago con PayPal';
-        default:
-            return 'Otros medios de pago';
-    }
+const getCategoryName = (categoryId) => {
+    if (!categoryId) return 'N/A';
+    
+    const category = categories.value.find(c => c.id === categoryId);
+    return category ? category.name : categoryId;
 };
 
-const getProviderIcon = (provider) => {
-    switch (provider) {
-        case 'Visa':
-            return 'mdi-credit-card';
-        case 'Mastercard':
-            return 'mdi-credit-card';
-        case 'MercadoPago':
-            return 'mdi-cart';
-        case 'Google Play':
-            return 'mdi-google-play';
-        case 'MODO':
-            return 'mdi-cellphone';
-        case 'PayPal':
-            return 'mdi-paypal';
-        default:
-            return 'mdi-cash';
+// Datos para categorías
+const categories = ref([]);
+const loadingCategories = ref(false);
+
+// Cargar categorías desde el backend
+const fetchCategories = async () => {
+    loadingCategories.value = true;
+    try {
+        const { data } = await api.get('/categories');
+        categories.value = data;
+    } catch (error) {
+        console.error('Error al obtener categorías:', error);
+    } finally {
+        loadingCategories.value = false;
     }
 };
 
@@ -396,6 +367,11 @@ const formatUrl = (url) => {
         return url;
     }
 };
+
+// Cargar datos al montar el componente
+onMounted(() => {
+    fetchCategories();
+});
 </script>
 
 <style scoped>

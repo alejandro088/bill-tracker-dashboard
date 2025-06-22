@@ -5,8 +5,68 @@ import {
   updatePayment,
   deletePayment as removePayment
 } from '../db/paymentsDB.js';
+import prisma from '../db/prismaClient.js';
 
-export const addPayment = async (payment) => addPaymentToDb(payment);
+// Nueva función para actualizar el saldo de la cuenta al realizar un pago
+const updateAccountBalance = async (paymentMethodId, amount, currency) => {
+  if (!paymentMethodId) return;
+  
+  // Buscar el método de pago y la cuenta asociada
+  const paymentMethod = await prisma.paymentMethods.findUnique({
+    where: { id: paymentMethodId },
+    include: { Account: true }
+  });
+  
+  // Si el método de pago no tiene cuenta asociada, no hacemos nada
+  if (!paymentMethod || !paymentMethod.Account) return;
+  
+  const account = paymentMethod.Account;
+  
+  // Si la cuenta no tiene saldo registrado, no podemos actualizar
+  if (account.balance === null) return;
+  
+  // Si las monedas coinciden, simplemente restamos
+  if (account.currency === currency) {
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { balance: account.balance - amount }
+    });
+  } else {
+    // Si las monedas son diferentes, necesitamos una tasa de cambio
+    // Por ahora, para simplificar, usaremos una tasa fija si no se proporciona
+    // Idealmente, esto debería obtenerse de una API externa o configuración
+    let exchangeRate = 500; // Tasa por defecto ARS/USD
+    
+    let newBalance;
+    if (currency === 'USD' && account.currency === 'ARS') {
+      // Convertir USD a ARS y restar
+      newBalance = account.balance - (amount * exchangeRate);
+    } else if (currency === 'ARS' && account.currency === 'USD') {
+      // Convertir ARS a USD y restar
+      newBalance = account.balance - (amount / exchangeRate);
+    }
+    
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { balance: newBalance }
+    });
+  }
+};
+
+export const addPayment = async (payment) => {
+  const result = await addPaymentToDb(payment);
+  
+  // Si el pago tiene un método de pago asociado, actualizamos el saldo de la cuenta
+  if (payment.paymentMethodId) {
+    await updateAccountBalance(
+      payment.paymentMethodId, 
+      payment.amount, 
+      payment.currency
+    );
+  }
+  
+  return result;
+};
 
 export const addOneTimePayment = async (paymentData) => {
   const { amount, currency, paymentMethodId, category, description } = paymentData;
@@ -20,7 +80,14 @@ export const addOneTimePayment = async (paymentData) => {
     paidAt: new Date(),
   };
   
-  return await addPaymentToDb(payment);
+  const result = await addPaymentToDb(payment);
+  
+  // Actualizar el saldo de la cuenta asociada al método de pago
+  if (paymentMethodId) {
+    await updateAccountBalance(paymentMethodId, amount, currency);
+  }
+  
+  return result;
 };
 
 export const listPayments = async (filters = {}) => {
@@ -69,7 +136,16 @@ export const getPaymentSummary = async (startDate, endDate) => {
     return true;
   });
 
-  // Calculate total paid
+  // Calculate total paid by currency
+  const totalARS = filteredPayments
+    .filter(payment => payment.currency === 'ARS')
+    .reduce((sum, payment) => sum + payment.amount, 0);
+    
+  const totalUSD = filteredPayments
+    .filter(payment => payment.currency === 'USD')
+    .reduce((sum, payment) => sum + payment.amount, 0);
+    
+  // Calculate total paid (all currencies)
   const totalPaid = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   // Calculate monthly average
@@ -125,6 +201,8 @@ export const getPaymentSummary = async (startDate, endDate) => {
 
   return {
     totalPaid,
+    totalARS,
+    totalUSD,
     monthlyAverage,
     mostUsedMethodId,
     previousPeriodComparison,

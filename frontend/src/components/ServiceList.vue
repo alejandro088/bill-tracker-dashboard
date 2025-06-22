@@ -6,7 +6,6 @@
             v-model:search="search"
             v-model:category="category"
             v-model:currency="currency"
-            v-model:paymentProvider="paymentProvider"
             v-model:recurrence="recurrence"
         />
         
@@ -69,7 +68,6 @@ const services = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const category = ref(localStorage.getItem('svc_category') || '');
-const paymentProvider = ref(localStorage.getItem('svc_provider') || '');
 const recurrence = ref(localStorage.getItem('svc_recurrence') || '');
 const newBill = ref(null);
 const selectedBill = ref(null);
@@ -80,7 +78,6 @@ const selectedService = ref(null);
 
 // Watchers for localStorage
 watch(category, (val) => localStorage.setItem('svc_category', val));
-watch(paymentProvider, (val) => localStorage.setItem('svc_provider', val));
 watch(recurrence, (val) => localStorage.setItem('svc_recurrence', val));
 watch(dueSoon, (val) => localStorage.setItem('svc_dueSoon', val ? '1' : '0'));
 
@@ -107,19 +104,13 @@ const filteredServices = computed(() => {
         })
         .filter((service) => {
             if (category.value) {
-                return service.category === category.value;
+                return service.categoryId === category.value;
             }
             return true;
         })
         .filter((service) => {
             if (currency.value) {
                 return service.defaultCurrency === currency.value;
-            }
-            return true;
-        })
-        .filter((service) => {
-            if (paymentProvider.value) {
-                return service.paymentProvider === paymentProvider.value;
             }
             return true;
         })

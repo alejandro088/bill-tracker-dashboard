@@ -52,6 +52,8 @@ export function useAnalytics() {
   const categoryColors = {
     utilities: '#1976d2',
     subscriptions: '#9c27b0',
+    groceries: '#4caf50',
+    entertainment: '#ff9800',
     taxes: '#e53935',
     others: '#fb8c00'
   }

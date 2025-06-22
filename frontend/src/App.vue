@@ -100,7 +100,7 @@ let notifTimer
 
 onMounted(async () => {
   try {
-    const { data } = await api.get('/notifications')
+    const { data } = await api.get('/notifications/unread')
     notifications.value = data || []
 
     // Aplicar valores por defecto

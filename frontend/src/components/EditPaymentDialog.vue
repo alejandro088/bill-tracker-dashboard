@@ -103,13 +103,24 @@ async function confirm() {
 async function fetchProviders() {
   try {
     const { data } = await api.get('/payment-methods');
+    
+    // Obtener las cuentas para mostrar información adicional
+    const accountsResponse = await api.get('/accounts');
+    const accounts = accountsResponse.data;
+    
     // Transformar los datos al formato requerido por v-select
-    providers.value = data.map(method => ({
-      title: method.name,
-      value: method.id,
-      description: method.description,
-      icon: method.icon
-    }));
+    providers.value = data.map(method => {
+      // Buscar la cuenta asociada si existe
+      const account = accounts.find(acc => acc.id === method.accountId);
+      
+      return {
+        title: method.name + (account ? ` (${account.name})` : ''),
+        value: method.id,
+        description: method.description,
+        icon: method.icon,
+        account: account || null
+      };
+    });
   } catch (error) {
     console.error('Error al obtener proveedores:', error);
     // Valores por defecto en caso de error
