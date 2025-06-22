@@ -1,5 +1,52 @@
 # Changelog
 
+## [2025-06-22] - Mejoras en la vista de Pagar factura
+
+### Added
+- Rediseñada la interfaz de pago de facturas con mejor visualización de la información
+- Añadida tarjeta resumen con estado del pago y totales
+- Implementada función de optimización automática de métodos de pago
+- Agregadas notificaciones más claras y detalladas durante el proceso de pago
+- Mejorada la validación de saldo en cuentas antes de confirmar el pago
+
+### Changed
+- Reorganizada la interfaz para mostrar primero la información importante
+- Mejorada la visualización de la tasa de cambio para pagos con múltiples monedas
+- Actualizada la funcionalidad para sugerir métodos de pago con saldo suficiente
+
+## [2025-06-22] - Implementación de descuento automático de saldo en cuentas
+
+### Added
+- Implementada la funcionalidad para descontar automáticamente el saldo de la cuenta asociada al método de pago al realizar un pago
+- Agregada validación para verificar si la cuenta tiene saldo suficiente antes de permitir el pago
+- Mejorados los componentes de diálogo de pago (PayDialog, OneTimePaymentDialog) para mostrar el saldo disponible en la cuenta
+- Implementada la conversión de monedas para cuentas y pagos en diferentes divisas
+
+### Changed
+- Modificado el servicio de pagos para actualizar el saldo de la cuenta después de cada pago
+- Actualizado el controlador de pagos para validar el saldo de la cuenta antes de procesar un pago
+- Modificado el servicio de facturación para actualizar los saldos de las cuentas al pagar facturas
+
+## [2025-06-22] - Mejoras en la vista de Historial de Pagos
+
+### Added
+- Agregada funcionalidad para exportar datos de pagos a Excel/CSV
+- Mejorada la visualización de montos con indicadores visuales por tipo de moneda (ARS/USD)
+- Restaurados los diálogos para crear nuevas categorías y métodos de pago
+- Completada la funcionalidad de filtrado por todos los campos
+
+### Fixed
+- Corregido el encabezado de la página para mostrar el nombre del servicio cuando corresponde
+- Restaurado el widget de resumen de pagos
+- Corregidos los filtros que estaban incompletos en la función filteredPayments
+
+## [2025-06-22] - Adición de tarjetas de resumen por moneda
+
+### Added
+- Agregadas tarjetas de resumen separadas para mostrar el total en ARS y USD en PaymentHistory
+- Implementada la discriminación de pagos por moneda en el servicio de pagos
+- Actualizado el componente PaymentSummaryWidget para mostrar totales por moneda
+
 ## [2025-06-22] - Actualización de la columna de Medio de pago en ServiceBills
 
 ### Changed
@@ -374,3 +421,46 @@
 ### Fixed
 - Corregido error en la creación de categorías y métodos de pago donde se enviaba `id` como nulo.
 - Mejorada la robustez de los controladores del backend para asegurar que el campo `id` se excluya de las peticiones de creación.
+
+## [2025-06-22] - Actualización de ServiceList para consumir categorías y métodos de pago desde el backend
+
+### Changed
+- Actualizado ServiceList.vue para utilizar `paymentMethodId` en lugar de `paymentProvider`
+- Actualizado ServiceTable.vue para mostrar el nombre del método de pago relacionado
+- Implementada la carga dinámica de métodos de pago desde la API en ServiceTable.vue
+- Implementada la carga dinámica de categorías desde la API en ServiceTable.vue
+- Modificada la persistencia en localStorage para usar la clave correcta (svc_paymentMethod)
+- Mejorada la visualización de categorías y métodos de pago para mostrar sus nombres en lugar de IDs
+
+### Fixed
+- Corregida la lógica de filtrado para que funcione con los nuevos campos `paymentMethodId` y `categoryId`
+- Mejorados los tooltips para mostrar información dinámica desde el backend
+
+## [2025-06-22] - Eliminación de columna y filtro de Método de Pago en la vista de Servicios
+
+### Changed
+- Eliminada la columna "Método de Pago" de la tabla de servicios
+- Eliminado el filtro de método de pago en ServiceFilters
+- Simplificado el componente ServiceList y ServiceTable para eliminar referencias a métodos de pago
+- Reducido el código relacionado con la carga y filtrado de métodos de pago
+
+## [2025-06-22] - Implementación de Cuentas para rastrear el origen de los egresos
+
+### Added
+- Creado nuevo modelo `Account` en el esquema de Prisma para almacenar cuentas bancarias, efectivo y tarjetas
+- Actualizado el modelo `PaymentMethods` para vincularse con cuentas
+- Creado servicio `accountService.js` para gestionar las operaciones CRUD de cuentas
+- Creado controlador `accountController.js` para manejar las solicitudes HTTP
+- Creadas rutas en `accountRoutes.js` para acceder a las operaciones de cuentas
+- Nuevo componente `AccountManager.vue` para administrar cuentas en la interfaz
+- Integrada la gestión de cuentas en la vista de configuraciones
+- Modificados los componentes de pago para mostrar la cuenta asociada a cada método de pago
+- Mejorada la UX al mostrar la cuenta origen en cada método de pago en los diálogos de pago
+
+### Changed
+- Actualizada la forma de mostrar métodos de pago para incluir la cuenta de origen
+- Mejorada la pestaña de configuraciones para incluir la gestión de cuentas
+- Actualizado el esquema de base de datos con migraciones para las nuevas relaciones
+
+### Fixed
+- Corregida la visualización de métodos de pago para mostrar información adicional de la cuenta
