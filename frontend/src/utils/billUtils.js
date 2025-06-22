@@ -27,18 +27,19 @@ export function formatDate(date) {
 export function summarizePayments(payments) {
     const map = {};
     payments.forEach((p) => {
-        if (!map[p.paymentProvider]) map[p.paymentProvider] = 0;
-        map[p.paymentProvider] += Number(p.amount);
+        const methodName = p.paymentMethodName || p.PaymentMethods?.name || 'Desconocido';
+        if (!map[methodName]) map[methodName] = 0;
+        map[methodName] += Number(p.amount);
     });
     return Object.entries(map)
-        .map(([prov, amt]) => `${prov} ($${amt.toFixed(2)})`)
+        .map(([method, amt]) => `${method} ($${amt.toFixed(2)})`)
         .join(' + ');
 }
 
 export const TABLE_HEADERS = [
     { title: 'Due Date', key: 'dueDate' },
     { title: 'Monto', key: 'amount' },
-    { title: 'Medio de pago', key: 'paymentProvider', sortable: false },
+    { title: 'Medio de pago', key: 'paymentMethodName', sortable: false },
     { title: 'Estado', key: 'status' },
     { title: 'Acciones', key: 'actions', sortable: false }
 ];

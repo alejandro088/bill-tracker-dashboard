@@ -63,42 +63,48 @@ export const formatAmount = (amount, currency = DEFAULT_CURRENCY) => {
 
 // Categories for services and bills
 export const CATEGORIES = {
-    UTILITIES: 'utilities',
-    SUBSCRIPTIONS: 'subscriptions',
-    TAXES: 'taxes',
-    OTHERS: 'others'
-}
+    UTILITIES: 'Servicios públicos',
+    SUBSCRIPTIONS: 'Suscripciones',
+    TAXES: 'Impuestos',
+    GROCERIES: 'Supermercado',
+    ENTERTAINMENT: 'Entretenimiento',
+    OTHER: 'Otro',
+};
 
 // Human readable category labels
 export const CATEGORY_LABELS = {
     [CATEGORIES.UTILITIES]: 'Servicios',
     [CATEGORIES.SUBSCRIPTIONS]: 'Suscripciones',
     [CATEGORIES.TAXES]: 'Impuestos',
-    [CATEGORIES.OTHERS]: 'Otros'
-}
+    [CATEGORIES.GROCERIES]: 'Supermercado',
+    [CATEGORIES.ENTERTAINMENT]: 'Entretenimiento',
+    [CATEGORIES.OTHER]: 'Otros',
+};
 
 // List of categories with their labels for dropdowns
 export const CATEGORY_OPTIONS = Object.entries(CATEGORIES).map(([_, value]) => ({
     title: CATEGORY_LABELS[value],
     value: value
-}))
+}));
 
 // Category colors for charts and UI elements
 export const CATEGORY_COLORS = {
     [CATEGORIES.UTILITIES]: '#1976d2',
     [CATEGORIES.SUBSCRIPTIONS]: '#9c27b0',
     [CATEGORIES.TAXES]: '#e53935',
-    [CATEGORIES.OTHERS]: '#fb8c00'
-}
+    [CATEGORIES.GROCERIES]: '#4caf50',
+    [CATEGORIES.ENTERTAINMENT]: '#ff9800',
+    [CATEGORIES.OTHER]: '#fb8c00',
+};
 
 // Helper function to get category color
-export const getCategoryColor = (category) => CATEGORY_COLORS[category] || CATEGORY_COLORS[CATEGORIES.OTHERS]
+export const getCategoryColor = (category) => CATEGORY_COLORS[category] || CATEGORY_COLORS[CATEGORIES.OTHER];
 
 // Default category for new bills/services
-export const DEFAULT_CATEGORY = CATEGORIES.UTILITIES
+export const DEFAULT_CATEGORY = CATEGORIES.UTILITIES;
 
 // All categories including 'All' option for filters
-export const CATEGORY_FILTER_OPTIONS = ['Todas', ...Object.values(CATEGORIES)]
+export const CATEGORY_FILTER_OPTIONS = ['Todas', ...Object.values(CATEGORIES)];
 
 // One-time payment categories
 export const ONE_TIME_PAYMENT_CATEGORIES = {
@@ -111,3 +117,15 @@ export const ONE_TIME_PAYMENT_CATEGORIES = {
 };
 
 export const ONE_TIME_PAYMENT_CATEGORY_LIST = Object.values(ONE_TIME_PAYMENT_CATEGORIES);
+
+// Helper for getting category icons
+export const CATEGORY_ICONS = {
+    [CATEGORIES.UTILITIES]: 'mdi-lightbulb',
+    [CATEGORIES.SUBSCRIPTIONS]: 'mdi-newspaper',
+    [CATEGORIES.TAXES]: 'mdi-file-document',
+    [CATEGORIES.GROCERIES]: 'mdi-cart',
+    [CATEGORIES.ENTERTAINMENT]: 'mdi-movie',
+    [CATEGORIES.OTHER]: 'mdi-help-circle-outline',
+};
+
+export const getCategoryIcon = (category) => CATEGORY_ICONS[category] || 'mdi-help-circle-outline';

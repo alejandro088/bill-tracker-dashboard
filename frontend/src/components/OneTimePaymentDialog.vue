@@ -60,8 +60,10 @@
 
               <v-col cols="12">
                 <v-select
-                  v-model="payment.paymentProvider"
-                  :items="paymentProviders"
+                  v-model="payment.paymentMethodId"
+                  :items="paymentMethods"
+                  item-title="title"
+                  item-value="value"
                   label="Método de pago"
                   required
                   :rules="[v => !!v || 'El método de pago es requerido']"
@@ -82,47 +84,79 @@
 </template>
 
 <script setup>
-import { ref, reactive, defineEmits } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import { 
   CURRENCIES,
   CURRENCY_LIST,
-  PAYMENT_METHOD_LIST,
   ONE_TIME_PAYMENT_CATEGORY_LIST 
 } from '../constants/index.js'
+import api from '../api.js'
 
 const emit = defineEmits(['payment-created'])
 
 const dialog = ref(false)
 const valid = ref(false)
 const form = ref(null)
+const paymentMethods = ref([])
 
 const payment = reactive({
   amount: '',
   currency: CURRENCIES.ARS,
   category: '',
   description: '',
-  paymentProvider: ''
+  paymentMethodId: ''
 })
 
 const currencies = CURRENCY_LIST
 const categories = ONE_TIME_PAYMENT_CATEGORY_LIST
-const paymentProviders = PAYMENT_METHOD_LIST
+
+// Cargar los métodos de pago desde la API
+const fetchPaymentMethods = async () => {
+  try {
+    const { data } = await api.get('/payment-methods')
+    paymentMethods.value = data.map(method => ({
+      title: method.name,
+      value: method.id,
+      description: method.description,
+      icon: method.icon
+    }))
+  } catch (error) {
+    console.error('Error al cargar métodos de pago:', error)
+    // Valores por defecto en caso de error
+    paymentMethods.value = [
+      { title: 'Visa', value: '1' },
+      { title: 'Mastercard', value: '2' },
+      { title: 'MercadoPago', value: '3' }
+    ]
+  }
+}
 
 const close = () => {
   dialog.value = false
   form.value?.reset()
+  // Resetear el objeto de pago
+  Object.assign(payment, {
+    amount: '',
+    currency: CURRENCIES.ARS,
+    category: '',
+    description: '',
+    paymentMethodId: ''
+  })
 }
 
 const save = async () => {
   if (!form.value?.validate()) return
 
   try {
-    await axios.post('/api/payments/one-time', payment)
+    await api.post('/payments/one-time', payment)
     close()
     emit('payment-created')
   } catch (error) {
     console.error('Error al crear el pago:', error)
   }
 }
+
+// Cargar los métodos de pago al montar el componente
+onMounted(fetchPaymentMethods)
 </script>

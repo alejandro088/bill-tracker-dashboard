@@ -9,12 +9,12 @@ import {
 export const addPayment = async (payment) => addPaymentToDb(payment);
 
 export const addOneTimePayment = async (paymentData) => {
-  const { amount, currency, paymentProvider, category, description } = paymentData;
+  const { amount, currency, paymentMethodId, category, description } = paymentData;
   
   const payment = {
     amount,
     currency,
-    paymentProvider,
+    paymentMethodId,
     category,
     description,
     paidAt: new Date(),
@@ -24,7 +24,7 @@ export const addOneTimePayment = async (paymentData) => {
 };
 
 export const listPayments = async (filters = {}) => {
-  const { name, year, currency, category } = filters;
+  const { name, year, currency, category, paymentMethodId } = filters;
   
   // Obtener pagos base (por nombre o todos)
   const payments = name ? await getPaymentsByName(name) : await getAllPayments();
@@ -47,6 +47,11 @@ export const listPayments = async (filters = {}) => {
       // Para pagos únicos, usar la categoría directa del pago
       const paymentCategory = payment.Bill?.Service?.category || payment.category;
       if (paymentCategory !== category) return false;
+    }
+    
+    // Filtro por método de pago
+    if (paymentMethodId && paymentMethodId !== 'Todas') {
+      if (payment.paymentMethodId !== paymentMethodId) return false;
     }
     
     return true;
@@ -82,19 +87,19 @@ export const getPaymentSummary = async (startDate, endDate) => {
     monthlyAverage = totalPaid / (monthsDiff || 1); // Avoid division by zero
   }
 
-  // Get most used payment provider
-  const providerCounts = {};
+  // Get most used payment method
+  const methodCounts = {};
   filteredPayments.forEach(payment => {
-    const provider = payment.paymentProvider || 'Unknown';
-    providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+    const methodId = payment.paymentMethodId || 'Unknown';
+    methodCounts[methodId] = (methodCounts[methodId] || 0) + 1;
   });
 
-  let mostUsedProvider = 'None';
+  let mostUsedMethodId = 'None';
   let maxCount = 0;
 
-  Object.entries(providerCounts).forEach(([provider, count]) => {
+  Object.entries(methodCounts).forEach(([methodId, count]) => {
     if (count > maxCount) {
-      mostUsedProvider = provider;
+      mostUsedMethodId = methodId;
       maxCount = count;
     }
   });
@@ -121,7 +126,7 @@ export const getPaymentSummary = async (startDate, endDate) => {
   return {
     totalPaid,
     monthlyAverage,
-    mostUsedProvider,
+    mostUsedMethodId,
     previousPeriodComparison,
     paymentCount: filteredPayments.length
   };
@@ -160,15 +165,15 @@ export const getPaymentTrends = async (startDate, endDate) => {
   // Group payments by category
   const byCategory = {};
   filteredPayments.forEach(payment => {
-    const category = payment.Bill?.Service?.category || 'Unknown';
+    const category = payment.Bill?.Service?.category || payment.category || 'Unknown';
     byCategory[category] = (byCategory[category] || 0) + payment.amount;
   });
 
-  // Group payments by payment provider
-  const byProvider = {};
+  // Group payments by payment method
+  const byMethod = {};
   filteredPayments.forEach(payment => {
-    const provider = payment.paymentProvider || 'Unknown';
-    byProvider[provider] = (byProvider[provider] || 0) + payment.amount;
+    const methodName = payment.PaymentMethods?.name || 'Unknown';
+    byMethod[methodName] = (byMethod[methodName] || 0) + payment.amount;
   });
 
   return {
@@ -180,9 +185,9 @@ export const getPaymentTrends = async (startDate, endDate) => {
       labels: Object.keys(byCategory),
       data: Object.values(byCategory)
     },
-    providers: {
-      labels: Object.keys(byProvider),
-      data: Object.values(byProvider)
+    methods: {
+      labels: Object.keys(byMethod),
+      data: Object.values(byMethod)
     }
   };
 };

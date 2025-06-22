@@ -46,14 +46,20 @@
             label="Payment Method"
             density="compact"
           />
-          <v-select 
-            v-model="category" 
-            :items="CATEGORY_OPTIONS"
-            item-title="title"
-            item-value="value"
-            label="Category" 
-            density="compact" 
+          <v-select
+            v-model="category"
+            :items="categories"
+            label="Categoría"
+            density="compact"
           />
+          <v-btn
+            variant="text"
+            color="primary"
+            @click="fetchCategories"
+            prepend-icon="mdi-refresh"
+          >
+            Actualizar Categorías
+          </v-btn>
           <v-select
             v-model="recurrence"
             :items="recurrenceOptions"
@@ -107,6 +113,7 @@ const autoRenew = ref(false)
 const loading = ref(false)
 const error = ref(null)
 const dialog = ref(false)
+const categories = ref([])
 
 function close() {
   dialog.value = false
@@ -152,4 +159,19 @@ const submit = async () => {
     loading.value = false
   }
 }
+
+const fetchCategories = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/categories')
+    categories.value = response.data
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+// Fetch categories on component mount
+fetchCategories()
 </script>

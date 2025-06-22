@@ -7,7 +7,7 @@ export const addPayment = async (payment) => {
     currency, 
     exchangeRate, 
     paidAt, 
-    paymentProvider,
+    paymentMethodId,
     category,
     description
   } = payment;
@@ -15,7 +15,7 @@ export const addPayment = async (payment) => {
   const data = {
     amount: parseFloat(amount),
     currency,
-    paymentProvider,
+    paymentMethodId,
     paidAt: paidAt || new Date(),
     category: category || null,
     description: description || null
@@ -44,7 +44,10 @@ export const getPaymentsByName = async (name) => {
         Service: { name }
       }
     },
-    include: { Bill: { include: { Service: true } } },
+    include: { 
+      Bill: { include: { Service: true } },
+      PaymentMethods: true
+    },
     orderBy: { paidAt: 'desc' }
   });
 
@@ -58,7 +61,10 @@ export const getPaymentsByName = async (name) => {
 
 export const getAllPayments = async () => {
   const payments = await prisma.payment.findMany({
-    include: { Bill: { include: { Service: true } } },
+    include: { 
+      Bill: { include: { Service: true } },
+      PaymentMethods: true
+    },
     orderBy: { paidAt: 'desc' }
   });
 
@@ -77,13 +83,15 @@ export const getAllPayments = async () => {
       // Agregar metadatos para la UI
       type: isPaidBill ? 'bill' : 'one-time',
       description: payment.description || (isPaidBill ? payment.Bill.Service.name : ''),
-      serviceCategory: isPaidBill ? payment.Bill.Service.category : null
+      serviceCategory: isPaidBill ? payment.Bill.Service.category : null,
+      // Incluir información del método de pago
+      paymentMethodName: payment.PaymentMethods?.name || 'Desconocido'
     };
   });
 };
 
 export const updatePayment = async (id, payment) => {
-  const { amount, currency, exchangeRate, paidAt, paymentProvider } = payment;
+  const { amount, currency, exchangeRate, paidAt, paymentMethodId } = payment;
   return prisma.payment.update({
     where: { id },
     data: {
@@ -91,7 +99,7 @@ export const updatePayment = async (id, payment) => {
       currency,
       exchangeRate,
       paidAt,
-      paymentProvider
+      paymentMethodId
     }
   });
 };

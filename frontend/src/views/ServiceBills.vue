@@ -192,7 +192,7 @@
                         </v-chip>
                     </template>
 
-                    <template #item.paymentProvider="{ item }">
+                    <template #item.paymentMethodName="{ item }">
                         <template v-if="item.payments?.length">
                             <v-chip
                                 size="small"

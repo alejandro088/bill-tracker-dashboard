@@ -11,9 +11,11 @@
           class="mr-2"
         />
         <v-select
-          v-model="payment.paymentProvider"
+          v-model="payment.paymentMethodId"
           :items="providers"
-          label="Payment Provider"
+          item-title="title"
+          item-value="value"
+          label="Medio de Pago"
           density="compact"
         />
         <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
@@ -28,6 +30,7 @@
             </template>
             <v-date-picker v-model="payment.paidAt" @update:modelValue="menu = false" />
           </v-menu>
+
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -41,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import api from '../api.js';
 
 const props = defineProps({ payment: Object });
@@ -49,11 +52,11 @@ const emit = defineEmits(['edited', 'close']);
 
 const dialog = ref(false);
 const menu = ref(false);
-const providers = ['Visa', 'Mastercard', 'MODO', 'MercadoPago', 'Google Play', 'PayPal'];
+const providers = ref([]);
 
 const payment = ref({
   amount: 0,
-  paymentProvider: '',
+  paymentMethodId: null,
   paidAt: ''
 });
 
@@ -69,7 +72,7 @@ watch(
         paidAt 
       };
     } else {
-      payment.value = { amount: 0, paymentProvider: '', paidAt: '' };
+      payment.value = { amount: 0, paymentMethodId: null, paidAt: '' };
     }
   },
   { immediate: true }
@@ -87,6 +90,8 @@ async function confirm() {
       ...payment.value,
       paidAt: payment.value.paidAt ? new Date(payment.value.paidAt).toISOString() : null
     };
+
+    console.log('Editing payment:', paymentData);
     await api.put(`/payments/${payment.value.id}`, paymentData);
     emit('edited', paymentData);
     close();
@@ -94,4 +99,31 @@ async function confirm() {
     console.error('Error editing payment:', error);
   }
 }
+
+async function fetchProviders() {
+  try {
+    const { data } = await api.get('/payment-methods');
+    // Transformar los datos al formato requerido por v-select
+    providers.value = data.map(method => ({
+      title: method.name,
+      value: method.id,
+      description: method.description,
+      icon: method.icon
+    }));
+  } catch (error) {
+    console.error('Error al obtener proveedores:', error);
+    // Valores por defecto en caso de error
+    providers.value = [
+      { title: 'Visa', value: '1' },
+      { title: 'Mastercard', value: '2' },
+      { title: 'MercadoPago', value: '3' },
+      { title: 'Google Play', value: '4' },
+      { title: 'MODO', value: '5' },
+      { title: 'PayPal', value: '6' }
+    ];
+  }
+}
+
+// Cargar los proveedores al montar el componente
+onMounted(fetchProviders);
 </script>

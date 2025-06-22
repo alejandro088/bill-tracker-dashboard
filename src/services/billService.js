@@ -267,7 +267,7 @@ const handlePayments = async (bill, data) => {
             : [
                   {
                       amount: bill.amount,
-                      paymentProvider: data.paymentProvider || 'unknown',
+                      paymentMethodId: data.paymentMethodId || null,
                   },
               ];
 
@@ -276,7 +276,9 @@ const handlePayments = async (bill, data) => {
             billId: bill.id,
             amount: p.amount,
             paidAt,
-            paymentProvider: p.paymentProvider || 'unknown',
+            paymentMethodId: p.paymentMethodId || null,
+            exchangeRate: p.exchangeRate || null,
+            currency: p.currency || bill.currency
         })),
         skipDuplicates: true,
     });

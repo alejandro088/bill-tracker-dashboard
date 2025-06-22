@@ -1,5 +1,40 @@
 # Changelog
 
+## [2025-06-22] - Actualización de la columna de Medio de pago en ServiceBills
+
+### Changed
+- Actualizada la columna "Medio de pago" en ServiceBills.vue para usar paymentMethodName en lugar de paymentProvider
+- Modificado el método getServiceById para incluir la relación PaymentMethods en los pagos
+- Actualizado el template de ServiceBills para mostrar correctamente los métodos de pago relacionados
+
+## [2025-06-22] - Migración a paymentMethodId y actualización del servicio de pagos
+
+### Changed
+- Actualizado el servicio de pagos en el backend para usar `paymentMethodId` en lugar de `paymentProvider`
+- Modificada la función `addPayment` para recibir y almacenar el ID del método de pago
+- Actualizada la función `listPayments` para incluir filtro por `paymentMethodId`
+- Modificadas las funciones `getPaymentSummary` y `getPaymentTrends` para utilizar `paymentMethodId` y `PaymentMethods`
+- Corregido el componente OneTimePaymentDialog para usar `paymentMethodId` y cargar dinámicamente métodos de pago desde la API
+
+### Fixed
+- Corregido el acceso a la información del método de pago a través de la relación `PaymentMethods`
+- Actualizada la lógica para mostrar el método de pago más utilizado en los informes
+
+## [2025-06-22] - Corrección en filtros y diálogo de edición de pagos
+
+### Changed
+- Corregido el filtro de categorías en PaymentHistory.vue para utilizar el campo `categoryId` del servicio
+- Modificado el componente EditPaymentDialog para eliminar el selector de categorías
+- Actualizado el diálogo de edición de pagos para cargar los medios de pago desde el backend
+- Cambiado el almacenamiento de método de pago para usar `paymentMethodId` en lugar de `paymentProvider`
+- Actualizada la columna de método de pago en la tabla para que use la relación con PaymentMethods y muestre el nombre real del método
+- Modificado el componente PayDialog para eliminar el selector de categoría y alimentar los métodos de pago desde el backend
+
+### Fixed
+- Corregido el problema de visualización de categorías en el selector
+- Solucionado el error de filtrado de categorías en el listado de pagos
+- Corregido el filtrado de métodos de pago para usar el ID en lugar del nombre
+
 ## [2025-06-21] - Pagos Únicos
 
 ### Added
@@ -321,7 +356,21 @@
   - Visualización mejorada de íconos en la tabla de servicios
 
 ## [Unreleased]
+### Added
+- Agregadas las tablas `Category` y `PaymentMethods` al esquema de Prisma.
+- Creado el servicio `categoryService.js` para manejar las operaciones CRUD de categorías.
+- Creado el servicio `paymentMethodService.js` para manejar las operaciones CRUD de métodos de pago.
+- Creado el controlador `categoryController.js` para interactuar con las categorías.
+- Creado el controlador `paymentMethodController.js` para interactuar con los métodos de pago.
+- Definidas las rutas `categoryRoutes.js` y `paymentMethodRoutes.js` para las operaciones CRUD de categorías y métodos de pago.
+- Generadas las migraciones necesarias para reflejar los cambios en la base de datos.
+- Integradas las rutas de métodos de pago en el archivo principal del backend.
+- Actualizado el componente `PaymentHistory.vue` para consumir las categorías y métodos de pago desde las nuevas APIs.
+- Creada nueva vista dedicada `SettingsView.vue` para la administración de categorías y métodos de pago.
+- Agregados formularios para crear, editar y eliminar categorías y métodos de pago.
+- Implementada navegación a la nueva vista de configuración desde la barra lateral.
+- Mejorado el filtrado de pagos para utilizar los IDs de las categorías.
+
 ### Fixed
-- Se corrigió el manejo de la prop `type` en el componente `BaseCard` dentro de `Analytics.vue` para evitar errores de validación.
-- Se ajustó el acceso a propiedades de `Bill` en `PaymentHistory.vue` para manejar correctamente pagos únicos y evitar errores cuando `Bill` es `null`.
-- Se actualizaron los filtros y headers en `PaymentHistory.vue` para soportar pagos únicos de manera consistente.
+- Corregido error en la creación de categorías y métodos de pago donde se enviaba `id` como nulo.
+- Mejorada la robustez de los controladores del backend para asegurar que el campo `id` se excluya de las peticiones de creación.

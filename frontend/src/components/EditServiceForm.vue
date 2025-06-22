@@ -158,14 +158,9 @@
                             <v-col cols="12" md="4">
                                 <v-select
                                     v-model="formData.category"
-                                    :items="CATEGORY_OPTIONS"
-                                    item-title="title"
-                                    item-value="value"
+                                    :items="categories"
                                     label="Categoría"
-                                    required
-                                    :rules="[v => !!v || 'La categoría es requerida']"
-                                    variant="outlined"
-                                    density="comfortable"
+                                    density="compact"
                                 />
                             </v-col>
                             <v-col cols="12" md="4">

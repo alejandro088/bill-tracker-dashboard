@@ -2,11 +2,11 @@ import prisma from '../db/prismaClient.js';
 import { createNotification } from './notificationService.js';
 
 export const listServices = async (query = {}) => {
-  const { category, recurrence, paymentProvider, dueSoon } = query;
+  const { category, recurrence, paymentMethodId, dueSoon } = query;
   const where = { archived: false };
   if (category) where.category = category;
   if (recurrence) where.recurrence = recurrence;
-  if (paymentProvider) where.paymentProvider = paymentProvider;
+  if (paymentMethodId) where.paymentMethodId = paymentMethodId;
   if (dueSoon) {
     const soon = new Date();
     soon.setDate(soon.getDate() + Number(dueSoon));
@@ -20,15 +20,33 @@ export const listServices = async (query = {}) => {
   const services = await prisma.service.findMany({
     where,
     orderBy: { name: 'asc' },
-    include: { bills: { orderBy: { dueDate: 'desc' }, take: 1 } }
+    include: { 
+      bills: { orderBy: { dueDate: 'desc' }, take: 1 },
+      PaymentMethods: true
+    }
   });
-  return services.map((s) => ({ ...s, lastBill: s.bills[0] || null, bills: undefined }));
+  return services.map((s) => ({ 
+    ...s, 
+    lastBill: s.bills[0] || null, 
+    bills: undefined,
+    paymentMethodName: s.PaymentMethods?.name || null
+  }));
 };
 
 export const getServiceById = async (id) =>
   prisma.service.findUnique({
     where: { id },
-    include: { bills: { include: { payments: true } } }
+    include: { 
+      bills: { 
+        include: { 
+          payments: { 
+            include: { 
+              PaymentMethods: true 
+            } 
+          } 
+        } 
+      } 
+    }
   });
 
 export const updateService = async (id, data) => {

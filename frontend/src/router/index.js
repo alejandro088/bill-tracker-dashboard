@@ -5,6 +5,7 @@ import Analytics from '../views/Analytics.vue';
 import ServiceBills from '../views/ServiceBills.vue';
 import Summary from '../views/Summary.vue';
 import NotificationPanel from '../views/NotificationPanel.vue';
+import SettingsView from '../views/SettingsView.vue';
 
 const routes = [
   { path: '/', component: Dashboard },
@@ -12,7 +13,8 @@ const routes = [
   { path: '/history/:name?', component: PaymentHistory, props: true },
   { path: '/analytics', component: Analytics },
   { path: '/summary', component: Summary },
-  { path: '/notifications', component: NotificationPanel }
+  { path: '/notifications', component: NotificationPanel },
+  { path: '/settings', component: SettingsView }
 ];
 
 export default createRouter({

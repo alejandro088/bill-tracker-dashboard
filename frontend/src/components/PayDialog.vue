@@ -41,8 +41,10 @@
             @update:model-value="updateExchangeRate(i)"
           />
           <v-select
-            v-model="p.paymentProvider"
+            v-model="p.paymentMethodId"
             :items="providers"
+            item-title="title"
+            item-value="value"
             label="Medio de pago"
             density="compact"
             class="flex-grow-1"
@@ -86,7 +88,7 @@ const props = defineProps({ bill: Object });
 const emit = defineEmits(['paid', 'close', 'notify']);
 
 const dialog = ref(false);
-const providers = ['Visa', 'Mastercard', 'MODO', 'MercadoPago', 'Google Play', 'PayPal'];
+const providers = ref([]);
 const payments = ref([]);
 const exchangeRate = ref(0);
 const lastUpdate = ref(null);
@@ -117,17 +119,55 @@ async function fetchExchangeRate() {
   }
 }
 
+
+
+// Obtener proveedores desde la API
+async function fetchProviders() {
+  try {
+    const response = await api.get('/payment-methods');
+    if (response.status === 200) {
+      providers.value = response.data.map(method => ({
+        title: method.name,
+        value: method.id,
+        description: method.description,
+        icon: method.icon
+      }));
+    } else {
+      emit('notify', {
+        type: 'error',
+        message: 'Error al obtener métodos de pago'
+      });
+    }
+  } catch (error) {
+    console.error('Error al obtener métodos de pago:', error);
+    emit('notify', {
+      type: 'error',
+      message: 'Error al obtener métodos de pago'
+    });
+    // Valores por defecto en caso de error
+    providers.value = [
+      { title: 'Visa', value: '1' },
+      { title: 'Mastercard', value: '2' },
+      { title: 'MercadoPago', value: '3' },
+      { title: 'Google Play', value: '4' },
+      { title: 'MODO', value: '5' },
+      { title: 'PayPal', value: '6' }
+    ];
+  }
+}
+
 watch(
   () => props.bill,
   async (b) => {
     dialog.value = !!b;
     if (b) {
       await fetchExchangeRate();
+      await fetchProviders();
       paymentDate.value = new Date().toISOString().split('T')[0];
       payments.value = [{ 
         amount: b.amount, 
         currency: b.currency,
-        paymentProvider: '',
+        paymentMethodId: '',
         exchangeRate: exchangeRate.value
       }];
     } else {
@@ -168,7 +208,7 @@ function addLine() {
   payments.value.push({ 
     amount: 0, 
     currency: props.bill.currency,
-    paymentProvider: '',
+    paymentMethodId: '',
     exchangeRate: exchangeRate.value
   });
 }

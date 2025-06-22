@@ -38,6 +38,12 @@
           title="Resumen"
           :active="route.path.startsWith('/summary')"
         />
+        <v-list-item
+          to="/settings"
+          prepend-icon="mdi-cog"
+          title="Configuración"
+          :active="route.path.startsWith('/settings')"
+        />
       </v-list>
     </v-navigation-drawer>
 
