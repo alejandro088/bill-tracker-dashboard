@@ -263,8 +263,8 @@ onMounted(fetchUnreadNotifications);
 
 .notifications-list {
   max-height: 350px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: auto; /* Añadido para mostrar la barra de desplazamiento */
+  overflow-x: hidden; /* Prevenir desplazamiento horizontal */
   scrollbar-width: thin; /* Para Firefox */
   scrollbar-color: rgba(var(--v-theme-primary), 0.5) rgba(0, 0, 0, 0.05); /* Para Firefox - color más oscuro */
   padding-right: 2px; /* Añade espacio para la barra de desplazamiento */
@@ -281,14 +281,20 @@ onMounted(fetchUnreadNotifications);
 }
 
 .notifications-list::-webkit-scrollbar-thumb {
-  background-color: rgba(var(--v-theme-primary), 0.5); /* Color más oscuro por defecto */
+  background-color: rgba(var(--v-theme-primary), 0.6); /* Color más oscuro por defecto para mayor visibilidad */
   border-radius: 8px;
   transition: background-color 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil para mejorar la visibilidad */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Borde más visible */
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1); /* Sombra para hacerlo más prominente */
 }
 
 .notifications-list::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(var(--v-theme-primary), 0.7); /* Aún más oscuro al hacer hover */
+  background-color: rgba(var(--v-theme-primary), 0.8); /* Aún más oscuro al hacer hover para mayor visibilidad */
+}
+
+/* Asegura que la barra de desplazamiento sea siempre visible */
+.notifications-list:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--v-theme-primary), 0.7); /* Destacar la barra al hacer hover en la lista */
 }
 
 .empty-notifications {

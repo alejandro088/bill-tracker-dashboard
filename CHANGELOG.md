@@ -6,9 +6,12 @@
 - Mejorado el diseño de la barra de desplazamiento para hacerla más visible y funcional
   - Aumentado el ancho de 6px a 8px para mejor visibilidad
   - Añadido un borde sutil para mejorar el contraste visual
-  - Incrementado el contraste del color de fondo (de 0.3 a 0.5 de opacidad)
+  - Incrementado el contraste del color de fondo (de 0.3 a 0.6 de opacidad)
+  - Aplicado efecto de sombra para hacer la barra más prominente
+  - **Corregido:** Añadida propiedad `overflow-y: auto` para asegurar que la barra de desplazamiento se muestre
 - Añadido efecto hover en la barra de desplazamiento para mejor interacción
-  - Implementado cambio de opacidad de 0.5 a 0.7 al pasar el cursor
+  - Implementado cambio de opacidad de 0.6 a 0.8 al pasar el cursor
+  - Añadido efecto de resaltado cuando se hace hover sobre el contenedor de notificaciones
 - Optimizado el soporte para Firefox con propiedades scrollbar-width y scrollbar-color
   - Mejorado el contraste de colores para Firefox con scrollbar-color
 - Ajustada la altura máxima del contenedor de notificaciones para mejor visualización
