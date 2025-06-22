@@ -1,5 +1,23 @@
 # Changelog
 
+## [2025-06-22] - Mejoras en el panel de notificaciones
+
+### Added
+- Implementada búsqueda avanzada de notificaciones por título y contenido
+- Añadida agrupación visual de notificaciones por fecha (Hoy, Ayer, fechas anteriores)
+- Agregada funcionalidad para eliminar notificaciones individuales
+- Añadido botón para eliminar todas las notificaciones leídas
+- Implementada paginación para mejorar el rendimiento con gran cantidad de notificaciones
+- Mejorados los filtros de tipo con chips visuales y mejor experiencia de usuario
+- Agregados tooltips informativos en los botones de acción
+
+### Changed
+- Rediseñada la interfaz para ser más limpia y accesible
+- Mejorada la API del backend para soportar filtrado avanzado y paginación
+- Optimizada la interacción con notificaciones (marcar como leído al hacer clic)
+- Mejorada la experiencia en dispositivos móviles con diseño adaptativo
+- Actualizado el sistema de filtrado para permitir múltiples filtros simultáneos
+
 ## [2025-06-22] - Eliminación del selector de moneda en pagos
 
 ### Changed
