@@ -1,5 +1,10 @@
 # Changelog
 
+## [2025-06-22] - Correcciones en el panel de notificaciones
+
+### Fixed
+- Corregido error de importación en NotificationPanel.vue al añadir la función formatDate en utils/formatters.js
+
 ## [2025-06-22] - Mejoras en el panel de notificaciones
 
 ### Added
