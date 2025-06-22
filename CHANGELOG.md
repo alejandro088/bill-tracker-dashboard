@@ -1,5 +1,18 @@
 # Changelog
 
+## [2025-06-22] - Eliminación del selector de moneda en pagos
+
+### Changed
+- Eliminado el selector de moneda (ARS, USD) del diálogo de pago de facturas
+- La moneda ahora se asigna automáticamente según la cuenta asociada al método de pago seleccionado
+- Mejorado el algoritmo de selección automática de métodos de pago para respetar la moneda de la cuenta
+- Actualizada la función de verificación de saldo para tener en cuenta la moneda de la cuenta
+
+### Improved
+- La interfaz de pago es ahora más simple al eliminar la selección manual de moneda
+- Añadida selección automática de un método de pago preferido al iniciar el diálogo
+- Mejorada la experiencia de usuario al simplificar el proceso de pago
+
 ## [2025-06-22] - Mejoras en la vista de Pagar factura
 
 ### Added

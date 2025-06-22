@@ -50,21 +50,12 @@
           <v-text-field
             v-model.number="p.amount"
             type="number"
-            :label="'Monto ' + (p.currency === 'USD' ? 'USD' : 'ARS')"
+            :label="`Monto ${getMethodCurrency(p.paymentMethodId)}`"
             density="compact"
             variant="outlined"
             class="mr-2"
-            style="max-width:100px"
-          />
-          <v-select
-            v-model="p.currency"
-            :items="['ARS', 'USD']"
-            label="Moneda"
-            density="compact"
-            variant="outlined"
-            class="mr-2"
-            style="max-width:100px"
-            @update:model-value="updateExchangeRate(i)"
+            style="max-width:150px"
+            :prefix="getMethodCurrency(p.paymentMethodId) === 'USD' ? 'USD ' : '$'"
           />
           <v-select
             v-model="p.paymentMethodId"
@@ -279,12 +270,37 @@ watch(
       await fetchExchangeRate();
       await fetchProviders();
       paymentDate.value = new Date().toISOString().split('T')[0];
+      
+      // Intentar encontrar un método de pago preferido (el del servicio o uno con saldo suficiente)
+      let preferredMethodId = '';
+      
+      if (b.Service?.paymentMethodId) {
+        // Si el servicio tiene un método de pago configurado, usarlo como preferido
+        preferredMethodId = b.Service.paymentMethodId;
+      } else {
+        // Buscar un método con saldo suficiente y en la misma moneda
+        const methodWithSufficientBalance = providers.value.find(p => 
+          p.account && 
+          p.account.currency === b.currency && 
+          p.account.balance >= b.amount
+        );
+        
+        if (methodWithSufficientBalance) {
+          preferredMethodId = methodWithSufficientBalance.value;
+        }
+      }
+      
       payments.value = [{ 
         amount: b.amount, 
-        currency: b.currency,
-        paymentMethodId: '',
+        currency: b.currency, // Se actualizará cuando se seleccione un método de pago
+        paymentMethodId: preferredMethodId,
         exchangeRate: exchangeRate.value
       }];
+      
+      // Si se seleccionó un método, actualizar la moneda
+      if (preferredMethodId) {
+        updatePaymentMethodInfo(0);
+      }
     } else {
       payments.value = [];
     }
@@ -333,7 +349,7 @@ const hasInsufficientFunds = computed(() => {
 function addLine() {
   payments.value.push({ 
     amount: 0, 
-    currency: props.bill.currency,
+    currency: props.bill.currency, // Se actualizará cuando se seleccione un método de pago
     paymentMethodId: '',
     exchangeRate: exchangeRate.value
   });
@@ -366,11 +382,9 @@ function getPaymentMethodAccount(paymentMethodId) {
 function checkSufficientBalance(account, payment) {
   if (!account || account.balance === null || !payment?.amount) return true;
   
-  // Verificar si hay suficiente saldo
-  if (account.currency === payment.currency) {
-    // Monedas iguales, comparación directa
-    return account.balance >= payment.amount;
-  } else {
+  // La moneda del pago debe ser la misma que la de la cuenta
+  // Si el pago viene con una moneda diferente, necesitamos convertirla
+  if (payment.currency && payment.currency !== account.currency) {
     // Monedas diferentes, necesitamos convertir
     if (payment.currency === 'USD' && account.currency === 'ARS') {
       // Calcular cuántos ARS necesitamos
@@ -381,6 +395,9 @@ function checkSufficientBalance(account, payment) {
       const amountInUSD = payment.amount / exchangeRate.value;
       return account.balance >= amountInUSD;
     }
+  } else {
+    // Monedas iguales o no especificada, comparación directa
+    return account.balance >= payment.amount;
   }
   return true;
 }
@@ -391,17 +408,25 @@ function updatePaymentMethodInfo(index) {
   const paymentMethod = providers.value.find(p => p.value === paymentMethodId);
   const payment = payments.value[index];
   
+  // Actualizar la moneda según la cuenta asociada al método de pago
+  if (paymentMethod?.account) {
+    // Asignar la moneda de la cuenta al pago
+    payments.value[index].currency = paymentMethod.account.currency;
+  } else {
+    // Si no hay cuenta asociada, usar la moneda de la factura
+    payments.value[index].currency = props.bill?.currency || 'ARS';
+  }
+  
+  // Actualizar la tasa de cambio si es necesario
+  if (hasMultipleCurrencies.value) {
+    updateExchangeRate(index);
+  }
+  
   // Sugerimos un método de pago con saldo suficiente si es posible
   if (paymentMethodId && payment.amount > 0) {
     const availableMethods = providers.value
       .filter(p => p.account && p.account.balance !== null)
       .sort((a, b) => {
-        // Priorizar métodos de pago de la misma moneda que el pago
-        const aMatchesCurrency = a.account.currency === payment.currency;
-        const bMatchesCurrency = b.account.currency === payment.currency;
-        if (aMatchesCurrency && !bMatchesCurrency) return -1;
-        if (!aMatchesCurrency && bMatchesCurrency) return 1;
-        // Si ambos o ninguno coincide en moneda, ordenar por saldo disponible
         return b.account.balance - a.account.balance;
       });
     
@@ -456,20 +481,16 @@ function suggestPaymentMethod() {
     const alternativeMethods = providers.value
       .filter(p => p.account && p.account.balance !== null)
       .filter(p => p.value !== payment.paymentMethodId)
-      .filter(p => checkSufficientBalance(p.account, payment));
+      .filter(p => checkSufficientBalance(p.account, { ...payment, currency: p.account.currency }));
     
     if (alternativeMethods.length > 0) {
-      // Ordenar por preferencia: misma moneda primero, luego por saldo
-      alternativeMethods.sort((a, b) => {
-        const aMatchesCurrency = a.account.currency === payment.currency;
-        const bMatchesCurrency = b.account.currency === payment.currency;
-        if (aMatchesCurrency && !bMatchesCurrency) return -1;
-        if (!aMatchesCurrency && bMatchesCurrency) return 1;
-        return b.account.balance - a.account.balance;
-      });
+      // Ordenar por saldo disponible
+      alternativeMethods.sort((a, b) => b.account.balance - a.account.balance);
       
       // Seleccionar el mejor método automáticamente
       payments.value[i].paymentMethodId = alternativeMethods[0].value;
+      // Actualizar la moneda al cambiar el método de pago
+      payments.value[i].currency = alternativeMethods[0].account.currency;
       
       emit('notify', {
         type: 'info',
@@ -555,6 +576,15 @@ async function confirm() {
   } finally {
     loading.value = false;
   }
+}
+
+function getMethodCurrency(paymentMethodId) {
+  if (!paymentMethodId) return props.bill?.currency || 'ARS';
+  
+  const method = providers.value.find(p => p.value === paymentMethodId);
+  if (!method?.account) return props.bill?.currency || 'ARS';
+  
+  return method.account.currency;
 }
 </script>
 
