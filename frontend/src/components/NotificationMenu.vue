@@ -134,7 +134,7 @@ const fetchUnreadNotifications = async () => {
     loading.value = true;
     try {
         const response = await api.get('/notifications/unread', {
-            params: { limit: 5 }
+            params: { limit: 100 }
         });
         unreadNotifications.value = response.data;
         
@@ -198,16 +198,6 @@ const getTypeColor = (type) => {
 // Cargar notificaciones inicialmente
 onMounted(fetchUnreadNotifications);
 
-// Recargar las notificaciones cada 60 segundos
-let intervalId;
-onMounted(() => {
-    intervalId = setInterval(fetchUnreadNotifications, 60000); // 60 segundos
-});
-
-// Limpiar el intervalo al desmontar
-onUnmounted(() => {
-    if (intervalId) clearInterval(intervalId);
-});
 </script>
 
 <style>
@@ -272,18 +262,33 @@ onUnmounted(() => {
 }
 
 .notifications-list {
-  max-height: 400px;
+  max-height: 350px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin; /* Para Firefox */
+  scrollbar-color: rgba(var(--v-theme-primary), 0.5) rgba(0, 0, 0, 0.05); /* Para Firefox - color más oscuro */
+  padding-right: 2px; /* Añade espacio para la barra de desplazamiento */
 }
+
 .notifications-list::-webkit-scrollbar {
-  width: 8px;
+  width: 8px; /* Aumentado el ancho para mejor visibilidad */
 }
+
 .notifications-list::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  margin: 4px 0;
 }
+
 .notifications-list::-webkit-scrollbar-thumb {
-  background-color: rgba(var(--v-theme-on-surface), 0.12);
-  border-radius: 4px;
+  background-color: rgba(var(--v-theme-primary), 0.5); /* Color más oscuro por defecto */
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil para mejorar la visibilidad */
+}
+
+.notifications-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--v-theme-primary), 0.7); /* Aún más oscuro al hacer hover */
 }
 
 .empty-notifications {
