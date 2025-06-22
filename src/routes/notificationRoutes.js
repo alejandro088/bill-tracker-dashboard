@@ -74,6 +74,25 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Obtener solo notificaciones no leídas
+router.get('/unread', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const take = parseInt(limit);
+    
+    const notifications = await prisma.notification.findMany({
+      where: { read: false },
+      orderBy: { createdAt: 'desc' },
+      take
+    });
+    
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error al obtener notificaciones no leídas:', error);
+    res.status(500).json({ error: 'Error al obtener notificaciones no leídas' });
+  }
+});
+
 // Crear una notificación
 router.post('/', async (req, res) => {
   try {

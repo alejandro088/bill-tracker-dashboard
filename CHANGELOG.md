@@ -1,5 +1,18 @@
 # Changelog
 
+## [2025-06-22] - Mejora del menú de notificaciones
+
+### Added
+- Agregado endpoint `/notifications/unread` para obtener sólo notificaciones no leídas
+- Rediseñado el componente NotificationMenu para mostrar sólo notificaciones no leídas
+- Añadida actualización automática del menú de notificaciones cada 60 segundos
+- Implementada funcionalidad para marcar notificaciones como leídas directamente desde el menú
+
+### Changed
+- Mejorada la visualización del menú con iconos según tipo de notificación
+- Optimizado el rendimiento al cargar sólo notificaciones no leídas
+- Mejorada la interactividad con efectos visuales al hacer hover/clic
+
 ## [2025-06-22] - Corrección de visualización en el panel de notificaciones
 
 ### Fixed

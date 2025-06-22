@@ -3,10 +3,10 @@
         <template #activator="{ props }">
             <v-btn icon v-bind="props" class="mx-2">
                 <v-badge
-                    :content="notifications.length"
+                    :content="unreadNotifications.length"
                     color="red"
                     overlap
-                    v-if="notifications.length"
+                    v-if="unreadNotifications.length"
                 >
                     <v-icon>mdi-bell</v-icon>
                 </v-badge>
@@ -14,42 +14,51 @@
             </v-btn>
         </template>
 
-        <!-- menú igual que antes -->
         <v-card
             class="notifications-menu"
             max-width="400"
             min-width="320"
             elevation="3"
         >
-            <v-card-text class="text-subtitle-1 px-4 py-2">
-                Notificaciones
+            <v-card-text class="text-subtitle-1 px-4 py-2 d-flex align-center justify-space-between">
+                <span>Notificaciones no leídas</span>
+                <v-chip v-if="unreadCount" size="small" color="error" class="ml-2">{{ unreadCount }}</v-chip>
             </v-card-text>
 
             <v-divider></v-divider>
 
-            <v-list class="notifications-list pa-0" density="comfortable">
-                <template v-if="!notifications.length">
+            <div v-if="loading" class="pa-4 text-center">
+                <v-progress-circular indeterminate color="primary" size="24" class="mr-2"></v-progress-circular>
+                <span class="text-medium-emphasis">Cargando...</span>
+            </div>
+
+            <v-list v-else class="notifications-list pa-0" density="comfortable">
+                <template v-if="!unreadNotifications.length">
                     <v-list-item class="empty-notifications">
                         <v-list-item-subtitle
                             class="text-center py-4 text-medium-emphasis"
                         >
                             <v-icon class="mb-2">mdi-bell-off-outline</v-icon>
-                            <div>No hay notificaciones</div>
+                            <div>No hay notificaciones por leer</div>
                         </v-list-item-subtitle>
                     </v-list-item>
                 </template>
 
                 <template v-else>
                     <v-list-item
-                        v-for="(notification, i) in notifications.slice(0, 5)"
-                        :key="i"
+                        v-for="(notification, i) in unreadNotifications.slice(0, 5)"
+                        :key="notification.id"
                         :value="notification"
-                        class="notification-item"
-                        :class="{ unread: !notification.read }"
-                        :to="notification.actionUrl"
+                        class="notification-item unread"
+                        @click="handleNotificationClick(notification)"
                     >
-                        <div class="notification-title">
-                            {{ notification.title }}
+                        <div class="notification-header d-flex align-center mb-1">
+                            <v-avatar :color="getTypeColor(notification.type)" size="24" class="mr-2">
+                                <v-icon size="small" color="white">{{ getTypeIcon(notification.type) }}</v-icon>
+                            </v-avatar>
+                            <div class="notification-title">
+                                {{ notification.title }}
+                            </div>
                         </div>
                         <div class="notification-message">
                             {{ notification.message }}
@@ -63,10 +72,10 @@
                         </div>
                     </v-list-item>
 
-                    <v-divider v-if="notifications.length > 5"></v-divider>
+                    <v-divider v-if="unreadCount > 5"></v-divider>
 
                     <v-list-item
-                        v-if="notifications.length > 5"
+                        v-if="unreadCount > 5"
                         to="/notifications"
                         class="view-more text-center py-2"
                         variant="text"
@@ -74,32 +83,131 @@
                         <v-list-item-subtitle>
                             <span class="view-more-text">
                                 Ver
-                                {{ notifications.length - 5 }} notificaciones
+                                {{ unreadCount - 5 }} notificaciones
                                 más
                             </span>
                         </v-list-item-subtitle>
                     </v-list-item>
                 </template>
             </v-list>
+
+            <v-divider></v-divider>
+            
+            <v-card-actions>
+                <v-btn
+                    variant="text"
+                    color="primary"
+                    class="mx-auto"
+                    size="small"
+                    to="/notifications"
+                    prepend-icon="mdi-bell-outline"
+                >
+                    Ver todas las notificaciones
+                </v-btn>
+            </v-card-actions>
         </v-card>
     </v-menu>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { formatDateRelative } from '../utils/formatters';
+import api from '../api';
 
-export default {
-    name: 'NotificationMenu',
-    props: {
-        notifications: {
-            type: Array,
-            default: () => [],
-        },
+const props = defineProps({
+    // Este prop ya no es necesario, pero lo mantenemos por compatibilidad
+    notifications: {
+        type: Array,
+        default: () => [],
     },
-    methods: {
-        formatDateRelative,
-    },
+});
+
+const router = useRouter();
+const unreadNotifications = ref([]);
+const loading = ref(false);
+const error = ref(null);
+const unreadCount = ref(0);
+
+// Obtener notificaciones no leídas desde el API
+const fetchUnreadNotifications = async () => {
+    loading.value = true;
+    try {
+        const response = await api.get('/notifications/unread', {
+            params: { limit: 5 }
+        });
+        unreadNotifications.value = response.data;
+        
+        // Obtener también el conteo total
+        const countResponse = await api.get('/notifications/unread-count');
+        unreadCount.value = countResponse.data.count;
+    } catch (err) {
+        console.error('Error al cargar notificaciones no leídas:', err);
+        error.value = 'Error al cargar notificaciones';
+    } finally {
+        loading.value = false;
+    }
 };
+
+// Manejar el clic en una notificación
+const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    
+    if (notification.actionUrl) {
+        router.push(notification.actionUrl);
+    }
+};
+
+// Marcar como leída
+const markAsRead = async (id) => {
+    try {
+        await api.post(`/notifications/${id}/read`);
+        // Eliminar la notificación de la lista
+        unreadNotifications.value = unreadNotifications.value.filter(n => n.id !== id);
+        // Decrementar el contador
+        unreadCount.value--;
+    } catch (error) {
+        console.error('Error al marcar notificación como leída:', error);
+    }
+};
+
+// Iconos para los tipos de notificaciones
+const getTypeIcon = (type) => {
+    const icons = {
+        'bill': 'mdi-currency-usd',
+        'payment': 'mdi-check-circle',
+        'reminder': 'mdi-clock-outline',
+        'alert': 'mdi-alert',
+        'info': 'mdi-information'
+    };
+    return icons[type] || 'mdi-bell';
+};
+
+// Colores para los tipos de notificaciones
+const getTypeColor = (type) => {
+    const colors = {
+        'bill': 'indigo',
+        'payment': 'success',
+        'reminder': 'warning',
+        'alert': 'error',
+        'info': 'info'
+    };
+    return colors[type] || 'primary';
+};
+
+// Cargar notificaciones inicialmente
+onMounted(fetchUnreadNotifications);
+
+// Recargar las notificaciones cada 60 segundos
+let intervalId;
+onMounted(() => {
+    intervalId = setInterval(fetchUnreadNotifications, 60000); // 60 segundos
+});
+
+// Limpiar el intervalo al desmontar
+onUnmounted(() => {
+    if (intervalId) clearInterval(intervalId);
+});
 </script>
 
 <style>
@@ -120,6 +228,7 @@ export default {
 }
 .notification-item:hover {
   background-color: rgb(var(--v-theme-surface-variant));
+  cursor: pointer;
 }
 
 /* Fuerza alineación a la izquierda de todo contenido interno */
@@ -142,11 +251,18 @@ export default {
   font-size: 0.875rem;
   font-weight: 500;
   color: rgb(var(--v-theme-on-surface));
+  flex-grow: 1;
 }
 
 .notification-message {
   font-size: 0.875rem;
   color: rgba(var(--v-theme-on-surface), 0.7);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .notification-date {
@@ -182,5 +298,13 @@ export default {
   text-align: center;
 }
 
+.view-more-text {
+  color: rgb(var(--v-theme-primary));
+  font-size: 0.875rem;
+  font-weight: 500;
+}
 
+.notification-header {
+  width: 100%;
+}
 </style>
