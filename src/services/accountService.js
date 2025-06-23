@@ -102,3 +102,89 @@ export const getAccountsBalance = async () => {
   
   return balances;
 };
+
+export const addIncome = async ({ accountId, amount, description }) => {
+  return prisma.income.create({
+    data: {
+      accountId,
+      amount,
+      description,
+    },
+  });
+};
+
+export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency, description, transferDate }) => {
+  return prisma.$transaction(async (prisma) => {
+    // Crear la transferencia
+    const transfer = await prisma.transfer.create({
+      data: {
+        fromAccountId,
+        toAccountId,
+        amount,
+        currency,
+        description,
+        transferDate,
+      },
+    });
+
+    // Actualizar el saldo de la cuenta de origen (restar)
+    await prisma.account.update({
+      where: { id: fromAccountId },
+      data: {
+        balance: {
+          decrement: parseFloat(amount),
+        },
+      },
+    });
+
+    // Actualizar el saldo de la cuenta de destino (sumar)
+    await prisma.account.update({
+      where: { id: toAccountId },
+      data: {
+        balance: {
+          increment: parseFloat(amount),
+        },
+      },
+    });
+
+    return transfer;
+  });
+};
+
+export const getIncomes = async () => {
+  try {
+    const incomes = await prisma.income.findMany({
+      include: {
+        account: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    console.log('Incomes retrieved:', incomes);
+    return incomes;
+  } catch (error) {
+    console.error('Error retrieving incomes:', error);
+    throw new Error('Error retrieving incomes: ' + error.message);
+  }
+};
+
+export const getTransfers = async () => {
+  try {
+    const transfers = await prisma.transfer.findMany({
+      include: {
+        fromAccount: true,
+        toAccount: true
+      },
+      orderBy: {
+        transferDate: 'desc'
+      }
+    });
+
+    return transfers;
+  } catch (error) {
+    console.error('Error retrieving transfers:', error);
+    throw new Error('Error retrieving transfers: ' + error.message);
+  }
+};

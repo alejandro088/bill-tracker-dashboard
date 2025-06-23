@@ -131,7 +131,32 @@ model Account {
   color       String?
   
   paymentMethods PaymentMethods[]
-  
+  incomingTransfers Transfer[] @relation("ToAccount")
+  outgoingTransfers Transfer[] @relation("FromAccount")
+  incomes    Income[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Income {
+  id          String   @id @default(uuid())
+  account     Account  @relation(fields: [accountId], references: [id])
+  accountId   String
+  amount      Decimal
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model Transfer {
+  id           String   @id @default(uuid())
+  fromAccount  Account  @relation("FromAccount", fields: [fromAccountId], references: [id])
+  fromAccountId String
+  toAccount    Account  @relation("ToAccount", fields: [toAccountId], references: [id])
+  toAccountId  String
+  amount       Decimal
+  currency     String
+  description  String?
+  transferDate DateTime
+  createdAt    DateTime @default(now())
 }
