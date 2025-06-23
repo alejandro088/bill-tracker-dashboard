@@ -95,3 +95,52 @@ export const getBalances = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener los balances' });
   }
 };
+
+// Registrar un ingreso en una cuenta
+export const registerIncome = async (req, res) => {
+  const { accountId, amount, description } = req.body;
+  try {
+    const income = await accountService.addIncome({ accountId, amount, description });
+    res.status(201).json(income);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Crear una transferencia entre cuentas
+export const createTransfer = async (req, res) => {
+  const { fromAccountId, toAccountId, amount, currency, description, date } = req.body;
+  try {
+    const transfer = await accountService.addTransfer({ 
+      fromAccountId, 
+      toAccountId, 
+      amount, 
+      currency, 
+      description, 
+      transferDate: new Date(date) 
+    });
+    res.status(201).json(transfer);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Listar ingresos
+export const listIncomes = async (req, res) => {
+  try {
+    const incomes = await accountService.getIncomes();
+    res.json(incomes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Listar transferencias
+export const listTransfers = async (req, res) => {
+  try {
+    const transfers = await accountService.getTransfers();
+    res.json(transfers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

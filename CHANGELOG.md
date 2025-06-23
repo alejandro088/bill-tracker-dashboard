@@ -538,3 +538,32 @@
 
 ### Fixed
 - Corregida la visualización de métodos de pago para mostrar información adicional de la cuenta
+
+## [Unreleased]
+### Added
+- Endpoint `/income` para registrar ingresos en `accountRoutes.js`.
+- Función `registerIncome` en `accountController.js`.
+- Función `addIncome` en `accountService.js`.
+- Modelo `Income` en `schema.prisma`.
+- Migración `add-income-table`.
+- Componente Vue `IncomeForm.vue` para registrar ingresos.
+- Componente Vue `TransferForm.vue` para realizar transferencias entre cuentas.
+
+### Changed
+- Endpoint `/transfers` para crear transferencias entre cuentas en `accountRoutes.js`.
+- Función `createTransfer` en `accountController.js`.
+- Función `addTransfer` en `accountService.js`.
+- Modelo `Transfer` en `schema.prisma`.
+- Migración `add-transfer-table`.
+- Actualización del modelo `Account` con relaciones para transferencias entrantes y salientes.
+
+### Changed
+- Refactorización de `IncomeForm.vue` y `TransferForm.vue` para utilizar `<script setup>` y `api.js` para las peticiones HTTP.
+- Mejora en la estructura del código con la API de Composition de Vue 3.
+
+## [2025-06-22] - Refactorización de FinanceManager
+
+### Changed
+- Refactorización de `FinanceManager.vue` para utilizar `<script setup>` y `api.js`.
+- Añadida la ruta `/finance` en el router para acceder a la vista de gestión financiera.
+- Agregado nuevo ítem en el sidebar para acceder a la vista de Finanzas.
