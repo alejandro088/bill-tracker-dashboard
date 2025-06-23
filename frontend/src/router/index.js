@@ -6,6 +6,7 @@ import ServiceBills from '../views/ServiceBills.vue';
 import Summary from '../views/Summary.vue';
 import NotificationPanel from '../views/NotificationPanel.vue';
 import SettingsView from '../views/SettingsView.vue';
+import FinanceManager from '../views/FinanceManager.vue';
 
 const routes = [
   { path: '/', component: Dashboard },
@@ -14,7 +15,8 @@ const routes = [
   { path: '/analytics', component: Analytics },
   { path: '/summary', component: Summary },
   { path: '/notifications', component: NotificationPanel },
-  { path: '/settings', component: SettingsView }
+  { path: '/settings', component: SettingsView },
+  { path: '/finance', component: FinanceManager }
 ];
 
 export default createRouter({

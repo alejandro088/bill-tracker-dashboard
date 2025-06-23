@@ -39,6 +39,12 @@
           :active="route.path.startsWith('/summary')"
         />
         <v-list-item
+          to="/finance"
+          prepend-icon="mdi-cash-multiple"
+          title="Finanzas"
+          :active="route.path.startsWith('/finance')"
+        />
+        <v-list-item
           to="/settings"
           prepend-icon="mdi-cog"
           title="Configuración"
