@@ -1,7 +1,11 @@
 import express from 'express';
 import * as accountController from '../controllers/accountController.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Aplicar autenticación a todas las rutas de cuentas
+router.use(requireAuth);
 
 // Rutas CRUD básicas
 router.get('/', accountController.getAllAccounts);

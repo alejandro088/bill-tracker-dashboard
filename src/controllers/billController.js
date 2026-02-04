@@ -10,7 +10,8 @@ import {
 
 export const getAll = async (req, res, next) => {
   try {
-    res.json(await listBills(req.query));
+    const userId = req.user?.userId || null;
+    res.json(await listBills(req.query, userId));
   } catch (err) {
     next(err);
   }
@@ -18,7 +19,8 @@ export const getAll = async (req, res, next) => {
 
 export const getById = async (req, res, next) => {
   try {
-    const bill = await getBillById(req.params.id);
+    const userId = req.user?.userId || null;
+    const bill = await getBillById(req.params.id, userId);
     if (!bill) return res.status(404).json({ message: 'Bill not found' });
     res.json(bill);
   } catch (err) {
@@ -28,7 +30,8 @@ export const getById = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const bill = await addBill(req.body);
+    const userId = req.user?.userId || null;
+    const bill = await addBill(req.body, userId);
     res.status(201).json(bill);
   } catch (err) {
     next(err);
@@ -97,7 +100,8 @@ export const update = async (req, res, next) => {
       }
     }
     
-    const result = await updateBill(req.params.id, req.body);
+    const userId = req.user?.userId || null;
+    const result = await updateBill(req.params.id, req.body, userId);
     if (!result) return res.status(404).json({ message: 'Bill not found' });
     res.json(result);
   } catch (err) {
@@ -107,7 +111,8 @@ export const update = async (req, res, next) => {
 
 export const remove = async (req, res, next) => {
   try {
-    await deleteBill(req.params.id);
+    const userId = req.user?.userId || null;
+    await deleteBill(req.params.id, userId);
     res.status(204).end();
   } catch (err) {
     next(err);
@@ -116,7 +121,8 @@ export const remove = async (req, res, next) => {
 
 export const getUpcoming = async (req, res, next) => {
   try {
-    const bills = await getUpcomingBills();
+    const userId = req.user?.userId || null;
+    const bills = await getUpcomingBills(userId);
     res.json(bills);
   } catch (err) {
     next(err);
@@ -125,7 +131,8 @@ export const getUpcoming = async (req, res, next) => {
 
 export const getSummaryStats = async (req, res, next) => {
   try {
-    const summary = await getSummaryWithCurrency();
+    const userId = req.user?.userId || null;
+    const summary = await getSummaryWithCurrency(userId);
     res.json(summary);
   } catch (err) {
     next(err);

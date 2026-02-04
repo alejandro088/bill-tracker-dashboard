@@ -13,22 +13,24 @@ enum Currency {
 }
 
 model Bill {
-  id              String   @id @default(uuid())
-  amount          Float
-  currency        Currency @default(ARS)
-  dueDate         DateTime
-  status          String
-  categoryId      String?
-  serviceId       String
-  autoRenew       Boolean  @default(false)
-  recurrence      String   @default("none")
-  paidAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id         String    @id @default(uuid())
+  amount     Float
+  currency   Currency  @default(ARS)
+  dueDate    DateTime
+  status     String
+  categoryId String?
+  userId     String?
+  serviceId  String
+  autoRenew  Boolean   @default(false)
+  recurrence String    @default("none")
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  Service   Service   @relation(fields: [serviceId], references: [id])
-  Category  Category? @relation(fields: [categoryId], references: [id])
-  payments  Payment[]
+  Service  Service   @relation(fields: [serviceId], references: [id])
+  User     User?     @relation(fields: [userId], references: [id])
+  Category Category? @relation(fields: [categoryId], references: [id])
+  payments Payment[]
 
   @@index([serviceId])
   @@index([categoryId])
@@ -37,15 +39,17 @@ model Bill {
 model Payment {
   id              String   @id @default(uuid())
   billId          String?
+  userId          String?
   amount          Float
   currency        Currency @default(ARS)
-  exchangeRate    Float?   // Tasa de cambio al momento del pago (si aplica)
+  exchangeRate    Float? // Tasa de cambio al momento del pago (si aplica)
   paidAt          DateTime
   paymentMethodId String?
   description     String?
 
-  Bill            Bill? @relation(fields: [billId], references: [id], onDelete: Cascade)
-  PaymentMethods  PaymentMethods? @relation(fields: [paymentMethodId], references: [id])
+  Bill           Bill?           @relation(fields: [billId], references: [id], onDelete: Cascade)
+  User           User?           @relation(fields: [userId], references: [id])
+  PaymentMethods PaymentMethods? @relation(fields: [paymentMethodId], references: [id])
 
   @@index([billId])
   @@index([paymentMethodId])
@@ -65,11 +69,12 @@ model Service {
   id              String   @id @default(uuid())
   name            String
   description     String?
-  url             String?  // URL del servicio para favicons automáticos
-  iconKey         String?  // Clave para servicios populares (ej: "netflix", "youtube", "chatgpt")
-  customIconUrl   String?  // URL para íconos personalizados cuando no es un servicio popular
-  customIconKey   String?  // Clave para íconos personalizados
-  categoryId     String?
+  url             String? // URL del servicio para favicons automáticos
+  iconKey         String? // Clave para servicios populares (ej: "netflix", "youtube", "chatgpt")
+  customIconUrl   String? // URL para íconos personalizados cuando no es un servicio popular
+  customIconKey   String? // Clave para íconos personalizados
+  categoryId      String?
+  userId          String?
   paymentMethodId String?
   paymentProvider String?
   recurrence      String   @default("none")
@@ -79,42 +84,43 @@ model Service {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  Category        Category? @relation(fields: [categoryId], references: [id])
+  Category       Category?       @relation(fields: [categoryId], references: [id])
   PaymentMethods PaymentMethods? @relation(fields: [paymentMethodId], references: [id])
 
   bills Bill[]
 
-
+  User User? @relation(fields: [userId], references: [id])
 }
 
 model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String    @id @default(uuid())
+  name        String    @unique
   description String?
   bills       Bill[]
   services    Service[]
-  color      String?  // Color para la categoría, puede ser un código hexadecimal
-  icon     String?  // Clave para íconos populares (ej: "netflix", "youtube", "chatgpt")
+  color       String? // Color para la categoría, puede ser un código hexadecimal
+  icon        String? // Clave para íconos populares (ej: "netflix", "youtube", "chatgpt")
 
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PaymentMethods {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String    @id @default(uuid())
+  name        String    @unique
   description String?
-  icon       String?
+  icon        String?
   payments    Payment[]
   services    Service[]
   accountId   String?
-  
-  Account     Account? @relation(fields: [accountId], references: [id])
+  userId      String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  Account Account? @relation(fields: [accountId], references: [id])
+  User    User?    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([accountId])
 }
 
@@ -122,19 +128,21 @@ model Account {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
-  type        String   // Tipo de cuenta: "Banco", "Efectivo", "Tarjeta de Crédito", etc.
-  balance     Float?   // Saldo actual (opcional)
+  type        String // Tipo de cuenta: "Banco", "Efectivo", "Tarjeta de Crédito", etc.
+  balance     Float? // Saldo actual (opcional)
   currency    Currency @default(ARS)
   icon        String?
   color       String?
-  
-  paymentMethods PaymentMethods[]
-  incomingTransfers Transfer[] @relation("ToAccount")
-  outgoingTransfers Transfer[] @relation("FromAccount")
-  incomes    Income[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  userId            String?
+  paymentMethods    PaymentMethods[]
+  incomingTransfers Transfer[]       @relation("ToAccount")
+  outgoingTransfers Transfer[]       @relation("FromAccount")
+  incomes           Income[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User?    @relation(fields: [userId], references: [id])
 }
 
 model Income {
@@ -147,24 +155,29 @@ model Income {
 }
 
 model Transfer {
-  id           String   @id @default(uuid())
-  fromAccount  Account  @relation("FromAccount", fields: [fromAccountId], references: [id])
+  id            String   @id @default(uuid())
+  fromAccount   Account  @relation("FromAccount", fields: [fromAccountId], references: [id])
   fromAccountId String
-  toAccount    Account  @relation("ToAccount", fields: [toAccountId], references: [id])
-  toAccountId  String
-  amount       Decimal
-  currency     String
-  description  String?
-  transferDate DateTime
-  createdAt    DateTime @default(now())
+  toAccount     Account  @relation("ToAccount", fields: [toAccountId], references: [id])
+  toAccountId   String
+  amount        Decimal
+  currency      String
+  description   String?
+  transferDate  DateTime
+  createdAt     DateTime @default(now())
 }
 
 model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  email        String?  @unique
-  passwordHash String
-  role         String   @default("user")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String           @id @default(uuid())
+  username       String           @unique
+  email          String?          @unique
+  passwordHash   String
+  role           String           @default("user")
+  bills          Bill[]
+  payments       Payment[]
+  services       Service[]
+  accounts       Account[]
+  paymentMethods PaymentMethods[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 }

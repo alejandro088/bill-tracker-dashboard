@@ -3,7 +3,7 @@ import * as accountService from '../services/accountService.js';
 // Obtener todas las cuentas
 export const getAllAccounts = async (req, res) => {
   try {
-    const accounts = await accountService.getAllAccounts();
+    const accounts = await accountService.getAllAccounts(req.user?.userId);
     res.json(accounts);
   } catch (error) {
     console.error('Error al obtener todas las cuentas:', error);
@@ -14,7 +14,7 @@ export const getAllAccounts = async (req, res) => {
 // Obtener una cuenta por ID
 export const getAccountById = async (req, res) => {
   try {
-    const account = await accountService.getAccountById(req.params.id);
+    const account = await accountService.getAccountById(req.params.id, req.user?.userId);
     if (!account) {
       return res.status(404).json({ error: 'Cuenta no encontrada' });
     }
@@ -28,7 +28,7 @@ export const getAccountById = async (req, res) => {
 // Crear una nueva cuenta
 export const createAccount = async (req, res) => {
   try {
-    const newAccount = await accountService.createAccount(req.body);
+    const newAccount = await accountService.createAccount(req.body, req.user?.userId);
     res.status(201).json(newAccount);
   } catch (error) {
     console.error('Error al crear la cuenta:', error);
@@ -39,7 +39,7 @@ export const createAccount = async (req, res) => {
 // Actualizar una cuenta existente
 export const updateAccount = async (req, res) => {
   try {
-    const updatedAccount = await accountService.updateAccount(req.params.id, req.body);
+    const updatedAccount = await accountService.updateAccount(req.params.id, req.body, req.user?.userId);
     res.json(updatedAccount);
   } catch (error) {
     console.error('Error al actualizar la cuenta:', error);
@@ -50,7 +50,7 @@ export const updateAccount = async (req, res) => {
 // Eliminar una cuenta
 export const deleteAccount = async (req, res) => {
   try {
-    await accountService.deleteAccount(req.params.id);
+    await accountService.deleteAccount(req.params.id, req.user?.userId);
     res.json({ message: 'Cuenta eliminada correctamente' });
   } catch (error) {
     console.error('Error al eliminar la cuenta:', error);
@@ -65,7 +65,7 @@ export const deleteAccount = async (req, res) => {
 export const linkPaymentMethod = async (req, res) => {
   try {
     const { paymentMethodId, accountId } = req.body;
-    const result = await accountService.linkPaymentMethodToAccount(paymentMethodId, accountId);
+    const result = await accountService.linkPaymentMethodToAccount(paymentMethodId, accountId, req.user?.userId);
     res.json(result);
   } catch (error) {
     console.error('Error al vincular método de pago a cuenta:', error);
@@ -77,7 +77,7 @@ export const linkPaymentMethod = async (req, res) => {
 export const unlinkPaymentMethod = async (req, res) => {
   try {
     const { paymentMethodId } = req.params;
-    const result = await accountService.unlinkPaymentMethodFromAccount(paymentMethodId);
+    const result = await accountService.unlinkPaymentMethodFromAccount(paymentMethodId, req.user?.userId);
     res.json(result);
   } catch (error) {
     console.error('Error al desvincular método de pago de cuenta:', error);
@@ -88,7 +88,7 @@ export const unlinkPaymentMethod = async (req, res) => {
 // Obtener balance de cuentas por moneda
 export const getBalances = async (req, res) => {
   try {
-    const balances = await accountService.getAccountsBalance();
+    const balances = await accountService.getAccountsBalance(req.user?.userId);
     res.json(balances);
   } catch (error) {
     console.error('Error al obtener los balances:', error);
@@ -100,7 +100,7 @@ export const getBalances = async (req, res) => {
 export const registerIncome = async (req, res) => {
   const { accountId, amount, description } = req.body;
   try {
-    const income = await accountService.addIncome({ accountId, amount, description });
+    const income = await accountService.addIncome({ accountId, amount, description }, req.user?.userId);
     res.status(201).json(income);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -118,7 +118,8 @@ export const createTransfer = async (req, res) => {
       currency, 
       description, 
       transferDate: new Date(date) 
-    });
+    }, req.user?.userId);
+    
     res.status(201).json(transfer);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -128,7 +129,7 @@ export const createTransfer = async (req, res) => {
 // Listar ingresos
 export const listIncomes = async (req, res) => {
   try {
-    const incomes = await accountService.getIncomes();
+    const incomes = await accountService.getIncomes(req.user?.userId);
     res.json(incomes);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -138,7 +139,7 @@ export const listIncomes = async (req, res) => {
 // Listar transferencias
 export const listTransfers = async (req, res) => {
   try {
-    const transfers = await accountService.getTransfers();
+    const transfers = await accountService.getTransfers(req.user?.userId);
     res.json(transfers);
   } catch (error) {
     res.status(500).json({ error: error.message });

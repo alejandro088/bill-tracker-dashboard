@@ -1,0 +1,8 @@
+-- Add userId columns and foreign keys to Bill, Payment, Service
+ALTER TABLE `Bill` ADD COLUMN `userId` VARCHAR(191) NULL;
+ALTER TABLE `Payment` ADD COLUMN `userId` VARCHAR(191) NULL;
+ALTER TABLE `Service` ADD COLUMN `userId` VARCHAR(191) NULL;
+
+ALTER TABLE `Bill` ADD CONSTRAINT `Bill_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Service` ADD CONSTRAINT `Service_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

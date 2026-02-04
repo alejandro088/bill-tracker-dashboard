@@ -1,6 +1,6 @@
 import prisma from './prismaClient.js';
 
-export const addPayment = async (payment) => {
+export const addPayment = async (payment, userId = null) => {
   const { 
     billId, 
     amount, 
@@ -29,6 +29,12 @@ export const addPayment = async (payment) => {
     data.billId = billId; // ✅ corregido
   }
 
+  if (userId) {
+    data.userId = userId;
+  } else if (payment.userId) {
+    data.userId = payment.userId;
+  }
+
   console.log('Adding payment with billId:', billId);
   console.log('🧾 Data to be created:', data);
 
@@ -37,13 +43,14 @@ export const addPayment = async (payment) => {
 };
 
 
-export const getPaymentsByName = async (name) => {
+export const getPaymentsByName = async (name, userId = null) => {
+  const where = {
+    Bill: { Service: { name } },
+    ...(userId && { userId })
+  };
+
   const payments = await prisma.payment.findMany({
-    where: {
-      Bill: {
-        Service: { name }
-      }
-    },
+    where,
     include: { 
       Bill: { include: { Service: true } },
       PaymentMethods: true
@@ -59,8 +66,13 @@ export const getPaymentsByName = async (name) => {
   }));
 };
 
-export const getAllPayments = async () => {
+export const getAllPayments = async (userId = null) => {
+  const where = {
+    ...(userId && { userId })
+  };
+
   const payments = await prisma.payment.findMany({
+    where,
     include: { 
       Bill: { include: { Service: true } },
       PaymentMethods: true
@@ -111,25 +123,22 @@ export const deletePayment = async (id) => {
 };
 
 // Obtener pagos por moneda
-export const getPaymentsByCurrency = async (currency) => {
+export const getPaymentsByCurrency = async (currency, userId = null) => {
+  const where = { currency, ...(userId && { userId }) };
   return prisma.payment.findMany({
-    where: { currency },
+    where,
     include: { Bill: { include: { Service: true } } },
     orderBy: { paidAt: 'desc' }
   });
 };
 
 // Obtener el total de pagos por moneda en un rango de fechas
-export const getTotalByDateRangeAndCurrency = async (startDate, endDate, currency) => {
-  const payments = await prisma.payment.findMany({
-    where: {
-      currency,
-      paidAt: {
-        gte: startDate,
-        lte: endDate
-      }
-    }
-  });
-  
+export const getTotalByDateRangeAndCurrency = async (startDate, endDate, currency, userId = null) => {
+  const where = {
+    currency,
+    paidAt: { gte: startDate, lte: endDate },
+    ...(userId && { userId })
+  };
+  const payments = await prisma.payment.findMany({ where });
   return payments.reduce((total, payment) => total + payment.amount, 0);
 };

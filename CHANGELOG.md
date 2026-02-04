@@ -1,5 +1,10 @@
 # Changelog
 
+## [2026-02-04] - Migración: agregar `userId` a `Account` y `PaymentMethods`
+
+### Changed
+- Añadida migración SQL en `prisma/migrations/add-userid-to-accounts-and-paymentmethods/migration.sql` para agregar las columnas `userId` y las constraints FK en `Account` y `PaymentMethods`.
+
 ## [2026-02-04] - Añadida autenticación básica (JWT)
 
 ### Added

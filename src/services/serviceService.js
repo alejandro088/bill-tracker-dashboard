@@ -3,12 +3,16 @@
  * @param {string} id - ID del servicio
  * @returns {Promise<Object|null>} Servicio archivado o null
  */
-export const archiveService = async (id) => {
+export const archiveService = async (id, userId) => {
   try {
     validateString(id, 'id');
     if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
+    if (!userId) throw new ServiceError('userId requerido', 'validation');
     const existing = await prisma.service.findUnique({ where: { id } });
     if (!existing) return null;
+    if (existing.userId !== userId) {
+      throw new ServiceError('Service not found', 'not_found');
+    }
     return await prisma.service.update({
       where: { id },
       data: { archived: true }
@@ -25,12 +29,16 @@ export const archiveService = async (id) => {
  * @param {string} id - ID del servicio
  * @returns {Promise<Object|null>} Servicio restaurado o null
  */
-export const restoreService = async (id) => {
+export const restoreService = async (id, userId) => {
   try {
     validateString(id, 'id');
     if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
+    if (!userId) throw new ServiceError('userId requerido', 'validation');
     const existing = await prisma.service.findUnique({ where: { id } });
     if (!existing) return null;
+    if (existing.userId !== userId) {
+      throw new ServiceError('Service not found', 'not_found');
+    }
     return await prisma.service.update({
       where: { id },
       data: { archived: false }
@@ -100,10 +108,11 @@ function buildServiceFilters(query = {}) {
  * @param {Object} query - Parámetros de búsqueda y paginación
  * @returns {Promise<Array>} Listado de servicios
  */
-export const listServicesPaginated = async (query = {}) => {
+export const listServicesPaginated = async (query = {}, userId) => {
   try {
+    if (!userId) throw new ServiceError('userId requerido', 'validation');
     const { limit = 20, offset = 0 } = query;
-    const where = buildServiceFilters(query);
+    const where = { ...buildServiceFilters(query), userId };
     const services = await prisma.service.findMany({
       where,
       orderBy: { name: 'asc' },
@@ -126,7 +135,7 @@ export const listServicesPaginated = async (query = {}) => {
   }
 };
 
-export const listServices = async (query = {}) => {
+export const listServices = async (query = {}, userId) => {
   // Validación de parámetros centralizada
   validateString(query.categoryId, 'categoryId');
   validateString(query.recurrence, 'recurrence');
@@ -148,10 +157,12 @@ export const listServices = async (query = {}) => {
     };
   }
   try {
+    if (!userId) throw new ServiceError('userId requerido', 'validation');
     const { limit = 20, offset = 0 } = query;
+    const whereWithUser = { ...(where), userId };
     const [services, total] = await Promise.all([
       prisma.service.findMany({
-        where,
+        where: whereWithUser,
         orderBy: { name: 'asc' },
         skip: Number(offset),
         take: Number(limit),
@@ -161,7 +172,7 @@ export const listServices = async (query = {}) => {
           PaymentMethods: true
         }
       }),
-      prisma.service.count({ where })
+      prisma.service.count({ where: whereWithUser })
     ]);
     return {
       data: services.map((s) => ({ 
@@ -183,12 +194,13 @@ export const listServices = async (query = {}) => {
  * @param {string} id - ID del servicio
  * @returns {Promise<Object|null>} Servicio encontrado o null
  */
-export const getServiceById = async (id) => {
+export const getServiceById = async (id, userId) => {
   try {
     validateString(id, 'id');
     if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
-    return await prisma.service.findUnique({
-      where: { id },
+    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    return await prisma.service.findFirst({
+      where: { id, userId },
       include: { 
         bills: { 
           include: { 
@@ -212,13 +224,17 @@ export const getServiceById = async (id) => {
  * @param {Object} data - Datos a actualizar
  * @returns {Promise<Object|null>} Servicio actualizado o null
  */
-export const updateService = async (id, data) => {
+export const updateService = async (id, data, userId) => {
   try {
     validateString(id, 'id');
     if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
     validateObject(data, 'data');
+    if (!userId) throw new ServiceError('userId requerido', 'validation');
     const existing = await prisma.service.findUnique({ where: { id } });
     if (!existing) return null;
+    if (existing.userId !== userId) {
+      throw new ServiceError('Service not found', 'not_found');
+    }
     return await prisma.service.update({ where: { id }, data });
   } catch (error) {
     console.error('Error al actualizar servicio:', error);
@@ -232,11 +248,13 @@ export const updateService = async (id, data) => {
  * @param {Object} data - Datos del servicio
  * @returns {Promise<Object>} Servicio creado
  */
-export const createService = async (data) => {
+export const createService = async (data, userId) => {
   try {
     validateObject(data, 'data');
     if (!data.name) throw new ServiceError('Datos de servicio incompletos o inválidos', 'validation');
-    const service = await prisma.service.create({ data });
+    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    const createData = { ...data, userId };
+    const service = await prisma.service.create({ data: createData });
     await createNotification(`Nuevo servicio registrado: ${service.name}`);
     return service;
   } catch (error) {

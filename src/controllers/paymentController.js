@@ -8,7 +8,7 @@ export const history = async (req, res, next) => {
       currency: req.query.currency,
       category: req.query.category
     };
-    const payments = await listPayments(filters);
+    const payments = await listPayments(filters, req.user?.userId);
     res.json(payments);
   } catch (err) {
     next(err);
@@ -19,7 +19,7 @@ export const editPayment = async (req, res, next) => {
   try {
     const { id } = req.params;
     const payment = req.body;
-    res.json(await editPaymentService(id, payment));
+    res.json(await editPaymentService(id, payment, req.user?.userId));
   } catch (err) {
     next(err);
   }
@@ -28,7 +28,7 @@ export const editPayment = async (req, res, next) => {
 export const deletePayment = async (req, res, next) => {
   try {
     const { id } = req.params;
-    res.json(await deletePaymentService(id));
+    res.json(await deletePaymentService(id, req.user?.userId));
   } catch (err) {
     next(err);
   }
@@ -38,7 +38,7 @@ export const summary = async (req, res, next) => {
   try {
     const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
     const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
-    res.json(await getPaymentSummary(startDate, endDate));
+    res.json(await getPaymentSummary(startDate, endDate, req.user?.userId));
   } catch (err) {
     next(err);
   }
@@ -48,7 +48,7 @@ export const trends = async (req, res, next) => {
   try {
     const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
     const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
-    res.json(await getPaymentTrends(startDate, endDate));
+    res.json(await getPaymentTrends(startDate, endDate, req.user?.userId));
   } catch (err) {
     next(err);
   }
@@ -107,7 +107,7 @@ export const createOneTimePayment = async (req, res, next) => {
     }
     
     // Si llegamos aquí, podemos proceder con el pago
-    res.json(await addOneTimePayment(payment));
+    res.json(await addOneTimePayment(payment, req.user?.userId));
   } catch (err) {
     next(err);
   }

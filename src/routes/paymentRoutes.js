@@ -4,10 +4,10 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-router.get('/summary', summary);
-router.get('/trends', trends);
+router.get('/summary', requireAuth, summary);
+router.get('/trends', requireAuth, trends);
 router.post('/one-time', requireAuth, createOneTimePayment);
-router.get('/:name?', history);
+router.get('/:name?', requireAuth, history);
 router.put('/:id', requireAuth, editPayment);
 router.delete('/:id', requireAuth, deletePayment);
 

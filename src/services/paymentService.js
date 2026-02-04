@@ -53,22 +53,22 @@ const updateAccountBalance = async (paymentMethodId, amount, currency) => {
   }
 };
 
-export const addPayment = async (payment) => {
-  const result = await addPaymentToDb(payment);
-  
+export const addPayment = async (payment, userId = null) => {
+  const result = await addPaymentToDb(payment, userId);
+
   // Si el pago tiene un método de pago asociado, actualizamos el saldo de la cuenta
   if (payment.paymentMethodId) {
     await updateAccountBalance(
-      payment.paymentMethodId, 
-      payment.amount, 
+      payment.paymentMethodId,
+      payment.amount,
       payment.currency
     );
   }
-  
+
   return result;
 };
 
-export const addOneTimePayment = async (paymentData) => {
+export const addOneTimePayment = async (paymentData, userId = null) => {
   const { amount, currency, paymentMethodId, category, description } = paymentData;
   
   const payment = {
@@ -80,7 +80,7 @@ export const addOneTimePayment = async (paymentData) => {
     paidAt: new Date(),
   };
   
-  const result = await addPaymentToDb(payment);
+  const result = await addPaymentToDb(payment, userId);
   
   // Actualizar el saldo de la cuenta asociada al método de pago
   if (paymentMethodId) {
@@ -90,11 +90,11 @@ export const addOneTimePayment = async (paymentData) => {
   return result;
 };
 
-export const listPayments = async (filters = {}) => {
+export const listPayments = async (filters = {}, userId = null) => {
   const { name, year, currency, category, paymentMethodId } = filters;
   
   // Obtener pagos base (por nombre o todos)
-  const payments = name ? await getPaymentsByName(name) : await getAllPayments();
+  const payments = name ? await getPaymentsByName(name, userId) : await getAllPayments(userId);
   
   // Aplicar filtros
   return payments.filter(payment => {
@@ -125,8 +125,8 @@ export const listPayments = async (filters = {}) => {
   });
 };
 
-export const getPaymentSummary = async (startDate, endDate) => {
-  const payments = await getAllPayments();
+export const getPaymentSummary = async (startDate, endDate, userId = null) => {
+  const payments = await getAllPayments(userId);
 
   // Filter by date range if provided
   const filteredPayments = payments.filter(payment => {
@@ -210,16 +210,28 @@ export const getPaymentSummary = async (startDate, endDate) => {
   };
 };
 
-export const editPayment = async (id, payment) => {
+export const editPayment = async (id, payment, userId = null) => {
+  if (userId) {
+    const existing = await prisma.payment.findUnique({ where: { id } });
+    if (!existing || existing.userId !== userId) {
+      throw new Error('Payment not found');
+    }
+  }
   return await updatePayment(id, payment);
 };
 
-export const deletePayment = async (id) => {
+export const deletePayment = async (id, userId = null) => {
+  if (userId) {
+    const existing = await prisma.payment.findUnique({ where: { id } });
+    if (!existing || existing.userId !== userId) {
+      throw new Error('Payment not found');
+    }
+  }
   return await removePayment(id);
 };
 
-export const getPaymentTrends = async (startDate, endDate) => {
-  const payments = await getAllPayments();
+export const getPaymentTrends = async (startDate, endDate, userId = null) => {
+  const payments = await getAllPayments(userId);
 
   // Filter by date range if provided
   const filteredPayments = payments.filter(payment => {

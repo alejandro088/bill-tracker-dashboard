@@ -1,7 +1,9 @@
 import prisma from '../db/prismaClient.js';
 
-export const getAllAccounts = async () => {
+export const getAllAccounts = async (userId = null) => {
+  const where = { ...(userId && { userId }) };
   return prisma.account.findMany({
+    where,
     include: {
       paymentMethods: true
     },
@@ -11,16 +13,17 @@ export const getAllAccounts = async () => {
   });
 };
 
-export const getAccountById = async (id) => {
-  return prisma.account.findUnique({
-    where: { id },
+export const getAccountById = async (id, userId = null) => {
+  const where = { id, ...(userId && { userId }) };
+  return prisma.account.findFirst({
+    where,
     include: {
       paymentMethods: true
     }
   });
 };
 
-export const createAccount = async (accountData) => {
+export const createAccount = async (accountData, userId = null) => {
   const { name, description, type, balance, currency, icon, color } = accountData;
   
   return prisma.account.create({
@@ -31,14 +34,19 @@ export const createAccount = async (accountData) => {
       balance: balance ? parseFloat(balance) : null,
       currency,
       icon,
-      color
+      color,
+      ...(userId && { userId })
     }
   });
 };
 
-export const updateAccount = async (id, accountData) => {
+export const updateAccount = async (id, accountData, userId = null) => {
   const { name, description, type, balance, currency, icon, color } = accountData;
   
+  if (userId) {
+    const existing = await prisma.account.findUnique({ where: { id } });
+    if (!existing || existing.userId !== userId) throw new Error('Account not found');
+  }
   return prisma.account.update({
     where: { id },
     data: {
@@ -53,7 +61,7 @@ export const updateAccount = async (id, accountData) => {
   });
 };
 
-export const deleteAccount = async (id) => {
+export const deleteAccount = async (id, userId = null) => {
   // Primero verificar si tiene métodos de pago asociados
   const account = await prisma.account.findUnique({
     where: { id },
@@ -63,6 +71,9 @@ export const deleteAccount = async (id) => {
   if (account.paymentMethods.length > 0) {
     throw new Error('No se puede eliminar la cuenta porque tiene métodos de pago asociados');
   }
+  if (userId) {
+    if (!account || account.userId !== userId) throw new Error('Account not found');
+  }
   
   return prisma.account.delete({
     where: { id }
@@ -70,14 +81,26 @@ export const deleteAccount = async (id) => {
 };
 
 // Funciones para vincular y desvincular métodos de pago a cuentas
-export const linkPaymentMethodToAccount = async (paymentMethodId, accountId) => {
+export const linkPaymentMethodToAccount = async (paymentMethodId, accountId, userId = null) => {
+  if (userId) {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account || account.userId !== userId) throw new Error('Account not found');
+    const pm = await prisma.paymentMethods.findUnique({ where: { id: paymentMethodId } });
+    if (!pm || pm.userId !== userId) throw new Error('Payment method not found');
+  }
   return prisma.paymentMethods.update({
     where: { id: paymentMethodId },
     data: { accountId }
   });
 };
 
-export const unlinkPaymentMethodFromAccount = async (paymentMethodId) => {
+export const unlinkPaymentMethodFromAccount = async (paymentMethodId, userId = null) => {
+  if (userId) {
+    const pm = await prisma.paymentMethods.findUnique({ where: { id: paymentMethodId }, include: { Account: true } });
+    if (!pm) throw new Error('Payment method not found');
+    const account = pm.Account;
+    if (account && account.userId !== userId) throw new Error('Not authorized');
+  }
   return prisma.paymentMethods.update({
     where: { id: paymentMethodId },
     data: { accountId: null }
@@ -85,8 +108,9 @@ export const unlinkPaymentMethodFromAccount = async (paymentMethodId) => {
 };
 
 // Función para obtener el balance total por moneda
-export const getAccountsBalance = async () => {
-  const accounts = await prisma.account.findMany();
+export const getAccountsBalance = async (userId = null) => {
+  const where = { ...(userId && { userId }) };
+  const accounts = await prisma.account.findMany({ where });
   
   // Agrupar por moneda
   const balances = {};
@@ -103,7 +127,11 @@ export const getAccountsBalance = async () => {
   return balances;
 };
 
-export const addIncome = async ({ accountId, amount, description }) => {
+export const addIncome = async ({ accountId, amount, description }, userId = null) => {
+  if (userId) {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account || account.userId !== userId) throw new Error('Account not found');
+  }
   return prisma.income.create({
     data: {
       accountId,
@@ -113,7 +141,13 @@ export const addIncome = async ({ accountId, amount, description }) => {
   });
 };
 
-export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency, description, transferDate }) => {
+export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency, description, transferDate }, userId = null) => {
+  if (userId) {
+    const fromAccount = await prisma.account.findUnique({ where: { id: fromAccountId } });
+    const toAccount = await prisma.account.findUnique({ where: { id: toAccountId } });
+    if (!fromAccount || fromAccount.userId !== userId) throw new Error('From account not found');
+    if (!toAccount || toAccount.userId !== userId) throw new Error('To account not found');
+  }
   return prisma.$transaction(async (prisma) => {
     // Crear la transferencia
     const transfer = await prisma.transfer.create({
@@ -151,9 +185,11 @@ export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency
   });
 };
 
-export const getIncomes = async () => {
+export const getIncomes = async (userId = null) => {
   try {
+    const where = userId ? { account: { userId } } : {};
     const incomes = await prisma.income.findMany({
+      where,
       include: {
         account: true
       },
@@ -170,9 +206,11 @@ export const getIncomes = async () => {
   }
 };
 
-export const getTransfers = async () => {
+export const getTransfers = async (userId = null) => {
   try {
+    const where = userId ? { OR: [ { fromAccount: { userId } }, { toAccount: { userId } } ] } : {};
     const transfers = await prisma.transfer.findMany({
+      where,
       include: {
         fromAccount: true,
         toAccount: true
