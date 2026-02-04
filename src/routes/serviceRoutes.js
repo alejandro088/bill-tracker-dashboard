@@ -8,5 +8,6 @@ router.get('/:id', controller.getById);
 router.put('/:id', controller.update);
 router.post('/', controller.create);
 router.patch('/:id/archive', controller.archive);
+router.patch('/:id/restore', controller.restore);
 
 export default router;

@@ -2,8 +2,19 @@ import {
   listServices,
   getServiceById,
   updateService,
-  createService
+  createService,
+  restoreService
 } from '../services/serviceService.js';
+
+export const restore = async (req, res, next) => {
+  try {
+    const service = await restoreService(req.params.id);
+    if (!service) return res.status(404).json({ message: 'Service not found' });
+    res.json(service);
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const getAll = async (req, res, next) => {
   try {
