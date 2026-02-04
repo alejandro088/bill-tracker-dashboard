@@ -49,6 +49,8 @@
           <v-select
             v-model="category"
             :items="categories"
+            item-title="name"
+            item-value="id"
             label="Categoría"
             density="compact"
           />

@@ -119,6 +119,7 @@ const fetchCategories = async () => {
             { title: 'Todas', value: '' },
             { title: 'Servicios', value: 'utilities' },
             { title: 'Suscripciones', value: 'subscriptions' },
+            { title: 'Supermercado', value: 'groceries' },
             { title: 'Impuestos', value: 'taxes' },
             { title: 'Otros', value: 'others' }
         ];

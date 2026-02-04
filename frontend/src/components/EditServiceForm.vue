@@ -157,7 +157,7 @@
                         <v-row>
                             <v-col cols="12" md="4">
                                 <v-select
-                                    v-model="formData.category"
+                                    v-model="formData.categoryId"
                                     :items="categories"
                                     label="Categoría"
                                     density="compact"
@@ -232,17 +232,14 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, toRefs } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import api from '../api'
 import ServiceIcon from './ServiceIcon.vue'
 import { 
     CURRENCIES, 
     CURRENCY_LIST,
     DEFAULT_CURRENCY,
-    PAYMENT_METHOD_LIST,
-    CATEGORIES,
-    CATEGORY_OPTIONS,
-    DEFAULT_CATEGORY
+    PAYMENT_METHOD_LIST
 } from '../constants'
 
 const props = defineProps({
@@ -297,6 +294,24 @@ const selectIcon = (icon) => {
     showIconPicker.value = false;
 };
 
+
+// Listado de categorías desde la API
+const categories = ref([]);
+
+onMounted(async () => {
+    try {
+        const response = await api.get('/categories');
+        // Ajusta según la estructura de la respuesta
+        categories.value = response.data.map(cat => ({
+            title: cat.name,
+            value: cat.id
+        }));
+    } catch (error) {
+        console.error('Error al obtener categorías:', error);
+        categories.value = [];
+    }
+});
+
 const formData = ref({
     name: props.service.name,
     url: props.service.url,
@@ -305,6 +320,7 @@ const formData = ref({
     customIconKey: props.service.customIconKey,
     defaultCurrency: props.service.defaultCurrency,
     category: props.service.category,
+    categoryId: props.service.categoryId,
     paymentProvider: props.service.paymentProvider,
     recurrence: props.service.recurrence,
     autoRenew: props.service.autoRenew

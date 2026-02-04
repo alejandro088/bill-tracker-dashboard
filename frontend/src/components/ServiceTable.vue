@@ -77,17 +77,17 @@
 
             <!-- Template para la categoría -->
             <template #item.category="{ item }">
-                <v-tooltip :text="getCategoryInfo(item.category)">
+                <v-tooltip :text="getCategoryInfo(item.Category.name)">
                     <template #activator="{ props }">
                         <v-chip
                             v-bind="props"
-                            :color="getCategoryColor(item.category)"
+                            :color="getCategoryColor(item.Category.name)"
                             size="small"
                             class="text-capitalize"
                             variant="flat"
                         >
-                            <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.category) }}</v-icon>
-                            {{ getCategoryName(item.category) }}
+                            <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.Category.name) }}</v-icon>
+                            {{ getCategoryName(item.Category.name) }}
                         </v-chip>
                     </template>
                 </v-tooltip>
@@ -165,7 +165,7 @@
                         </template>
                     </v-tooltip>
 
-                    <v-tooltip text="Archivar servicio">
+                    <v-tooltip v-if="!item.archived" text="Archivar servicio">
                         <template #activator="{ props }">
                             <v-btn
                                 v-bind="props"
@@ -177,6 +177,21 @@
                                 @click="$emit('archive', item)"
                             >
                                 <v-icon>mdi-archive</v-icon>
+                            </v-btn>
+                        </template>
+                    </v-tooltip>
+                    <v-tooltip v-else text="Restaurar servicio">
+                        <template #activator="{ props }">
+                            <v-btn
+                                v-bind="props"
+                                color="success"
+                                variant="flat"
+                                icon
+                                size="small"
+                                class="mx-1"
+                                @click="$emit('restore', item)"
+                            >
+                                <v-icon>mdi-archive-arrow-up</v-icon>
                             </v-btn>
                         </template>
                     </v-tooltip>
@@ -207,7 +222,7 @@ const props = defineProps({
     }
 });
 
-defineEmits(['add-bill', 'archive', 'edit']);
+defineEmits(['add-bill', 'archive', 'edit', 'restore']);
 
 const headers = [
     {
@@ -243,10 +258,9 @@ const headers = [
 ];
 
 const getCategoryInfo = (categoryId) => {
-    if (!categoryId) return 'Sin categoría definida';
 
-    console.log(categoryId)
-    console.log(categories.value)
+
+    if (!categoryId) return 'Sin categoría definida';
     
     const category = categories.value.find(c => c.name === categoryId);
     if (category) {

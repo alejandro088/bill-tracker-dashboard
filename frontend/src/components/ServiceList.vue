@@ -17,6 +17,7 @@
             :error="error"
             @add-bill="newInvoice"
             @archive="archive"
+            @restore="restore"
             @edit="editService"
         />
 
@@ -86,7 +87,7 @@ const fetchServices = async () => {
     error.value = null;
     try {
         const response = await api.get('/services');
-        services.value = response.data;
+        services.value = response.data.data;
     } catch (err) {
         error.value = 'Error al cargar los servicios: ' + err.message;
     } finally {
@@ -122,14 +123,18 @@ const filteredServices = computed(() => {
         })
         .filter((service) => {
             if (dueSoon.value) {
-                const lastBill = service.lastBill;
-                if (!lastBill) return false;
+                // Debe tener al menos una factura pendiente o vencida que venza en los próximos 7 días
                 
-                const dueDate = new Date(lastBill.dueDate);
+                if (!service.bills || !Array.isArray(service.bills)) return false;
                 const today = new Date();
-                const sevenDaysFromNow = new Date(today.setDate(today.getDate() + 7));
+                const sevenDaysFromNow = new Date();
                 
-                return dueDate <= sevenDaysFromNow;
+                sevenDaysFromNow.setDate(today.getDate() + 7);
+                return service.bills.some(bill => {
+                    if (bill.status === 'paid') return false;
+                    const dueDate = new Date(bill.dueDate);
+                    return dueDate >= today && dueDate <= sevenDaysFromNow;
+                });
             }
             return true;
         });
@@ -168,6 +173,19 @@ const archive = async (service) => {
         notify({
             type: 'error',
             text: 'Error al archivar el servicio: ' + err.message
+        });
+    }
+};
+
+const restore = async (service) => {
+    try {
+        await api.patch(`/services/${service.id}/restore`);
+        notify('Servicio restaurado exitosamente');
+        fetchServices();
+    } catch (err) {
+        notify({
+            type: 'error',
+            text: 'Error al restaurar el servicio: ' + err.message
         });
     }
 };

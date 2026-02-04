@@ -158,24 +158,26 @@
                     hover
                 >
           <template #item.dueDate="{ item }">
-            <v-tooltip :text="getDaysUntilDue(item.dueDate) < 0 
-              ? `Vencido hace ${Math.abs(getDaysUntilDue(item.dueDate))} días`
-              : `Vence en ${getDaysUntilDue(item.dueDate)} días`"
-            >
-              <template #activator="{ props }">
-                <div v-bind="props" class="d-flex align-center gap-2">
-                  <v-icon 
-                    size="small" 
-                    :color="getDaysUntilDue(item.dueDate) < 0 ? 'error' : 'grey'"
-                  >
-                    mdi-calendar
-                  </v-icon>
-                  <span :class="{ 'text-error': getDaysUntilDue(item.dueDate) < 0 }">
-                    {{ formatDate(item.dueDate) }}
-                  </span>
-                </div>
-              </template>
-            </v-tooltip>
+                        <v-tooltip :text="item.status === 'paid' 
+                            ? `Pagado el ${item.payments?.length ? formatDate(item.payments[0].paidAt) : formatDate(item.dueDate)}`
+                            : (getDaysUntilDue(item.dueDate) < 0 
+                                    ? `Vencido hace ${Math.abs(getDaysUntilDue(item.dueDate))} días`
+                                    : `Vence en ${getDaysUntilDue(item.dueDate)} días`)"
+                        >
+                            <template #activator="{ props }">
+                                <div v-bind="props" class="d-flex align-center gap-2">
+                                    <v-icon 
+                                        size="small" 
+                                        :color="getDaysUntilDue(item.dueDate) < 0 && item.status !== 'paid' ? 'error' : 'grey'"
+                                    >
+                                        mdi-calendar
+                                    </v-icon>
+                                    <span :class="{ 'text-error': getDaysUntilDue(item.dueDate) < 0 && item.status !== 'paid' }">
+                                        {{ formatDate(item.dueDate) }}
+                                    </span>
+                                </div>
+                            </template>
+                        </v-tooltip>
           </template>
 
                     <template #item.amount="{ item }">
