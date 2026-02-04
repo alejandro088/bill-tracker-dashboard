@@ -13,6 +13,7 @@ import summaryRoutes from './routes/summaryRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import paymentMethodRoutes from './routes/paymentMethodRoutes.js';
 import accountRoutes from './routes/accountRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import logger from './middleware/logger.js';
 import errorHandler from './middleware/errorHandler.js';
 import './reminder.js';
@@ -51,6 +52,8 @@ app.use('/api/summary', summaryRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/payment-methods', paymentMethodRoutes);
 app.use('/api/accounts', accountRoutes);
+// Autenticación
+app.use('/api/auth', authRoutes);
 
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
