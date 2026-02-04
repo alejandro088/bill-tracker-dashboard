@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026-02-04] - Añadida autenticación básica (JWT)
+
+### Added
+- Endpoint de autenticación: `POST /api/auth/login` para obtener un JWT.
+- Middleware `src/middleware/auth.js` con `requireAuth` y `optionalAuth`.
+
+### Added
+- Endpoint de registro: `POST /api/auth/register` para crear usuarios persistentes (Prisma `User`).
+- Modelo `User` añadido en `prisma/schema.prisma`.
+
+### Changed
+- Se añadieron dependencias `bcryptjs` y `jsonwebtoken` en `package.json`.
+
+
 ## [2025-06-22] - Mejoras en la barra de desplazamiento del menú de notificaciones
 
 ### Changed
