@@ -41,12 +41,6 @@
             <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
           </v-menu>
           <v-select
-            v-model="paymentMethod"
-            :items="PAYMENT_METHOD_LIST"
-            label="Payment Method"
-            density="compact"
-          />
-          <v-select
             v-model="category"
             :items="categories"
             item-title="name"
@@ -91,9 +85,7 @@ import api from '../api.js'
 import { 
   CURRENCIES, 
   CURRENCY_LIST, 
-  DEFAULT_CURRENCY, 
-  PAYMENT_METHODS,
-  PAYMENT_METHOD_LIST
+  DEFAULT_CURRENCY
 } from '../constants'
 
 const emit = defineEmits(['added', 'notify'])
@@ -104,7 +96,6 @@ const amount = ref(0)
 const currency = ref(DEFAULT_CURRENCY)
 const dueDate = ref('')
 const menu = ref(false)
-const paymentMethod = ref(PAYMENT_METHODS.VISA)
 const category = ref('')
 const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly']
 const recurrence = ref('none')
@@ -142,7 +133,6 @@ const submit = async () => {
       amount: Number(amount.value),
       currency: currency.value,
       dueDate: due.toISOString(),
-      paymentMethod: paymentMethod.value,
       category: category.value,
       recurrence: recurrence.value,
       autoRenew: category.value === CATEGORIES.SUBSCRIPTIONS ? autoRenew.value : false,
