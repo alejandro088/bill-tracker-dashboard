@@ -132,12 +132,28 @@ export const addIncome = async ({ accountId, amount, description }, userId = nul
     const account = await prisma.account.findUnique({ where: { id: accountId } });
     if (!account || account.userId !== userId) throw new Error('Account not found');
   }
-  return prisma.income.create({
-    data: {
-      accountId,
-      amount,
-      description,
-    },
+  // Crear el ingreso y actualizar el balance de la cuenta en una transacción
+  return prisma.$transaction(async (prismaTx) => {
+    const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const income = await prismaTx.income.create({
+      data: {
+        accountId,
+        amount: parsedAmount,
+        description,
+      },
+    });
+
+    // Incrementar el balance de la cuenta (si existe)
+    await prismaTx.account.update({
+      where: { id: accountId },
+      data: {
+        balance: {
+          increment: parsedAmount,
+        },
+      },
+    });
+
+    return income;
   });
 };
 
