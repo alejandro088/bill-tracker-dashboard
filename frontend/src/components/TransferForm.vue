@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, toRef } from 'vue';
 import { CURRENCY_LIST } from '../constants';
 import api from '../api';
 
@@ -138,7 +138,8 @@ const valid = ref(false);
 const loading = ref(false);
 const dateMenu = ref(false);
 const formRef = ref(null);
-const accounts = ref([]);
+const props = defineProps({ accounts: { type: Array, default: () => [] } });
+const accounts = toRef(props, 'accounts');
 const currencies = CURRENCY_LIST;
 
 // Datos del formulario
@@ -152,14 +153,6 @@ const transfer = reactive({
 });
 
 // Métodos
-const fetchAccounts = async () => {
-  try {
-    const response = await api.get('/accounts');
-    accounts.value = response.data;
-  } catch (error) {
-    console.error('Error al cargar las cuentas:', error);
-  }
-};
 
 const submitTransfer = async () => {
   if (!valid.value) return;
@@ -192,8 +185,7 @@ const submitTransfer = async () => {
 // Definir emisión de eventos
 const emit = defineEmits(['transfer-completed']);
 
-// Cargar datos al montar el componente
-onMounted(fetchAccounts);
+// `accounts` ahora se recibe desde el componente padre como prop
 </script>
 
 <style scoped>

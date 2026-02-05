@@ -116,6 +116,7 @@ const router = useRouter();
 const search = ref('');
 const loading = ref(false);
 const transactions = ref([]);
+const accounts = ref([]);
 
 // Definición de columnas de la tabla
 const headers = [
@@ -130,6 +131,15 @@ const headers = [
 // Métodos
 const goToAccountManager = () => {
   router.push('/settings');
+};
+
+const fetchAccounts = async () => {
+  try {
+    const resp = await api.get('/accounts');
+    accounts.value = resp.data;
+  } catch (err) {
+    console.error('Error al cargar cuentas:', err);
+  }
 };
 
 const refreshData = async () => {
@@ -208,7 +218,10 @@ const formatDate = (date) => {
 };
 
 // Cargar datos al montar el componente
-onMounted(refreshData);
+onMounted(async () => {
+  await fetchAccounts();
+  await refreshData();
+});
 </script>
 
 <style scoped>
