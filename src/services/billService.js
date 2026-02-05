@@ -49,7 +49,7 @@ const handleAutoRenewal = async (bill) => {
     // Create the next bill using the Service recurrence (the service is the source of truth for recurrence)
     const serviceRecurrence = billFull.Service?.recurrence || 'none';
     const due = calculateNextDueDate(billFull.dueDate, serviceRecurrence);
-    console.debug('handleAutoRenewal: creating next bill for', billFull.id, 'due:', due.toISOString(), 'billAuto=', billAuto, 'serviceAuto=', serviceAuto);
+    console.debug('handleAutoRenewal: creating next bill for', billFull.id, 'due:', due.toISOString(), 'serviceAuto=', serviceAuto);
     const created = await prisma.bill.create({
         data: {
             serviceId: billFull.serviceId,
