@@ -159,7 +159,7 @@ const submitTransfer = async () => {
   
   loading.value = true;
   try {
-    await api.post('/transfers', transfer);
+    await api.post('/accounts/transfers', transfer);
     
     // Cerrar el diálogo y resetear el formulario
     dialog.value = false;
