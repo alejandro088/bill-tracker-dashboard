@@ -136,7 +136,8 @@ const submit = async () => {
       category: category.value,
       recurrence: recurrence.value,
       autoRenew: category.value === CATEGORIES.SUBSCRIPTIONS ? autoRenew.value : false,
-    }
+          status: 'pending',
+        }
 
     await api.post('/bills', bill)
     emit('notify', `Bill added: ${name.value} (${currency.value} ${amount.value})`)

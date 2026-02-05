@@ -107,7 +107,8 @@ const submit = async () => {
       recurrence: recurrence.value,
       amount: amount.value,
       dueDate: dueDate.value,
-      serviceId: serviceId.value
+      serviceId: serviceId.value,
+      status: 'pending'
     });
     emit('created');
     error.value = null;
