@@ -14,9 +14,12 @@
               <v-icon class="mr-2">mdi-cash-plus</v-icon>
               Ingresos
             </v-card-title>
-            <v-card-text>
+              <v-card-text>
               <p>Registra ingresos de dinero en tus cuentas</p>
-              <income-form @income-added="refreshData" />
+              <income-form :accounts="accounts" @income-added="refreshData" />
+              <div class="mt-3">
+                <withdrawal-form :accounts="accounts" @withdrawal-made="refreshData" />
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -27,9 +30,9 @@
               <v-icon class="mr-2">mdi-bank-transfer</v-icon>
               Transferencias
             </v-card-title>
-            <v-card-text>
+              <v-card-text>
               <p>Mueve dinero entre tus cuentas</p>
-              <transfer-form @transfer-completed="refreshData" />
+              <transfer-form :accounts="accounts" @transfer-completed="refreshData" />
             </v-card-text>
           </v-card>
         </v-col>
@@ -107,6 +110,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import IncomeForm from '../components/IncomeForm.vue';
 import TransferForm from '../components/TransferForm.vue';
+import WithdrawalForm from '../components/WithdrawalForm.vue';
 import api from '../api';
 
 // Router
@@ -157,11 +161,11 @@ const refreshData = async () => {
     transactions.value = [
       ...incomes.map(income => ({
         id: `income-${income.id}`,
-        type: 'Ingreso',
+        type: (Number(income.amount) < 0) ? 'Egreso' : 'Ingreso',
         date: new Date(income.createdAt),
         fromAccount: 'Externo',
         toAccount: income.account.name,
-        amount: income.amount,
+        amount: Math.abs(Number(income.amount)),
         currency: income.currency || 'ARS',
         description: income.description
       })),

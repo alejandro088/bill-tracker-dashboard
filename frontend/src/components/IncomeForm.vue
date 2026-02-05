@@ -137,7 +137,7 @@ const submitIncome = async () => {
   
   loading.value = true;
   try {
-    await api.post('/income', income);
+    await api.post('/accounts/income', income);
     
     // Cerrar el diálogo y resetear el formulario
     dialog.value = false;

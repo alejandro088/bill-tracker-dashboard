@@ -17,6 +17,8 @@ router.get('/balance/summary', accountController.getBalances);
 router.post('/income', accountController.registerIncome);
 // Ruta para crear transferencias
 router.post('/transfers', accountController.createTransfer);
+// Ruta para registrar retiros/egresos
+router.post('/withdraw', accountController.registerWithdrawal);
 
 // Nuevas rutas para listar ingresos y transferencias
 router.get('/incomes', accountController.listIncomes);

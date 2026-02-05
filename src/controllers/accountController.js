@@ -107,17 +107,43 @@ export const registerIncome = async (req, res) => {
   }
 };
 
+// Registrar un retiro/egreso
+export const registerWithdrawal = async (req, res) => {
+  const { accountId, amount, description } = req.body;
+  try {
+    const withdrawal = await accountService.addWithdrawal({ accountId, amount, description }, req.user?.userId);
+    res.status(201).json(withdrawal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Crear una transferencia entre cuentas
 export const createTransfer = async (req, res) => {
   const { fromAccountId, toAccountId, amount, currency, description, date } = req.body;
   try {
+    // Normalizar transferDate: si se pasa sólo la fecha (YYYY-MM-DD), combinarla con la hora actual
+    let transferDate;
+    if (!date) {
+      transferDate = new Date();
+    } else {
+      const dateStr = String(date);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const now = new Date();
+        const parts = dateStr.split('-').map(Number);
+        transferDate = new Date(parts[0], parts[1] - 1, parts[2], now.getHours(), now.getMinutes(), now.getSeconds());
+      } else {
+        transferDate = new Date(dateStr);
+      }
+    }
+
     const transfer = await accountService.addTransfer({ 
       fromAccountId, 
       toAccountId, 
       amount, 
       currency, 
       description, 
-      transferDate: new Date(date) 
+      transferDate
     }, req.user?.userId);
     
     res.status(201).json(transfer);
