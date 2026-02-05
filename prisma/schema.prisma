@@ -18,22 +18,19 @@ model Bill {
   currency   Currency  @default(ARS)
   dueDate    DateTime
   status     String
-  categoryId String?
   userId     String?
   serviceId  String
   autoRenew  Boolean   @default(false)
-  recurrence String    @default("none")
   paidAt     DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   Service  Service   @relation(fields: [serviceId], references: [id])
   User     User?     @relation(fields: [userId], references: [id])
-  Category Category? @relation(fields: [categoryId], references: [id])
+  // Category is resolved via the related Service
   payments Payment[]
 
   @@index([serviceId])
-  @@index([categoryId])
 }
 
 model Payment {

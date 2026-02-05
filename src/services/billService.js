@@ -32,7 +32,7 @@ const calculateNextDueDate = (currentDueDate, recurrence) => {
 
 const handleAutoRenewal = async (bill) => {
     // Ensure we have the full bill loaded (include Service to check its autoRenew)
-    const billFull = (bill.Category || bill.categoryId || bill.Service) ? bill : await prisma.bill.findUnique({ where: { id: bill.id }, include: { Category: true, Service: true } });
+    const billFull = bill.Service ? bill : await prisma.bill.findUnique({ where: { id: bill.id }, include: { Service: { include: { Category: true } } } });
     if (!billFull) {
         console.debug('handleAutoRenewal: billFull not found for', bill?.id);
         return null;
@@ -56,11 +56,9 @@ const handleAutoRenewal = async (bill) => {
             serviceId: billFull.serviceId,
             amount: billFull.amount,
             currency: billFull.currency,
-            categoryId: billFull.categoryId || null,
             dueDate: due,
             status: BILL_STATUS.PENDING,
             autoRenew: true,
-            recurrence: 'none',
             userId: billFull.userId || billFull.Service?.userId || null,
         },
     });
@@ -110,16 +108,16 @@ export const listBills = async (query = {}, userId = null) => {
 
         // Cuando se filtra por recurrencia, aplicarla sobre el Service (el servicio es la fuente de la recurrencia)
         if (recurrence) {
-            filters.Service = { recurrence };
+            filters.Service = { ...(filters.Service || {}), recurrence };
         }
 
-        // Resolve category (can be id or name)
+        // Resolve category (can be id or name) -> apply filter on Service.categoryId
         if (category) {
             const cat = await prisma.category.findFirst({ where: { OR: [{ id: category }, { name: category }] } });
             if (!cat) {
                 return { total: 0, page: Number(page), limit: Number(limit), data: [] };
             }
-            filters.categoryId = cat.id;
+            filters.Service = { ...(filters.Service || {}), categoryId: cat.id };
         }
 
         // Obtener total y datos
@@ -129,7 +127,7 @@ export const listBills = async (query = {}, userId = null) => {
             orderBy: { [sort]: 'asc' },
             skip: (page - 1) * limit,
             take: Number(limit),
-            include: { Service: true, payments: true, Category: true },
+            include: { Service: { include: { Category: true } }, payments: true },
         });
 
         // Mapear resultados
@@ -138,9 +136,10 @@ export const listBills = async (query = {}, userId = null) => {
             name: bill.Service?.name,
             description: bill.Service?.description,
             payments: bill.payments,
-            category: bill.Category?.name || null,
+            category: bill.Service?.Category?.name || null,
+            recurrence: bill.Service?.recurrence || 'none',
             Service: undefined,
-            Category: undefined,
+            // Category removed from Bill; use Service.Category instead
         }));
 
         return { 
@@ -160,7 +159,7 @@ export const getBillById = async (id, userId = null) => {
     if (userId) where.userId = userId;
     const bill = await prisma.bill.findFirst({
         where,
-        include: { Service: true, payments: true, Category: true }
+        include: { Service: { include: { Category: true } }, payments: true }
     });
 
     if (!bill) return null;
@@ -170,9 +169,9 @@ export const getBillById = async (id, userId = null) => {
         name: bill.Service?.name,
         description: bill.Service?.description,
         payments: bill.payments,
-        category: bill.Category?.name || null,
+        category: bill.Service?.Category?.name || null,
+        recurrence: bill.Service?.recurrence || 'none',
         Service: undefined,
-        Category: undefined,
     };
 };
 
@@ -235,20 +234,17 @@ export const addBill = async (data, userId = null) => {
     }
 
     const effectiveAutoRenew = (data.autoRenew !== undefined) ? data.autoRenew : (serviceObj?.autoRenew ?? false);
-    const effectiveRecurrence = data.recurrence || serviceObj?.recurrence || 'none';
 
     const { name, description, ...billData } = data;
-    // Las facturas son hechos concretos: no almacenamos una "recurrence" activa en la factura.
-    // Heredamos autoRenew/recurrence desde el Service para la creación/auto-renovación, pero la factura creada tendrá recurrence 'none'.
+    // Las facturas son hechos concretos y ya no almacenan `recurrence` ni `categoryId`.
+    // La categoría y recurrencia provienen del Service relacionado.
     const bill = await prisma.bill.create({
         data: {
             status: 'pending',
             autoRenew: effectiveAutoRenew,
-            recurrence: 'none',
             serviceId,
             amount: data.amount,
             dueDate: data.dueDate || new Date(),
-            categoryId: categoryId || null,
             userId: userId
         },
     });
@@ -288,6 +284,10 @@ export const updateBill = async (id, data, userId = null) => {
 
         const { name, description, payments, ...rest } = data;
         const updateData = { ...rest };
+        // Remove fields that no longer exist on Bill model
+        delete updateData.category;
+        delete updateData.recurrence;
+        delete updateData.categoryId;
 
         // Debug logs to trace autoRenew behavior
         try {

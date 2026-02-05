@@ -1,5 +1,20 @@
 # Changelog
 
+## [2026-02-05] - Frontend: usar categorías desde DB
+
+### Changed
+- Eliminadas las categorías hardcodeadas del frontend; ahora se cargan desde `/categories`.
+- Actualizados `frontend/src/constants/index.js`, `BillForm.vue`, `EditBillForm.vue`, `useAnalytics.js` y `Analytics.vue` para consumir las categorías desde la base de datos.
+- `BillForm` y `EditBillForm` usan ahora las categorías de la API para los selectores.
+
+## [2026-02-05] - Backend: remover `categoryId` y `recurrence` de `Bill`
+
+### Changed
+- Eliminado `categoryId` y `recurrence` del modelo `Bill` en `prisma/schema.prisma`.
+- Actualizado `src/services/billService.js` para no leer/escribir estos campos y para exponer `category` y `recurrence` desde el `Service` relacionado.
+- Asegúrate de crear una migración de Prisma después de desplegar estos cambios.
+
+
 ## [2026-02-04] - Migración: agregar `userId` a `Account` y `PaymentMethods`
 
 ### Changed
