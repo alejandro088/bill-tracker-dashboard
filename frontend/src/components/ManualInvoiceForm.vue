@@ -2,7 +2,7 @@
   <v-dialog v-model="dialog" max-width="500" @update:modelValue="val => !val && close()">
     <v-card>
       <v-form @submit.prevent="submit">
-        <v-card-title>\u2795 Nueva factura</v-card-title>
+        <v-card-title>Nueva factura</v-card-title>
         <v-card-text class="pt-0">
           <v-text-field v-model="name" label="Name" density="compact" disabled />
           <v-text-field v-model="category" label="Category" density="compact" disabled />
@@ -69,8 +69,7 @@ const recurrence = ref('none');
 const serviceId = ref('');
 const amount = ref(0);
 const dueDate = ref('');
-const statusOptions = ['pending', 'paid', 'overdue'];
-const status = ref('pending');
+// Status is managed via payment actions; do not allow editing here
 const loading = ref(false);
 const error = ref(null);
 
@@ -85,7 +84,6 @@ watch(
       serviceId.value = b.serviceId || '';
       amount.value = b.amount || 0;
       dueDate.value = (b.dueDate || '').substring(0, 10);
-      status.value = b.status || 'pending';
       dialog.value = true;
     } else {
       dialog.value = false;
@@ -109,8 +107,6 @@ const submit = async () => {
       recurrence: recurrence.value,
       amount: amount.value,
       dueDate: dueDate.value,
-      status: status.value,
-      autoRenew: false,
       serviceId: serviceId.value
     });
     emit('created');
