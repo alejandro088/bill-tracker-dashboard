@@ -1,11 +1,13 @@
 import prisma from '../db/prismaClient.js';
 
-export async function createNotification(message) {
+export async function createNotification(message, userId) {
+  if (!userId) throw new Error('userId is required to create notification');
   return await prisma.notification.create({
       data: {
           message,
           read: false,
-          title: 'New Invoice'
+          title: 'New Invoice',
+          userId
       },
   });
 }

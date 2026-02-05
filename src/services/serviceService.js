@@ -255,7 +255,7 @@ export const createService = async (data, userId) => {
     if (!userId) throw new ServiceError('userId requerido', 'validation');
     const createData = { ...data, userId };
     const service = await prisma.service.create({ data: createData });
-    await createNotification(`Nuevo servicio registrado: ${service.name}`);
+    await createNotification(`Nuevo servicio registrado: ${service.name}`, userId);
     return service;
   } catch (error) {
     console.error('Error al crear servicio:', error);

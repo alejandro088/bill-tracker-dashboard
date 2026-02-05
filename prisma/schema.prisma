@@ -61,8 +61,8 @@ model Notification {
   title     String
   message   String
   actionUrl String?
-  userId    String?
-  User      User?    @relation(fields: [userId], references: [id])
+  userId    String
+  User      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   read      Boolean  @default(false)
   

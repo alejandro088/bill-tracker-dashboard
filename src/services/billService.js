@@ -217,6 +217,7 @@ export const addBill = async (data, userId = null) => {
                     message: `Nuevo servicio registrado: ${serviceObj.name}`,
                     read: false,
                     title: 'Nuevo Servicio',
+                    userId: userId || serviceObj.userId || null
                 }
             });
         } else {
@@ -261,6 +262,7 @@ export const addBill = async (data, userId = null) => {
             }).format(bill.amount)} (vence: ${new Date(bill.dueDate).toLocaleDateString('es-ES')})`,
             read: false,
             title: 'Nueva Factura',
+            userId: userId || bill.userId || null
 
         }
     });
@@ -400,10 +402,19 @@ const handlePayments = async (bill, data, userId = null) => {
 };
 
 const createPaymentNotification = async (bill) => {
+    // Ensure we have bill with service to determine user ownership
+    const billFull = await prisma.bill.findUnique({ where: { id: bill.id }, include: { Service: true } });
+    const uid = billFull?.userId || billFull?.Service?.userId;
+    if (!uid) {
+        console.debug('createPaymentNotification: no userId found for bill', bill.id, 'skipping notification');
+        return;
+    }
+
     await prisma.notification.create({
         data: {
             message: `Factura pagada: ${bill.serviceId} ($${bill.amount})`,
             title: 'Factura Pagada',
+            userId: uid
         },
     });
 };
