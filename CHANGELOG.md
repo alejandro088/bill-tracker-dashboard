@@ -10,6 +10,9 @@
 ### Fixed
 - Ajuste en `src/services/accountService.js` para fijar la collation de conexión MySQL antes de ejecutar búsquedas de `Income` y `Transfer`, evitando errores de "Illegal mix of collations" en algunas instalaciones MySQL.
 
+### Added
+- Migración manual: añadida `prisma/migrations/require-notification-userid/migration.sql` para agregar la columna `userId`, índice y constraint FK en `Notification`. La migración intenta forzar `NOT NULL` sólo si no hay filas con `userId` NULL.
+
 ## [2026-02-04] - Añadida autenticación básica (JWT)
 
 ### Added

@@ -565,6 +565,12 @@ async function confirm() {
       timeout: 3000
     });
     emit('paid');
+    // Notify NotificationMenu and other listeners to refresh
+    try {
+      window.dispatchEvent(new CustomEvent('notifications:refresh'));
+    } catch (e) {
+      // ignore in non-browser environments
+    }
     close();
   } catch (error) {
     console.error('Error al registrar el pago:', error);

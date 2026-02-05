@@ -65,7 +65,7 @@ model Notification {
   User      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   read      Boolean  @default(false)
-  
+
   @@index([userId])
 }
 
@@ -179,6 +179,7 @@ model User {
   role           String           @default("user")
   bills          Bill[]
   payments       Payment[]
+  notifications  Notification[]
   services       Service[]
   accounts       Account[]
   paymentMethods PaymentMethods[]
