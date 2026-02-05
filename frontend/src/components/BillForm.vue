@@ -50,7 +50,7 @@
             v-model="category"
             :items="categories"
             item-title="name"
-            item-value="id"
+            item-value="name"
             label="Categoría"
             density="compact"
           />
@@ -69,7 +69,7 @@
             density="compact"
           />
           <v-switch
-            v-if="category === CATEGORIES.SUBSCRIPTIONS"
+            v-if="category === 'subscriptions'"
             v-model="autoRenew"
             label="Auto Renew"
           />
@@ -93,10 +93,7 @@ import {
   CURRENCY_LIST, 
   DEFAULT_CURRENCY, 
   PAYMENT_METHODS,
-  PAYMENT_METHOD_LIST,
-  CATEGORIES,
-  CATEGORY_OPTIONS,
-  DEFAULT_CATEGORY
+  PAYMENT_METHOD_LIST
 } from '../constants'
 
 const emit = defineEmits(['added', 'notify'])
@@ -108,7 +105,7 @@ const currency = ref(DEFAULT_CURRENCY)
 const dueDate = ref('')
 const menu = ref(false)
 const paymentMethod = ref(PAYMENT_METHODS.VISA)
-const category = ref(DEFAULT_CATEGORY)
+const category = ref('')
 const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly']
 const recurrence = ref('none')
 const autoRenew = ref(false)
@@ -129,7 +126,7 @@ function resetForm() {
   currency.value = DEFAULT_CURRENCY
   dueDate.value = ''
   paymentMethod.value = PAYMENT_METHODS.VISA
-  category.value = DEFAULT_CATEGORY
+  category.value = ''
   recurrence.value = 'none'
   autoRenew.value = false
   error.value = null
@@ -166,7 +163,8 @@ const fetchCategories = async () => {
   loading.value = true
   try {
     const response = await api.get('/categories')
-    categories.value = response.data
+    // Usamos name como value para mantener compatibilidad con el backend
+    categories.value = response.data.map(c => ({ id: c.id, name: c.name, color: c.color }))
   } catch (e) {
     error.value = e.message
   } finally {

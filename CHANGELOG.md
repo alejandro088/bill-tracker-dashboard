@@ -11,6 +11,11 @@
 
 ### Changed
 - Eliminado `categoryId` y `recurrence` del modelo `Bill` en `prisma/schema.prisma`.
+## [2026-02-05] - Frontend: vista Detalle de Factura
+
+### Added
+- Nueva vista `BillDetails.vue` en `frontend/src/views/` para visualizar los detalles de una factura y su historial de pagos. Ruta registrada: `/bills/:id`.
+
 - Actualizado `src/services/billService.js` para no leer/escribir estos campos y para exponer `category` y `recurrence` desde el `Service` relacionado.
 - Asegúrate de crear una migración de Prisma después de desplegar estos cambios.
 

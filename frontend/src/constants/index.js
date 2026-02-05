@@ -60,72 +60,7 @@ export const formatAmount = (amount, currency = DEFAULT_CURRENCY) => {
         CURRENCY_FORMAT_OPTIONS[currency]
     ).format(amount);
 };
-
-// Categories for services and bills
-export const CATEGORIES = {
-    UTILITIES: 'Servicios públicos',
-    SUBSCRIPTIONS: 'Suscripciones',
-    TAXES: 'Impuestos',
-    GROCERIES: 'Supermercado',
-    ENTERTAINMENT: 'Entretenimiento',
-    OTHER: 'Otro',
-};
-
-// Human readable category labels
-export const CATEGORY_LABELS = {
-    [CATEGORIES.UTILITIES]: 'Servicios',
-    [CATEGORIES.SUBSCRIPTIONS]: 'Suscripciones',
-    [CATEGORIES.TAXES]: 'Impuestos',
-    [CATEGORIES.GROCERIES]: 'Supermercado',
-    [CATEGORIES.ENTERTAINMENT]: 'Entretenimiento',
-    [CATEGORIES.OTHER]: 'Otros',
-};
-
-// List of categories with their labels for dropdowns
-export const CATEGORY_OPTIONS = Object.entries(CATEGORIES).map(([_, value]) => ({
-    title: CATEGORY_LABELS[value],
-    value: value
-}));
-
-// Category colors for charts and UI elements
-export const CATEGORY_COLORS = {
-    [CATEGORIES.UTILITIES]: '#1976d2',
-    [CATEGORIES.SUBSCRIPTIONS]: '#9c27b0',
-    [CATEGORIES.TAXES]: '#e53935',
-    [CATEGORIES.GROCERIES]: '#4caf50',
-    [CATEGORIES.ENTERTAINMENT]: '#ff9800',
-    [CATEGORIES.OTHER]: '#fb8c00',
-};
-
-// Helper function to get category color
-export const getCategoryColor = (category) => CATEGORY_COLORS[category] || CATEGORY_COLORS[CATEGORIES.OTHER];
-
-// Default category for new bills/services
-export const DEFAULT_CATEGORY = CATEGORIES.UTILITIES;
-
-// All categories including 'All' option for filters
-export const CATEGORY_FILTER_OPTIONS = ['Todas', ...Object.values(CATEGORIES)];
-
-// One-time payment categories
-export const ONE_TIME_PAYMENT_CATEGORIES = {
-    GROCERIES: 'Supermercado',
-    BAKERY: 'Panadería',
-    VEGETABLES: 'Verdulería',
-    PHARMACY: 'Farmacia',
-    TRANSPORT: 'Transporte',
-    OTHERS: 'Otros'
-};
-
-export const ONE_TIME_PAYMENT_CATEGORY_LIST = Object.values(ONE_TIME_PAYMENT_CATEGORIES);
-
-// Helper for getting category icons
-export const CATEGORY_ICONS = {
-    [CATEGORIES.UTILITIES]: 'mdi-lightbulb',
-    [CATEGORIES.SUBSCRIPTIONS]: 'mdi-newspaper',
-    [CATEGORIES.TAXES]: 'mdi-file-document',
-    [CATEGORIES.GROCERIES]: 'mdi-cart',
-    [CATEGORIES.ENTERTAINMENT]: 'mdi-movie',
-    [CATEGORIES.OTHER]: 'mdi-help-circle-outline',
-};
-
-export const getCategoryIcon = (category) => CATEGORY_ICONS[category] || 'mdi-help-circle-outline';
+// Las categorías ahora se cargan desde la API (/categories).
+// Eliminamos las categorías hardcodeadas para que la UI use las definidas en la base de datos.
+// Si algún componente necesita información sobre categorías (colores, íconos),
+// debe solicitar `/categories` y mapear los campos `name`, `color`, `icon`, `description`.

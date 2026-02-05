@@ -13,6 +13,7 @@ import Register from '../views/Register.vue';
 const routes = [
   { path: '/', component: Dashboard },
   { path: '/services/:id', component: ServiceBills },
+  { path: '/bills/:id', component: () => import('../views/BillDetails.vue') },
   { path: '/history/:name?', component: PaymentHistory, props: true },
   { path: '/analytics', component: Analytics },
   { path: '/summary', component: Summary },

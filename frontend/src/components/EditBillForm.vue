@@ -25,7 +25,7 @@
             </template>
             <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
           </v-menu>
-          <v-select v-model="category" :items="categories" label="Category" density="compact" />
+          <v-select v-model="category" :items="categories" item-title="title" item-value="value" label="Category" density="compact" :loading="loadingCategories"/>
           <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
           <v-select
             v-model="recurrence"
@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import api from '../api.js';
 
 const props = defineProps({ bill: Object });
@@ -59,9 +59,10 @@ const name = ref('');
 const description = ref('');
 const amount = ref(0);
 const dueDate = ref('');
-const categories = ['utilities', 'subscriptions', 'taxes', 'others'];
+const categories = ref([]);
 const statusOptions = ['pending', 'paid', 'overdue'];
-const category = ref('utilities');
+const category = ref('');
+const loadingCategories = ref(false);
 const status = ref('pending');
 const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
 const recurrence = ref('none');
@@ -89,6 +90,19 @@ watch(
   },
   { immediate: true }
 );
+
+onMounted(async () => {
+  loadingCategories.value = true;
+  try {
+    const { data } = await api.get('/categories');
+    categories.value = data.map(cat => ({ title: cat.name, value: cat.name }));
+  } catch (e) {
+    console.error('Error cargando categorías:', e);
+    categories.value = [{ title: 'Servicios', value: 'utilities' }, { title: 'Suscripciones', value: 'subscriptions' }];
+  } finally {
+    loadingCategories.value = false;
+  }
+});
 
 function close() {
   dialog.value = false;

@@ -57,7 +57,7 @@
       <v-col cols="12" sm="4">
         <v-select
           v-model="category"
-          :items="CATEGORY_FILTER_OPTIONS"
+          :items="categoryOptions"
           label="Categoría"
           density="compact"
           hide-details
@@ -233,10 +233,7 @@ import ExportButton from '../components/ExportButton.vue'
 import { 
   CURRENCIES, 
   CURRENCY_FILTER_OPTIONS, 
-  formatAmount,
-  CATEGORY_FILTER_OPTIONS,
-  getCategoryColor as getCategoryColorFromData,
-  CATEGORY_LABELS
+  formatAmount
 } from '../constants'
 
 const {
@@ -252,7 +249,8 @@ const {
   highestExpense,
   expensesByCategory,
   getCategoryColor,
-  fetchData
+  fetchData,
+  categoryOptions
 } = useAnalytics()
 
 // Referencias a los canvas de los gráficos
@@ -265,12 +263,7 @@ let categoryChartInstance = null
 const currentYear = new Date().getFullYear()
 const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - i)
 
-// Categorías disponibles con sus etiquetas
-const categoryOptions = Object.entries(CATEGORY_LABELS)
-  .map(([value, label]) => ({
-    title: label,
-    value
-  }))
+// `categoryOptions` proviene del composable `useAnalytics`
 
 // Computed para la interfaz
 const savingsRate = computed(() => {

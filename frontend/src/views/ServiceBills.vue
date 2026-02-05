@@ -271,6 +271,22 @@
                                 </template>
                             </v-tooltip>
 
+                            <v-tooltip text="Ver detalle">
+                                <template #activator="{ props }">
+                                    <v-btn
+                                        v-bind="props"
+                                        :to="`/bills/${item.id}`"
+                                        color="primary"
+                                        variant="flat"
+                                        icon
+                                        class="mx-1"
+                                        size="small"
+                                    >
+                                        <v-icon>mdi-eye</v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-tooltip>
+
                             <v-tooltip text="Eliminar factura">
                                 <template #activator="{ props }">
                                     <v-btn
