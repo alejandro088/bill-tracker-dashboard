@@ -107,6 +107,17 @@ export const registerIncome = async (req, res) => {
   }
 };
 
+// Registrar un retiro/egreso
+export const registerWithdrawal = async (req, res) => {
+  const { accountId, amount, description } = req.body;
+  try {
+    const withdrawal = await accountService.addWithdrawal({ accountId, amount, description }, req.user?.userId);
+    res.status(201).json(withdrawal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Crear una transferencia entre cuentas
 export const createTransfer = async (req, res) => {
   const { fromAccountId, toAccountId, amount, currency, description, date } = req.body;

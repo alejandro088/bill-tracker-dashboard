@@ -157,6 +157,39 @@ export const addIncome = async ({ accountId, amount, description }, userId = nul
   });
 };
 
+export const addWithdrawal = async ({ accountId, amount, description }, userId = null) => {
+  if (userId) {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account || account.userId !== userId) throw new Error('Account not found');
+  }
+
+  return prisma.$transaction(async (prismaTx) => {
+    const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const negativeAmount = parsedAmount * -1;
+
+    // Registrar como un Income con monto negativo para conservar historial
+    const withdrawal = await prismaTx.income.create({
+      data: {
+        accountId,
+        amount: negativeAmount,
+        description,
+      },
+    });
+
+    // Reducir el balance de la cuenta
+    await prismaTx.account.update({
+      where: { id: accountId },
+      data: {
+        balance: {
+          decrement: parsedAmount,
+        },
+      },
+    });
+
+    return withdrawal;
+  });
+};
+
 export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency, description, transferDate }, userId = null) => {
   if (userId) {
     const fromAccount = await prisma.account.findUnique({ where: { id: fromAccountId } });
