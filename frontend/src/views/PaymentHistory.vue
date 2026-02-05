@@ -23,7 +23,7 @@
     </v-card>
 
     <!-- Summary Widget -->
-    <payment-summary-widget :start-date="startDate" :end-date="endDate" />
+    
     <v-row class="mb-2" v-if="!name" align="center">
       <v-col cols="12" sm="3">
         <v-select
@@ -39,7 +39,9 @@
         <v-select
           v-model="provider"
           :items="providers"
-          label="Provider"
+          item-title="title"
+          item-value="value"
+          label="Medio de Pago"
           density="compact"
           variant="outlined"
           clearable
@@ -75,6 +77,28 @@
           <v-date-picker v-model="endDate" @update:modelValue="menuEnd = false" />
         </v-menu>
       </v-col>
+      <v-col cols="12" sm="3">
+        <v-btn
+          variant="text"
+          color="primary"
+          @click="fetchCategories"
+          prepend-icon="mdi-refresh"
+        >
+          Actualizar Categorías
+        </v-btn>
+      </v-col>
+      <v-col cols="12" sm="3">
+        <v-btn
+          variant="text"
+          color="primary"
+          @click="fetchProviders"
+          prepend-icon="mdi-refresh"
+        >
+          Actualizar Proveedores
+        </v-btn>
+      </v-col>
+      
+      
     </v-row>
     <v-progress-linear v-if="loading" indeterminate />
     <v-alert v-else-if="error" type="error" dense>{{ error }}</v-alert>
@@ -85,9 +109,13 @@
       class="elevation-1 mb-6"
     >
       <template #item.Bill.dueDate="{ item }">
-        <div class="d-flex align-center gap-2">
+        <div v-if="item.Bill" class="d-flex align-center gap-2">
           <v-icon size="small" color="grey-darken-1">mdi-calendar</v-icon>
           {{ format(item.Bill.dueDate) }}
+        </div>
+        <div v-else class="d-flex align-center gap-2">
+          <v-icon size="small" color="grey-darken-1">mdi-cash-fast</v-icon>
+          <span class="text-grey">Pago único</span>
         </div>
       </template>
       <template #item.paidAt="{ item }">
@@ -98,11 +126,28 @@
       </template>
       <template #item.amount="{ item }">
         <div class="d-flex align-center gap-2">
-          <v-icon size="small" color="grey-darken-1">mdi-currency-usd</v-icon>
-          {{ item.amount.toFixed(2) }}
+          <v-icon size="small" :color="item.currency === 'USD' ? 'success' : 'primary'">
+            {{ item.currency === 'USD' ? 'mdi-currency-usd' : 'mdi-cash' }}
+          </v-icon>
+          <v-chip
+            size="small"
+            :color="item.currency === 'USD' ? 'success' : 'primary'"
+            variant="flat"
+            class="font-weight-medium"
+          >
+            {{ item.currency === 'USD' ? 'USD' : '$' }} {{ item.amount.toFixed(2) }}
+          </v-chip>
         </div>
       </template>
-      <template #item.name="{ item }">{{ item.Bill.Service.name }}</template>
+      <template #item.name="{ item }">{{ item.Bill ? item.Bill.Service.name : item.description }}</template>
+      <template #item.paymentMethodName="{ item }">
+        <div class="d-flex align-center gap-2">
+          <v-icon size="small" color="grey-darken-1">
+            {{ item.PaymentMethods?.icon ? item.PaymentMethods.icon : 'mdi-cash-multiple' }}
+          </v-icon>
+          {{ item.paymentMethodName }}
+        </div>
+      </template>
       <template #item.edit="{ item }">
         <div class="d-flex gap-1">
           <v-tooltip text="Editar pago">
@@ -156,12 +201,14 @@
     >
       <template #details v-if="paymentToDelete">
         <p class="text-body-2">
-          <strong>Servicio:</strong> {{ paymentToDelete.Bill.Service.name }}<br>
+          <strong>{{ paymentToDelete.Bill ? 'Servicio' : 'Descripción' }}:</strong> 
+          {{ paymentToDelete.Bill ? paymentToDelete.Bill.Service.name : paymentToDelete.description }}<br>
           <strong>Monto:</strong> ${{ paymentToDelete.amount?.toFixed(2) }}<br>
           <strong>Fecha de pago:</strong> {{ format(paymentToDelete.paidAt) }}
         </p>
       </template>
     </base-confirm-dialog>
+
   </v-container>
 </template>
 
@@ -169,7 +216,6 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '../api.js';
-import PaymentSummaryWidget from '../components/PaymentSummaryWidget.vue';
 import PaymentCharts from '../components/PaymentCharts.vue';
 import EditPaymentDialog from '../components/EditPaymentDialog.vue';
 import BaseConfirmDialog from '../components/BaseConfirmDialog.vue';
@@ -195,20 +241,15 @@ const confirmDialog = ref({
 const showDeleteDialog = ref(false);
 const paymentToDelete = ref(null);
 
-const categories = [
-  { title: 'Utilities', value: 'utilities' },
-  { title: 'Subscriptions', value: 'subscriptions' },
-  { title: 'Taxes', value: 'taxes' },
-  { title: 'Others', value: 'others' }
-];
-const providers = ['Visa', 'Mastercard', 'MercadoPago', 'Google Play', 'MODO', 'PayPal'];
+const categories = ref([]);
+const providers = ref([]);
 
 const headers = [
-  { title: 'Bill Name', key: 'Bill.Service.name' },
-  { title: 'Amount', key: 'amount' },
-  { title: 'Due Date', key: 'Bill.dueDate' },
-  { title: 'Paid Date', key: 'paidAt' },
-  { title: 'Provider', key: 'paymentProvider' },
+  { title: 'Nombre', key: 'name' },
+  { title: 'Monto', key: 'amount' },
+  { title: 'Fecha de Vencimiento', key: 'Bill.dueDate' },
+  { title: 'Fecha de Pago', key: 'paidAt' },
+  { title: 'Método', key: 'paymentMethodName' },
   { title: 'Acciones', key: 'edit', align: 'end' },
 ];
 
@@ -257,7 +298,55 @@ const fetchData = async () => {
   }
 };
 
-onMounted(fetchData);
+const fetchCategories = async () => {
+  try {
+    const { data } = await api.get('/categories');
+    // Transformar los datos al formato requerido por v-select
+    categories.value = data.map(cat => ({
+      title: cat.name,
+      value: cat.id
+    }));
+  } catch (error) {
+    console.error('Error al obtener categorías:', error);
+    // Valores por defecto en caso de error
+    categories.value = [
+      { title: 'Servicios', value: 'utilities' },
+      { title: 'Suscripciones', value: 'subscriptions' },
+      { title: 'Impuestos', value: 'taxes' },
+      { title: 'Otros', value: 'others' }
+    ];
+  }
+};
+
+const fetchProviders = async () => {
+  try {
+    const { data } = await api.get('/payment-methods');
+    // Transformar los datos al formato requerido por v-select
+    providers.value = data.map(method => ({
+      title: method.name,
+      value: method.id,
+      description: method.description,
+      icon: method.icon
+    }));
+  } catch (error) {
+    console.error('Error al obtener proveedores:', error);
+    // Valores por defecto en caso de error
+    providers.value = [
+      { title: 'Visa', value: 'Visa' },
+      { title: 'Mastercard', value: 'Mastercard' },
+      { title: 'MercadoPago', value: 'MercadoPago' },
+      { title: 'Google Play', value: 'Google Play' },
+      { title: 'MODO', value: 'MODO' },
+      { title: 'PayPal', value: 'PayPal' }
+    ];
+  }
+};
+
+onMounted(async () => {
+  await fetchCategories();
+  await fetchProviders();
+  fetchData();
+});
 watch(
   () => route.query,
   fetchData,
@@ -266,23 +355,33 @@ watch(
 
 const filteredPayments = computed(() => {
   let data = [...payments.value];
-  if (name.value) data = data.filter((p) => p.name === name.value);
+
+  if (name.value) {
+    data = data.filter((p) => {
+      if (p.Bill) return p.Bill.Service.name === name.value;
+      return p.description.includes(name.value);
+    });
+  }
+
   if (route.query.provider)
-    data = data.filter((p) => p.paymentProvider === route.query.provider);
+    data = data.filter((p) => p.paymentMethodId === route.query.provider);
+
   if (route.query.category)
-    data = data.filter((p) => p.Bill.category === route.query.category);
+    data = data.filter((p) => p.Bill?.Service.categoryId === route.query.category);
 
   if (category.value)
-    data = data.filter((p) => p.Bill.category === category.value);
+    data = data.filter((p) => p.Bill?.Service.categoryId === category.value);
+
   if (provider.value)
-    data = data.filter(
-      (p) => p.paymentProvider && p.paymentProvider === provider.value
-    );
+    data = data.filter((p) => p.paymentMethodId === provider.value);
+
   if (startDate.value)
     data = data.filter((p) => new Date(p.paidAt) >= new Date(startDate.value));
+
   if (endDate.value)
     data = data.filter((p) => new Date(p.paidAt) <= new Date(endDate.value));
-  return data.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
+
+  return data.sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt));
 });
 
 const editPayment = (item) => {
@@ -312,16 +411,50 @@ const confirmDelete = async () => {
 
 const selectedPayment = ref(null);
 
-const onPaymentEdited = (editedPayment) => {
-  const index = payments.value.findIndex(p => p.id === editedPayment.id);
-  if (index !== -1) {
-    payments.value[index] = editedPayment;
+const onPaymentEdited = async (editedPayment) => {
+  try {
+    await fetchData(); // Actualiza los pagos desde la base de datos
+    selectedPayment.value = null;
+  } catch (error) {
+    console.error('Error al actualizar los pagos:', error);
   }
-  selectedPayment.value = null;
 };
 
 const onEditDialogClose = () => {
   selectedPayment.value = null;
+};
+
+const exportToExcel = async () => {
+  exporting.value = true;
+  try {
+    const response = await api.get('/payments/export', {
+      params: {
+        startDate: startDate.value,
+        endDate: endDate.value,
+        category: category.value,
+        provider: provider.value
+      },
+      responseType: 'blob' // Importante para manejar el archivo como un blob
+    });
+
+    // Crear un enlace temporal para descargar el archivo
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `historial_pagos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+
+    // Limpiar el enlace temporal
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    exporting.value = false;
+  }
 };
 </script>
 

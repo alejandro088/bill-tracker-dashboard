@@ -6,7 +6,6 @@
             v-model:search="search"
             v-model:category="category"
             v-model:currency="currency"
-            v-model:paymentProvider="paymentProvider"
             v-model:recurrence="recurrence"
         />
         
@@ -18,6 +17,7 @@
             :error="error"
             @add-bill="newInvoice"
             @archive="archive"
+            @restore="restore"
             @edit="editService"
         />
 
@@ -69,7 +69,6 @@ const services = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const category = ref(localStorage.getItem('svc_category') || '');
-const paymentProvider = ref(localStorage.getItem('svc_provider') || '');
 const recurrence = ref(localStorage.getItem('svc_recurrence') || '');
 const newBill = ref(null);
 const selectedBill = ref(null);
@@ -80,7 +79,6 @@ const selectedService = ref(null);
 
 // Watchers for localStorage
 watch(category, (val) => localStorage.setItem('svc_category', val));
-watch(paymentProvider, (val) => localStorage.setItem('svc_provider', val));
 watch(recurrence, (val) => localStorage.setItem('svc_recurrence', val));
 watch(dueSoon, (val) => localStorage.setItem('svc_dueSoon', val ? '1' : '0'));
 
@@ -89,7 +87,7 @@ const fetchServices = async () => {
     error.value = null;
     try {
         const response = await api.get('/services');
-        services.value = response.data;
+        services.value = response.data.data;
     } catch (err) {
         error.value = 'Error al cargar los servicios: ' + err.message;
     } finally {
@@ -107,19 +105,13 @@ const filteredServices = computed(() => {
         })
         .filter((service) => {
             if (category.value) {
-                return service.category === category.value;
+                return service.categoryId === category.value;
             }
             return true;
         })
         .filter((service) => {
             if (currency.value) {
                 return service.defaultCurrency === currency.value;
-            }
-            return true;
-        })
-        .filter((service) => {
-            if (paymentProvider.value) {
-                return service.paymentProvider === paymentProvider.value;
             }
             return true;
         })
@@ -131,14 +123,18 @@ const filteredServices = computed(() => {
         })
         .filter((service) => {
             if (dueSoon.value) {
-                const lastBill = service.lastBill;
-                if (!lastBill) return false;
+                // Debe tener al menos una factura pendiente o vencida que venza en los próximos 7 días
                 
-                const dueDate = new Date(lastBill.dueDate);
+                if (!service.bills || !Array.isArray(service.bills)) return false;
                 const today = new Date();
-                const sevenDaysFromNow = new Date(today.setDate(today.getDate() + 7));
+                const sevenDaysFromNow = new Date();
                 
-                return dueDate <= sevenDaysFromNow;
+                sevenDaysFromNow.setDate(today.getDate() + 7);
+                return service.bills.some(bill => {
+                    if (bill.status === 'paid') return false;
+                    const dueDate = new Date(bill.dueDate);
+                    return dueDate >= today && dueDate <= sevenDaysFromNow;
+                });
             }
             return true;
         });
@@ -177,6 +173,19 @@ const archive = async (service) => {
         notify({
             type: 'error',
             text: 'Error al archivar el servicio: ' + err.message
+        });
+    }
+};
+
+const restore = async (service) => {
+    try {
+        await api.patch(`/services/${service.id}/restore`);
+        notify('Servicio restaurado exitosamente');
+        fetchServices();
+    } catch (err) {
+        notify({
+            type: 'error',
+            text: 'Error al restaurar el servicio: ' + err.message
         });
     }
 };

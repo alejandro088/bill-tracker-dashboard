@@ -14,7 +14,7 @@
           <div class="d-flex">
             <v-text-field
               v-model.number="amount"
-              :label="'Amount ' + (currency === 'USD' ? 'USD' : 'ARS')"
+              :label="`Amount ${currency}`"
               type="number"
               density="compact"
               class="flex-grow-1 mr-2"
@@ -22,7 +22,7 @@
             />
             <v-select
               v-model="currency"
-              :items="['ARS', 'USD']"
+              :items="CURRENCY_LIST"
               label="Currency"
               density="compact"
               style="min-width: 100px"
@@ -41,12 +41,27 @@
             <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
           </v-menu>
           <v-select
-            v-model="paymentProvider"
-            :items="providers"
-            label="Payment Provider"
+            v-model="paymentMethod"
+            :items="PAYMENT_METHOD_LIST"
+            label="Payment Method"
             density="compact"
           />
-          <v-select v-model="category" :items="categories" label="Category" density="compact" />
+          <v-select
+            v-model="category"
+            :items="categories"
+            item-title="name"
+            item-value="id"
+            label="Categoría"
+            density="compact"
+          />
+          <v-btn
+            variant="text"
+            color="primary"
+            @click="fetchCategories"
+            prepend-icon="mdi-refresh"
+          >
+            Actualizar Categorías
+          </v-btn>
           <v-select
             v-model="recurrence"
             :items="recurrenceOptions"
@@ -54,7 +69,7 @@
             density="compact"
           />
           <v-switch
-            v-if="category === 'subscriptions'"
+            v-if="category === CATEGORIES.SUBSCRIPTIONS"
             v-model="autoRenew"
             label="Auto Renew"
           />
@@ -71,77 +86,94 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import api from '../api.js';
+import { ref } from 'vue'
+import api from '../api.js'
+import { 
+  CURRENCIES, 
+  CURRENCY_LIST, 
+  DEFAULT_CURRENCY, 
+  PAYMENT_METHODS,
+  PAYMENT_METHOD_LIST,
+  CATEGORIES,
+  CATEGORY_OPTIONS,
+  DEFAULT_CATEGORY
+} from '../constants'
 
-const emit = defineEmits(['added', 'notify']);
+const emit = defineEmits(['added', 'notify'])
 
-const name = ref('');
-const description = ref('');
-const amount = ref(0);
-const currency = ref('ARS');
-const dueDate = ref('');
-const menu = ref(false);
-const providers = [
-  'Visa',
-  'Mastercard',
-  'MercadoPago',
-  'Google Play',
-  'MODO',
-  'PayPal'
-];
-const paymentProvider = ref(providers[0]);
-const categories = ['utilities', 'subscriptions', 'taxes', 'others'];
-const category = ref('utilities');
-const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
-const recurrence = ref('none');
-const autoRenew = ref(false);
-const loading = ref(false);
-const error = ref(null);
-const dialog = ref(false);
+const name = ref('')
+const description = ref('')
+const amount = ref(0)
+const currency = ref(DEFAULT_CURRENCY)
+const dueDate = ref('')
+const menu = ref(false)
+const paymentMethod = ref(PAYMENT_METHODS.VISA)
+const category = ref(DEFAULT_CATEGORY)
+const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly']
+const recurrence = ref('none')
+const autoRenew = ref(false)
+const loading = ref(false)
+const error = ref(null)
+const dialog = ref(false)
+const categories = ref([])
 
 function close() {
-  dialog.value = false;
-  resetForm();
+  dialog.value = false
+  resetForm()
 }
 
 function resetForm() {
-  name.value = '';
-  description.value = '';
-  amount.value = 0;
-  currency.value = 'ARS';
-  dueDate.value = '';
-  paymentProvider.value = providers[0];
-  category.value = 'utilities';
-  recurrence.value = 'none';
-  autoRenew.value = false;
-  error.value = null;
+  name.value = ''
+  description.value = ''
+  amount.value = 0
+  currency.value = DEFAULT_CURRENCY
+  dueDate.value = ''
+  paymentMethod.value = PAYMENT_METHODS.VISA
+  category.value = DEFAULT_CATEGORY
+  recurrence.value = 'none'
+  autoRenew.value = false
+  error.value = null
 }
 
 const submit = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const due = new Date(dueDate.value);
+    const due = new Date(dueDate.value)
     const bill = {
       name: name.value,
       description: description.value,
       amount: Number(amount.value),
       currency: currency.value,
       dueDate: due.toISOString(),
-      paymentProvider: paymentProvider.value,
+      paymentMethod: paymentMethod.value,
       category: category.value,
       recurrence: recurrence.value,
-      autoRenew: category.value === 'subscriptions' ? autoRenew.value : false,
-    };
+      autoRenew: category.value === CATEGORIES.SUBSCRIPTIONS ? autoRenew.value : false,
+    }
 
-    await api.post('/bills', bill);
-    emit('notify', `Bill added: ${name.value} (${currency.value} ${amount.value})`);
-    emit('added');
-    close();
+    await api.post('/bills', bill)
+    emit('notify', `Bill added: ${name.value} (${currency.value} ${amount.value})`)
+    emit('added')
+    close()
   } catch (e) {
-    error.value = e.message;
+    error.value = e.message
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
+
+const fetchCategories = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/categories')
+    categories.value = response.data
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+// Fetch categories on component mount
+fetchCategories()
 </script>

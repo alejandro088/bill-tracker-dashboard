@@ -1,0 +1,248 @@
+import prisma from '../db/prismaClient.js';
+
+export const getAllAccounts = async (userId = null) => {
+  const where = { ...(userId && { userId }) };
+  return prisma.account.findMany({
+    where,
+    include: {
+      paymentMethods: true
+    },
+    orderBy: {
+      name: 'asc'
+    }
+  });
+};
+
+export const getAccountById = async (id, userId = null) => {
+  const where = { id, ...(userId && { userId }) };
+  return prisma.account.findFirst({
+    where,
+    include: {
+      paymentMethods: true
+    }
+  });
+};
+
+export const createAccount = async (accountData, userId = null) => {
+  const { name, description, type, balance, currency, icon, color } = accountData;
+  
+  return prisma.account.create({
+    data: {
+      name,
+      description,
+      type,
+      balance: balance ? parseFloat(balance) : null,
+      currency,
+      icon,
+      color,
+      ...(userId && { userId })
+    }
+  });
+};
+
+export const updateAccount = async (id, accountData, userId = null) => {
+  const { name, description, type, balance, currency, icon, color } = accountData;
+  
+  if (userId) {
+    const existing = await prisma.account.findUnique({ where: { id } });
+    if (!existing || existing.userId !== userId) throw new Error('Account not found');
+  }
+  return prisma.account.update({
+    where: { id },
+    data: {
+      name,
+      description,
+      type,
+      balance: balance !== undefined ? parseFloat(balance) : undefined,
+      currency,
+      icon,
+      color
+    }
+  });
+};
+
+export const deleteAccount = async (id, userId = null) => {
+  // Primero verificar si tiene métodos de pago asociados
+  const account = await prisma.account.findUnique({
+    where: { id },
+    include: { paymentMethods: true }
+  });
+  
+  if (account.paymentMethods.length > 0) {
+    throw new Error('No se puede eliminar la cuenta porque tiene métodos de pago asociados');
+  }
+  if (userId) {
+    if (!account || account.userId !== userId) throw new Error('Account not found');
+  }
+  
+  return prisma.account.delete({
+    where: { id }
+  });
+};
+
+// Funciones para vincular y desvincular métodos de pago a cuentas
+export const linkPaymentMethodToAccount = async (paymentMethodId, accountId, userId = null) => {
+  if (userId) {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account || account.userId !== userId) throw new Error('Account not found');
+    const pm = await prisma.paymentMethods.findUnique({ where: { id: paymentMethodId } });
+    if (!pm || pm.userId !== userId) throw new Error('Payment method not found');
+  }
+  return prisma.paymentMethods.update({
+    where: { id: paymentMethodId },
+    data: { accountId }
+  });
+};
+
+export const unlinkPaymentMethodFromAccount = async (paymentMethodId, userId = null) => {
+  if (userId) {
+    const pm = await prisma.paymentMethods.findUnique({ where: { id: paymentMethodId }, include: { Account: true } });
+    if (!pm) throw new Error('Payment method not found');
+    const account = pm.Account;
+    if (account && account.userId !== userId) throw new Error('Not authorized');
+  }
+  return prisma.paymentMethods.update({
+    where: { id: paymentMethodId },
+    data: { accountId: null }
+  });
+};
+
+// Función para obtener el balance total por moneda
+export const getAccountsBalance = async (userId = null) => {
+  const where = { ...(userId && { userId }) };
+  const accounts = await prisma.account.findMany({ where });
+  
+  // Agrupar por moneda
+  const balances = {};
+  
+  accounts.forEach(account => {
+    if (account.balance !== null) {
+      if (!balances[account.currency]) {
+        balances[account.currency] = 0;
+      }
+      balances[account.currency] += account.balance;
+    }
+  });
+  
+  return balances;
+};
+
+export const addIncome = async ({ accountId, amount, description }, userId = null) => {
+  if (userId) {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account || account.userId !== userId) throw new Error('Account not found');
+  }
+  return prisma.income.create({
+    data: {
+      accountId,
+      amount,
+      description,
+    },
+  });
+};
+
+export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency, description, transferDate }, userId = null) => {
+  if (userId) {
+    const fromAccount = await prisma.account.findUnique({ where: { id: fromAccountId } });
+    const toAccount = await prisma.account.findUnique({ where: { id: toAccountId } });
+    if (!fromAccount || fromAccount.userId !== userId) throw new Error('From account not found');
+    if (!toAccount || toAccount.userId !== userId) throw new Error('To account not found');
+  }
+  return prisma.$transaction(async (prisma) => {
+    // Crear la transferencia
+    const transfer = await prisma.transfer.create({
+      data: {
+        fromAccountId,
+        toAccountId,
+        amount,
+        currency,
+        description,
+        transferDate,
+      },
+    });
+
+    // Actualizar el saldo de la cuenta de origen (restar)
+    await prisma.account.update({
+      where: { id: fromAccountId },
+      data: {
+        balance: {
+          decrement: parseFloat(amount),
+        },
+      },
+    });
+
+    // Actualizar el saldo de la cuenta de destino (sumar)
+    await prisma.account.update({
+      where: { id: toAccountId },
+      data: {
+        balance: {
+          increment: parseFloat(amount),
+        },
+      },
+    });
+
+    return transfer;
+  });
+};
+
+export const getIncomes = async (userId = null) => {
+  try {
+
+    // Evitar comparaciones SQL entre collations distintas haciendo el filtro
+    // por `userId` en memoria: primero obtener cuentas, filtrar por `userId`
+    // en JS y luego pedir los ingresos por `accountId`.
+    if (userId) {
+      const allAccounts = await prisma.account.findMany({ select: { id: true, userId: true, name: true, currency: true } });
+      const accountIds = allAccounts.filter(a => a.userId === userId).map(a => a.id);
+      if (accountIds.length === 0) return [];
+
+      const incomes = await prisma.income.findMany({
+        where: { accountId: { in: accountIds } },
+        include: { account: true },
+        orderBy: { createdAt: 'desc' }
+      });
+      return incomes;
+    }
+
+    const incomes = await prisma.income.findMany({
+      include: { account: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    console.log('Incomes retrieved:', incomes);
+    return incomes;
+  } catch (error) {
+    console.error('Error retrieving incomes:', error);
+    throw new Error('Error retrieving incomes: ' + error.message);
+  }
+};
+
+export const getTransfers = async (userId = null) => {
+  try {
+    if (userId) {
+      const allAccounts = await prisma.account.findMany({ select: { id: true, userId: true, name: true } });
+      const accountIds = allAccounts.filter(a => a.userId === userId).map(a => a.id);
+      if (accountIds.length === 0) return [];
+
+      const transfers = await prisma.transfer.findMany({
+        where: {
+          OR: [ { fromAccountId: { in: accountIds } }, { toAccountId: { in: accountIds } } ]
+        },
+        include: { fromAccount: true, toAccount: true },
+        orderBy: { transferDate: 'desc' }
+      });
+
+      return transfers;
+    }
+
+    const transfers = await prisma.transfer.findMany({
+      include: { fromAccount: true, toAccount: true },
+      orderBy: { transferDate: 'desc' }
+    });
+
+    return transfers;
+  } catch (error) {
+    console.error('Error retrieving transfers:', error);
+    throw new Error('Error retrieving transfers: ' + error.message);
+  }
+};

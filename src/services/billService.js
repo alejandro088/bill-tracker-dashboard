@@ -73,7 +73,7 @@ const updateOverdueBills = async () => {
  * @param {number} [query.limit=10] - Límite de resultados por página
  * @returns {Promise<{total: number, page: number, limit: number, data: Array}>}
  */
-export const listBills = async (query = {}) => {
+export const listBills = async (query = {}, userId = null) => {
     try {
         await updateOverdueBills();
         
@@ -101,7 +101,8 @@ export const listBills = async (query = {}) => {
             ...(category && { category }),
             ...(status && { status }),
             ...(recurrence && { recurrence }),
-            ...(serviceId && { serviceId })
+            ...(serviceId && { serviceId }),
+            ...(userId && { userId })
         };
 
         // Obtener total y datos
@@ -135,9 +136,11 @@ export const listBills = async (query = {}) => {
     }
 };
 
-export const getBillById = async (id) => {
-    return prisma.bill.findUnique({
-        where: { id },
+export const getBillById = async (id, userId = null) => {
+    const where = { id };
+    if (userId) where.userId = userId;
+    return prisma.bill.findFirst({
+        where,
         include: {
             Service: true,
             payments: true
@@ -145,7 +148,7 @@ export const getBillById = async (id) => {
     });
 };
 
-export const addBill = async (data) => {
+export const addBill = async (data, userId = null) => {
     let serviceId = data.serviceId;
     let serviceName = data.name;
     
@@ -164,6 +167,7 @@ export const addBill = async (data) => {
                     category: data.category,
                     recurrence: data.recurrence || 'none',
                     autoRenew: data.autoRenew ?? false,
+                    userId: userId
                 },
             });
             
@@ -197,6 +201,7 @@ export const addBill = async (data) => {
             amount: data.amount,
             dueDate: data.dueDate || new Date(),
             category: data.category || 'other',
+            userId: userId
         },
     });
 
@@ -222,10 +227,13 @@ export const addBill = async (data) => {
  * @param {Object} data - Datos de la factura a actualizar
  * @returns {Promise<{updated: Object, newBill: Object|null}>}
  */
-export const updateBill = async (id, data) => {
+export const updateBill = async (id, data, userId = null) => {
     try {
         const existing = await prisma.bill.findUnique({ where: { id } });
         if (!existing) {
+            throw new Error(`Bill with id ${id} not found`);
+        }
+        if (userId && existing.userId !== userId) {
             throw new Error(`Bill with id ${id} not found`);
         }
 
@@ -267,19 +275,68 @@ const handlePayments = async (bill, data) => {
             : [
                   {
                       amount: bill.amount,
-                      paymentProvider: data.paymentProvider || 'unknown',
+                      paymentMethodId: data.paymentMethodId || null,
                   },
               ];
 
-    await prisma.payment.createMany({
+    // Crear los pagos
+    const createdPayments = await prisma.payment.createMany({
         data: paymentsArr.map((p) => ({
             billId: bill.id,
             amount: p.amount,
             paidAt,
-            paymentProvider: p.paymentProvider || 'unknown',
+            paymentMethodId: p.paymentMethodId || null,
+            exchangeRate: p.exchangeRate || null,
+            currency: p.currency || bill.currency
         })),
         skipDuplicates: true,
     });
+    
+    // Actualizar los saldos de las cuentas asociadas a los métodos de pago
+    for (const payment of paymentsArr) {
+        if (!payment.paymentMethodId) continue;
+        
+        // Buscar el método de pago y la cuenta asociada
+        const paymentMethod = await prisma.paymentMethods.findUnique({
+            where: { id: payment.paymentMethodId },
+            include: { Account: true }
+        });
+        
+        // Si el método de pago no tiene cuenta asociada, no hacemos nada
+        if (!paymentMethod || !paymentMethod.Account) continue;
+        
+        const account = paymentMethod.Account;
+        
+        // Si la cuenta no tiene saldo registrado, no podemos actualizar
+        if (account.balance === null) continue;
+        
+        const currency = payment.currency || bill.currency;
+        
+        // Si las monedas coinciden, simplemente restamos
+        if (account.currency === currency) {
+            await prisma.account.update({
+                where: { id: account.id },
+                data: { balance: account.balance - payment.amount }
+            });
+        } else {
+            // Si las monedas son diferentes, usamos la tasa de cambio proporcionada o una por defecto
+            let exchangeRate = payment.exchangeRate || 500; // Tasa por defecto ARS/USD
+            
+            let newBalance;
+            if (currency === 'USD' && account.currency === 'ARS') {
+                // Convertir USD a ARS y restar
+                newBalance = account.balance - (payment.amount * exchangeRate);
+            } else if (currency === 'ARS' && account.currency === 'USD') {
+                // Convertir ARS a USD y restar
+                newBalance = account.balance - (payment.amount / exchangeRate);
+            }
+            
+            await prisma.account.update({
+                where: { id: account.id },
+                data: { balance: newBalance }
+            });
+        }
+    }
 };
 
 const createPaymentNotification = async (bill) => {
@@ -291,28 +348,39 @@ const createPaymentNotification = async (bill) => {
     });
 };
 
-export const deleteBill = async (id) => {
+export const deleteBill = async (id, userId = null) => {
+    // Ensure bill belongs to user if userId provided
+    if (userId) {
+        const existing = await prisma.bill.findUnique({ where: { id } });
+        if (!existing || existing.userId !== userId) {
+            throw new Error('Bill not found');
+        }
+    }
     await prisma.bill.delete({ where: { id } });
     return true;
 };
 
-export const getUpcomingBills = async () => {
+export const getUpcomingBills = async (userId = null) => {
     const now = new Date();
     const limit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const where = { dueDate: { gte: now, lte: limit } };
+    if (userId) where.userId = userId;
     const bills = await prisma.bill.findMany({
-        where: { dueDate: { gte: now, lte: limit } },
+        where,
         include: { Service: true },
     });
     return bills;
 };
 
-export const getMonthlySummary = async () => {
+export const getMonthlySummary = async (userId = null) => {
     await updateOverdueBills();
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const where = { dueDate: { gte: start, lt: end } };
+    if (userId) where.userId = userId;
     const bills = await prisma.bill.findMany({
-        where: { dueDate: { gte: start, lt: end } },
+        where,
     });
 
     const summary = { paid: 0, pending: 0, overdue: 0 };
@@ -323,13 +391,16 @@ export const getMonthlySummary = async () => {
 };
 
 export const getMonthlyStatusByMonth = async (
-    year = new Date().getFullYear()
+    year = new Date().getFullYear(),
+    userId = null
 ) => {
     await updateOverdueBills();
     const start = new Date(year, 0, 1);
     const end = new Date(year + 1, 0, 1);
+    const where = { dueDate: { gte: start, lt: end } };
+    if (userId) where.userId = userId;
     const bills = await prisma.bill.findMany({
-        where: { dueDate: { gte: start, lt: end } },
+        where,
         select: { dueDate: true, status: true, amount: true },
     });
     const map = {};
@@ -358,44 +429,40 @@ export const getSummary = async () => {
 };
 
 // Nueva función para obtener el resumen por moneda
-const getSummaryWithCurrency = async () => {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 30);
-  
-  const bills = await prisma.bill.findMany({
-    where: {
-      OR: [
-        { status: BILL_STATUS.PAID, paidAt: { gte: startDate } },
-        { status: BILL_STATUS.PENDING },
-        { status: BILL_STATUS.OVERDUE }
-      ]
-    }
+const getSummaryWithCurrency = async (userId = null) => {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
 
-  });
+    const where = {
+        OR: [
+            { status: BILL_STATUS.PAID, paidAt: { gte: startDate } },
+            { status: BILL_STATUS.PENDING },
+            { status: BILL_STATUS.OVERDUE }
+        ],
+        ...(userId && { userId })
+    };
 
-  const summary = {
-    ars: { paid: 0, pending: 0, overdue: 0 },
-    usd: { paid: 0, pending: 0, overdue: 0 }
-  };
+    const bills = await prisma.bill.findMany({ where });
 
-  bills.forEach(bill => {
-    // La moneda siempre será 'ARS' o 'USD' gracias al ENUM y valor por defecto
-    console.log(bill)
-    const currency = bill.currency.toLowerCase();
-    const amount = bill.amount || 0;
+    const summary = {
+        ars: { paid: 0, pending: 0, overdue: 0 },
+        usd: { paid: 0, pending: 0, overdue: 0 }
+    };
 
-    if (bill.status === BILL_STATUS.PAID && bill.paidAt >= startDate) {
-      summary[currency].paid += amount;
-    } else if (bill.status === BILL_STATUS.PENDING) {
-      summary[currency].pending += amount;
-    } else if (bill.status === BILL_STATUS.OVERDUE) {
-      summary[currency].overdue += amount;
-    }
-  });
+    bills.forEach(bill => {
+        const currency = (bill.currency || 'ARS').toLowerCase();
+        const amount = bill.amount || 0;
 
-  console.log(summary)
+        if (bill.status === BILL_STATUS.PAID && bill.paidAt >= startDate) {
+            summary[currency].paid += amount;
+        } else if (bill.status === BILL_STATUS.PENDING) {
+            summary[currency].pending += amount;
+        } else if (bill.status === BILL_STATUS.OVERDUE) {
+            summary[currency].overdue += amount;
+        }
+    });
 
-  return summary;
+    return summary;
 };
 
 export { getSummaryWithCurrency };

@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import api from '../api'
+import { CURRENCIES, CURRENCY_LIST, CURRENCY_FILTER_OPTIONS, DEFAULT_CURRENCY } from '../constants'
 
 // Funciones de validación
 const isValidPayment = (payment) => {
@@ -11,7 +12,7 @@ const isValidPayment = (payment) => {
     typeof payment.amount === 'number' &&
     !isNaN(payment.amount) &&
     typeof payment.currency === 'string' &&
-    ['ARS', 'USD'].includes(payment.currency) &&
+    CURRENCY_LIST.includes(payment.currency) &&
     typeof payment.category === 'string'
   )
 }
@@ -51,6 +52,8 @@ export function useAnalytics() {
   const categoryColors = {
     utilities: '#1976d2',
     subscriptions: '#9c27b0',
+    groceries: '#4caf50',
+    entertainment: '#ff9800',
     taxes: '#e53935',
     others: '#fb8c00'
   }
@@ -87,7 +90,7 @@ export function useAnalytics() {
   console.log('Current filters:', { year: year.value, currency: currency.value, category: category.value })
 
   const totalPaid = computed(() => {
-    const totals = { ARS: 0, USD: 0 }
+    const totals = { [CURRENCIES.ARS]: 0, [CURRENCIES.USD]: 0 }
     filteredBills.value.forEach(bill => {
       totals[bill.currency] += bill.amount
     })
@@ -96,13 +99,13 @@ export function useAnalytics() {
 
   const monthlyAverage = computed(() => {
     return {
-      ARS: totalPaid.value.ARS / 12,
-      USD: totalPaid.value.USD / 12
+      [CURRENCIES.ARS]: totalPaid.value[CURRENCIES.ARS] / 12,
+      [CURRENCIES.USD]: totalPaid.value[CURRENCIES.USD] / 12
     }
   })
 
   const highestExpense = computed(() => {
-    let highest = { amount: 0, currency: 'ARS', category: '' }
+    let highest = { amount: 0, currency: DEFAULT_CURRENCY, category: '' }
     filteredBills.value.forEach(bill => {
       if (bill.amount > highest.amount) {
         highest = {
@@ -119,7 +122,7 @@ export function useAnalytics() {
     const grouped = {}
     filteredBills.value.forEach(bill => {
       if (!grouped[bill.category]) {
-        grouped[bill.category] = { ARS: 0, USD: 0, count: 0 }
+        grouped[bill.category] = { [CURRENCIES.ARS]: 0, [CURRENCIES.USD]: 0, count: 0 }
       }
       grouped[bill.category][bill.currency] += bill.amount
       grouped[bill.category].count++

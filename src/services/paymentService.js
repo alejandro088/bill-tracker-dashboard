@@ -5,14 +5,96 @@ import {
   updatePayment,
   deletePayment as removePayment
 } from '../db/paymentsDB.js';
+import prisma from '../db/prismaClient.js';
 
-export const addPayment = async (payment) => addPaymentToDb(payment);
+// Nueva función para actualizar el saldo de la cuenta al realizar un pago
+const updateAccountBalance = async (paymentMethodId, amount, currency) => {
+  if (!paymentMethodId) return;
+  
+  // Buscar el método de pago y la cuenta asociada
+  const paymentMethod = await prisma.paymentMethods.findUnique({
+    where: { id: paymentMethodId },
+    include: { Account: true }
+  });
+  
+  // Si el método de pago no tiene cuenta asociada, no hacemos nada
+  if (!paymentMethod || !paymentMethod.Account) return;
+  
+  const account = paymentMethod.Account;
+  
+  // Si la cuenta no tiene saldo registrado, no podemos actualizar
+  if (account.balance === null) return;
+  
+  // Si las monedas coinciden, simplemente restamos
+  if (account.currency === currency) {
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { balance: account.balance - amount }
+    });
+  } else {
+    // Si las monedas son diferentes, necesitamos una tasa de cambio
+    // Por ahora, para simplificar, usaremos una tasa fija si no se proporciona
+    // Idealmente, esto debería obtenerse de una API externa o configuración
+    let exchangeRate = 500; // Tasa por defecto ARS/USD
+    
+    let newBalance;
+    if (currency === 'USD' && account.currency === 'ARS') {
+      // Convertir USD a ARS y restar
+      newBalance = account.balance - (amount * exchangeRate);
+    } else if (currency === 'ARS' && account.currency === 'USD') {
+      // Convertir ARS a USD y restar
+      newBalance = account.balance - (amount / exchangeRate);
+    }
+    
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { balance: newBalance }
+    });
+  }
+};
 
-export const listPayments = async (filters = {}) => {
-  const { name, year, currency, category } = filters;
+export const addPayment = async (payment, userId = null) => {
+  const result = await addPaymentToDb(payment, userId);
+
+  // Si el pago tiene un método de pago asociado, actualizamos el saldo de la cuenta
+  if (payment.paymentMethodId) {
+    await updateAccountBalance(
+      payment.paymentMethodId,
+      payment.amount,
+      payment.currency
+    );
+  }
+
+  return result;
+};
+
+export const addOneTimePayment = async (paymentData, userId = null) => {
+  const { amount, currency, paymentMethodId, category, description } = paymentData;
+  
+  const payment = {
+    amount,
+    currency,
+    paymentMethodId,
+    category,
+    description,
+    paidAt: new Date(),
+  };
+  
+  const result = await addPaymentToDb(payment, userId);
+  
+  // Actualizar el saldo de la cuenta asociada al método de pago
+  if (paymentMethodId) {
+    await updateAccountBalance(paymentMethodId, amount, currency);
+  }
+  
+  return result;
+};
+
+export const listPayments = async (filters = {}, userId = null) => {
+  const { name, year, currency, category, paymentMethodId } = filters;
   
   // Obtener pagos base (por nombre o todos)
-  const payments = name ? await getPaymentsByName(name) : await getAllPayments();
+  const payments = name ? await getPaymentsByName(name, userId) : await getAllPayments(userId);
   
   // Aplicar filtros
   return payments.filter(payment => {
@@ -29,16 +111,22 @@ export const listPayments = async (filters = {}) => {
     
     // Filtro por categoría
     if (category && category !== 'Todas') {
-      const paymentCategory = payment.Bill?.Service?.category;
+      // Para pagos únicos, usar la categoría directa del pago
+      const paymentCategory = payment.Bill?.Service?.category || payment.category;
       if (paymentCategory !== category) return false;
+    }
+    
+    // Filtro por método de pago
+    if (paymentMethodId && paymentMethodId !== 'Todas') {
+      if (payment.paymentMethodId !== paymentMethodId) return false;
     }
     
     return true;
   });
 };
 
-export const getPaymentSummary = async (startDate, endDate) => {
-  const payments = await getAllPayments();
+export const getPaymentSummary = async (startDate, endDate, userId = null) => {
+  const payments = await getAllPayments(userId);
 
   // Filter by date range if provided
   const filteredPayments = payments.filter(payment => {
@@ -48,7 +136,16 @@ export const getPaymentSummary = async (startDate, endDate) => {
     return true;
   });
 
-  // Calculate total paid
+  // Calculate total paid by currency
+  const totalARS = filteredPayments
+    .filter(payment => payment.currency === 'ARS')
+    .reduce((sum, payment) => sum + payment.amount, 0);
+    
+  const totalUSD = filteredPayments
+    .filter(payment => payment.currency === 'USD')
+    .reduce((sum, payment) => sum + payment.amount, 0);
+    
+  // Calculate total paid (all currencies)
   const totalPaid = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   // Calculate monthly average
@@ -66,19 +163,19 @@ export const getPaymentSummary = async (startDate, endDate) => {
     monthlyAverage = totalPaid / (monthsDiff || 1); // Avoid division by zero
   }
 
-  // Get most used payment provider
-  const providerCounts = {};
+  // Get most used payment method
+  const methodCounts = {};
   filteredPayments.forEach(payment => {
-    const provider = payment.paymentProvider || 'Unknown';
-    providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+    const methodId = payment.paymentMethodId || 'Unknown';
+    methodCounts[methodId] = (methodCounts[methodId] || 0) + 1;
   });
 
-  let mostUsedProvider = 'None';
+  let mostUsedMethodId = 'None';
   let maxCount = 0;
 
-  Object.entries(providerCounts).forEach(([provider, count]) => {
+  Object.entries(methodCounts).forEach(([methodId, count]) => {
     if (count > maxCount) {
-      mostUsedProvider = provider;
+      mostUsedMethodId = methodId;
       maxCount = count;
     }
   });
@@ -104,23 +201,37 @@ export const getPaymentSummary = async (startDate, endDate) => {
 
   return {
     totalPaid,
+    totalARS,
+    totalUSD,
     monthlyAverage,
-    mostUsedProvider,
+    mostUsedMethodId,
     previousPeriodComparison,
     paymentCount: filteredPayments.length
   };
 };
 
-export const editPayment = async (id, payment) => {
+export const editPayment = async (id, payment, userId = null) => {
+  if (userId) {
+    const existing = await prisma.payment.findUnique({ where: { id } });
+    if (!existing || existing.userId !== userId) {
+      throw new Error('Payment not found');
+    }
+  }
   return await updatePayment(id, payment);
 };
 
-export const deletePayment = async (id) => {
+export const deletePayment = async (id, userId = null) => {
+  if (userId) {
+    const existing = await prisma.payment.findUnique({ where: { id } });
+    if (!existing || existing.userId !== userId) {
+      throw new Error('Payment not found');
+    }
+  }
   return await removePayment(id);
 };
 
-export const getPaymentTrends = async (startDate, endDate) => {
-  const payments = await getAllPayments();
+export const getPaymentTrends = async (startDate, endDate, userId = null) => {
+  const payments = await getAllPayments(userId);
 
   // Filter by date range if provided
   const filteredPayments = payments.filter(payment => {
@@ -144,15 +255,15 @@ export const getPaymentTrends = async (startDate, endDate) => {
   // Group payments by category
   const byCategory = {};
   filteredPayments.forEach(payment => {
-    const category = payment.Bill?.Service?.category || 'Unknown';
+    const category = payment.Bill?.Service?.category || payment.category || 'Unknown';
     byCategory[category] = (byCategory[category] || 0) + payment.amount;
   });
 
-  // Group payments by payment provider
-  const byProvider = {};
+  // Group payments by payment method
+  const byMethod = {};
   filteredPayments.forEach(payment => {
-    const provider = payment.paymentProvider || 'Unknown';
-    byProvider[provider] = (byProvider[provider] || 0) + payment.amount;
+    const methodName = payment.PaymentMethods?.name || 'Unknown';
+    byMethod[methodName] = (byMethod[methodName] || 0) + payment.amount;
   });
 
   return {
@@ -164,9 +275,9 @@ export const getPaymentTrends = async (startDate, endDate) => {
       labels: Object.keys(byCategory),
       data: Object.values(byCategory)
     },
-    providers: {
-      labels: Object.keys(byProvider),
-      data: Object.values(byProvider)
+    methods: {
+      labels: Object.keys(byMethod),
+      data: Object.values(byMethod)
     }
   };
 };

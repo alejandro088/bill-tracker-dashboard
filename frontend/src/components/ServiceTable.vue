@@ -77,36 +77,18 @@
 
             <!-- Template para la categoría -->
             <template #item.category="{ item }">
-                <v-tooltip :text="getCategoryInfo(item.category)">
+                <v-tooltip :text="getCategoryInfo(item.Category.name)">
                     <template #activator="{ props }">
                         <v-chip
                             v-bind="props"
-                            :color="getCategoryColor(item.category)"
+                            :color="getCategoryColor(item.Category.name)"
                             size="small"
                             class="text-capitalize"
                             variant="flat"
                         >
-                            <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.category) }}</v-icon>
-                            {{ item.category }}
+                            <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.Category.name) }}</v-icon>
+                            {{ getCategoryName(item.Category.name) }}
                         </v-chip>
-                    </template>
-                </v-tooltip>
-            </template>
-
-            <template #item.paymentProvider="{ item }">
-                <v-tooltip :text="getProviderInfo(item.paymentProvider)">
-                    <template #activator="{ props }">
-                        <div
-                            v-bind="props"
-                            class="d-flex align-center justify-center"
-                        >
-                            <v-icon
-                                size="20"
-                                :icon="getProviderIcon(item.paymentProvider)"
-                                class="mr-1"
-                            ></v-icon>
-                            {{ item.paymentProvider }}
-                        </div>
                     </template>
                 </v-tooltip>
             </template>
@@ -183,7 +165,7 @@
                         </template>
                     </v-tooltip>
 
-                    <v-tooltip text="Archivar servicio">
+                    <v-tooltip v-if="!item.archived" text="Archivar servicio">
                         <template #activator="{ props }">
                             <v-btn
                                 v-bind="props"
@@ -198,6 +180,21 @@
                             </v-btn>
                         </template>
                     </v-tooltip>
+                    <v-tooltip v-else text="Restaurar servicio">
+                        <template #activator="{ props }">
+                            <v-btn
+                                v-bind="props"
+                                color="success"
+                                variant="flat"
+                                icon
+                                size="small"
+                                class="mx-1"
+                                @click="$emit('restore', item)"
+                            >
+                                <v-icon>mdi-archive-arrow-up</v-icon>
+                            </v-btn>
+                        </template>
+                    </v-tooltip>
                 </div>
             </template>
         </v-data-table>
@@ -205,6 +202,8 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import api from '../api.js';
 import { statusColor, statusIcon, formatAmountWithCurrency } from '../utils/formatters';
 import ServiceIcon from './ServiceIcon.vue';
 
@@ -223,7 +222,7 @@ const props = defineProps({
     }
 });
 
-defineEmits(['add-bill', 'archive', 'edit']);
+defineEmits(['add-bill', 'archive', 'edit', 'restore']);
 
 const headers = [
     {
@@ -235,12 +234,6 @@ const headers = [
     {
         title: 'Categoría',
         key: 'category',
-        align: 'center',
-        sortable: true,
-    },
-    {
-        title: 'Proveedor',
-        key: 'paymentProvider',
         align: 'center',
         sortable: true,
     },
@@ -264,80 +257,72 @@ const headers = [
     },
 ];
 
-const getCategoryInfo = (category) => {
-    switch (category) {
-        case 'utilities':
-            return 'Servicios básicos como luz, agua, gas, etc.';
-        case 'subscriptions':
-            return 'Suscripciones a servicios digitales';
-        case 'taxes':
-            return 'Impuestos y tasas gubernamentales';
-        default:
-            return 'Otros tipos de servicios';
+const getCategoryInfo = (categoryId) => {
+
+
+    if (!categoryId) return 'Sin categoría definida';
+    
+    const category = categories.value.find(c => c.name === categoryId);
+    if (category) {
+        return category.description || category.name;
     }
+    
+    return 'Categoría no encontrada';
 };
 
-const getCategoryColor = (category) => {
-    switch (category) {
-        case 'utilities':
-            return 'blue';
-        case 'subscriptions':
-            return 'purple';
-        case 'taxes':
-            return 'red';
-        default:
-            return 'grey';
+const getCategoryColor = (categoryId) => {
+    if (!categoryId) return 'grey';
+    
+    const category = categories.value.find(c => c.id === categoryId);
+    if (category && category.color) {
+        return category.color;
     }
+    
+    // Colores por defecto
+    if (categoryId === 'utilities') return 'blue';
+    if (categoryId === 'subscriptions') return 'purple';
+    if (categoryId === 'taxes') return 'red';
+    
+    return 'grey';
 };
 
-const getCategoryIcon = (category) => {
-    switch (category) {
-        case 'utilities':
-            return 'mdi-flash';
-        case 'subscriptions':
-            return 'mdi-shopping';
-        case 'taxes':
-            return 'mdi-bank';
-        default:
-            return 'mdi-help-circle';
+const getCategoryIcon = (categoryId) => {
+    if (!categoryId) return 'mdi-help-circle';
+    
+    const category = categories.value.find(c => c.id === categoryId);
+    if (category && category.icon) {
+        return category.icon;
     }
+    
+    // Iconos por defecto
+    if (categoryId === 'utilities') return 'mdi-flash';
+    if (categoryId === 'subscriptions') return 'mdi-shopping';
+    if (categoryId === 'taxes') return 'mdi-bank';
+    
+    return 'mdi-help-circle';
 };
 
-const getProviderInfo = (provider) => {
-    switch (provider) {
-        case 'Visa':
-            return 'Pago con tarjeta Visa';
-        case 'Mastercard':
-            return 'Pago con tarjeta Mastercard';
-        case 'MercadoPago':
-            return 'Pago a través de MercadoPago';
-        case 'Google Play':
-            return 'Pago a través de Google Play';
-        case 'MODO':
-            return 'Pago con MODO';
-        case 'PayPal':
-            return 'Pago con PayPal';
-        default:
-            return 'Otros medios de pago';
-    }
+const getCategoryName = (categoryId) => {
+    if (!categoryId) return 'N/A';
+    
+    const category = categories.value.find(c => c.id === categoryId);
+    return category ? category.name : categoryId;
 };
 
-const getProviderIcon = (provider) => {
-    switch (provider) {
-        case 'Visa':
-            return 'mdi-credit-card';
-        case 'Mastercard':
-            return 'mdi-credit-card';
-        case 'MercadoPago':
-            return 'mdi-cart';
-        case 'Google Play':
-            return 'mdi-google-play';
-        case 'MODO':
-            return 'mdi-cellphone';
-        case 'PayPal':
-            return 'mdi-paypal';
-        default:
-            return 'mdi-cash';
+// Datos para categorías
+const categories = ref([]);
+const loadingCategories = ref(false);
+
+// Cargar categorías desde el backend
+const fetchCategories = async () => {
+    loadingCategories.value = true;
+    try {
+        const { data } = await api.get('/categories');
+        categories.value = data;
+    } catch (error) {
+        console.error('Error al obtener categorías:', error);
+    } finally {
+        loadingCategories.value = false;
     }
 };
 
@@ -396,6 +381,11 @@ const formatUrl = (url) => {
         return url;
     }
 };
+
+// Cargar datos al montar el componente
+onMounted(() => {
+    fetchCategories();
+});
 </script>
 
 <style scoped>

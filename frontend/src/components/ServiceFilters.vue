@@ -23,7 +23,7 @@
                 </div>
                 <v-select
                     :model-value="category"
-                    :items="categoryOptions"
+                    :items="categories"
                     item-title="title"
                     item-value="value"
                     placeholder="Todas"
@@ -32,6 +32,7 @@
                     hide-details
                     clearable
                     @update:model-value="$emit('update:category', $event === null ? '' : $event)"
+                    :loading="loadingCategories"
                 />
             </v-col>
             <v-col cols="12" md="2">
@@ -52,24 +53,6 @@
                     hide-details
                     clearable
                     @update:model-value="$emit('update:currency', $event)"
-                />
-            </v-col>
-            <v-col cols="12" md="2">
-                <div class="filter-label">
-                    <v-icon size="18" class="mr-2">mdi-credit-card</v-icon>
-                    <span>Proveedor</span>
-                </div>
-                <v-select
-                    :model-value="paymentProvider"
-                    :items="providers"
-                    item-title="title"
-                    item-value="value"
-                    placeholder="Todos"
-                    density="compact"
-                    variant="outlined"
-                    hide-details
-                    clearable
-                    @update:model-value="$emit('update:paymentProvider', $event === null ? '' : $event)"
                 />
             </v-col>
             <v-col cols="12" md="2">
@@ -99,7 +82,6 @@ const props = defineProps({
     search: String,
     category: String,
     currency: String,
-    paymentProvider: String,
     recurrence: String
 });
 
@@ -107,27 +89,49 @@ const emit = defineEmits([
     'update:search',
     'update:category',
     'update:currency',
-    'update:paymentProvider',
     'update:recurrence'
 ]);
 
-const providers = [
-    { title: 'Todos', value: '' },
-    { title: 'Visa', value: 'Visa' },
-    { title: 'Mastercard', value: 'Mastercard' },
-    { title: 'MercadoPago', value: 'MercadoPago' },
-    { title: 'Google Play', value: 'Google Play' },
-    { title: 'MODO', value: 'MODO' },
-    { title: 'PayPal', value: 'PayPal' },
-];
+import { ref, onMounted } from 'vue';
+import api from '../api.js';
 
-const categoryOptions = [
-    { title: 'Todas', value: '' },
-    { title: 'Servicios', value: 'utilities' },
-    { title: 'Suscripciones', value: 'subscriptions' },
-    { title: 'Impuestos', value: 'taxes' },
-    { title: 'Otros', value: 'others' },
-];
+// Estado para las categorías
+const categories = ref([{ title: 'Todas', value: '' }]);
+const loadingCategories = ref(false);
+
+// Cargar categorías desde el backend
+const fetchCategories = async () => {
+    loadingCategories.value = true;
+    try {
+        const { data } = await api.get('/categories');
+        // Transformar los datos al formato requerido por v-select
+        const categoryItems = data.map(cat => ({
+            title: cat.name,
+            value: cat.id,
+            description: cat.description,
+            color: cat.color,
+            icon: cat.icon
+        }));
+        categories.value = [{ title: 'Todas', value: '' }, ...categoryItems];
+    } catch (error) {
+        console.error('Error al obtener categorías:', error);
+        categories.value = [
+            { title: 'Todas', value: '' },
+            { title: 'Servicios', value: 'utilities' },
+            { title: 'Suscripciones', value: 'subscriptions' },
+            { title: 'Supermercado', value: 'groceries' },
+            { title: 'Impuestos', value: 'taxes' },
+            { title: 'Otros', value: 'others' }
+        ];
+    } finally {
+        loadingCategories.value = false;
+    }
+};
+
+// Cargar datos al montar el componente
+onMounted(() => {
+    fetchCategories();
+});
 
 const recurrenceOptions = [
     { title: 'Todas', value: '' },

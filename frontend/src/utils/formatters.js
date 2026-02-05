@@ -47,3 +47,14 @@ export const formatDateRelative = (date) => {
   if (minutes > 0) return `${minutes} minuto${minutes > 1 ? 's' : ''} atrás`;
   return `${seconds} segundo${seconds > 1 ? 's' : ''} atrás`;
 };
+
+// Función para formatear fecha en formato legible
+export const formatDate = (date) => {
+  if (!date) return '';
+  const options = { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  };
+  return new Date(date).toLocaleDateString('es-ES', options);
+};

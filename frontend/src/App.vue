@@ -1,89 +1,130 @@
 <template>
-  <v-app>
-    <v-navigation-drawer
-      v-model="drawer"
-      app
-      class="sidebar"
-      permanent
-    >
-      <div class="sidebar-header">
-        <!-- <v-avatar size="40" class="mr-2">
-          <v-img src="/logo.png" alt="Logo" />
-        </v-avatar> -->
-        <span class="sidebar-title">Bill Tracker</span>
-      </div>
-      <v-divider class="mb-2" />
-      <v-list nav>
-        <v-list-item
-          to="/"
-          prepend-icon="mdi-view-dashboard"
-          title="Dashboard"
-          :active="route.path === '/'"
-        />
-        <v-list-item
-          to="/history"
-          prepend-icon="mdi-history"
-          title="Historial"
-          :active="route.path.startsWith('/history')"
-        />
-        <v-list-item
-          to="/analytics"
-          prepend-icon="mdi-chart-bar"
-          title="Analíticas"
-          :active="route.path.startsWith('/analytics')"
-        />
-        <v-list-item
-          to="/summary"
-          prepend-icon="mdi-table"
-          title="Resumen"
-          :active="route.path.startsWith('/summary')"
-        />
-      </v-list>
-    </v-navigation-drawer>
-
-    <v-app-bar app class="app-bar">
-      <v-toolbar-title>Bill Tracker Dashboard</v-toolbar-title>
-      <v-spacer />
-      <v-text-field
-        v-model="search"
-        placeholder="Buscar..."
-        hide-details
-        dense
-        solo-inverted
-        prepend-inner-icon="mdi-magnify"
-        class="search-bar"
-      />
-      
-      <NotificationMenu :notifications="notifications" />
-      <v-btn icon class="mx-2">
-        <v-icon>mdi-account-circle</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-main>
-      <v-container class="container">
-        <router-view v-slot="{ Component }">
-          <component :is="Component" @notify="showNotification" />
-        </router-view>
-      </v-container>
-    </v-main>
-    <div v-if="toast" class="toast">{{ toast }}</div>
-    <div v-if="showNewNotification" class="new-notification-toast">
-      Tienes una nueva notificación
+  <div>
+    <!-- Auth layout (no nav/appbar) -->
+    <div v-if="route.meta && route.meta.layout === 'auth'">
+      <v-app>
+        <v-main>
+          <v-container class="auth-container">
+            <router-view v-slot="{ Component }">
+              <component :is="Component" />
+            </router-view>
+          </v-container>
+        </v-main>
+      </v-app>
     </div>
-    <ChatbotWidget />
-  </v-app>
+
+    <!-- Default app layout -->
+    <div v-else>
+      <v-app>
+        <v-navigation-drawer
+          v-model="drawer"
+          app
+          class="sidebar"
+          permanent
+        >
+          <div class="sidebar-header">
+            <span class="sidebar-title">Bill Tracker</span>
+          </div>
+          <v-divider class="mb-2" />
+          <v-list nav>
+            <v-list-item
+              to="/"
+              prepend-icon="mdi-view-dashboard"
+              title="Dashboard"
+              :active="route.path === '/'"
+            />
+            <v-list-item
+              to="/history"
+              prepend-icon="mdi-history"
+              title="Historial"
+              :active="route.path.startsWith('/history')"
+            />
+            <v-list-item
+              to="/analytics"
+              prepend-icon="mdi-chart-bar"
+              title="Analíticas"
+              :active="route.path.startsWith('/analytics')"
+            />
+            <v-list-item
+              to="/summary"
+              prepend-icon="mdi-table"
+              title="Resumen"
+              :active="route.path.startsWith('/summary')"
+            />
+            <v-list-item
+              to="/finance"
+              prepend-icon="mdi-cash-multiple"
+              title="Finanzas"
+              :active="route.path.startsWith('/finance')"
+            />
+            <v-list-item
+              to="/settings"
+              prepend-icon="mdi-cog"
+              title="Configuración"
+              :active="route.path.startsWith('/settings')"
+            />
+          </v-list>
+        </v-navigation-drawer>
+
+        <v-app-bar app class="app-bar">
+          <v-toolbar-title>Bill Tracker Dashboard</v-toolbar-title>
+          <v-spacer />
+          <v-text-field
+            v-model="search"
+            placeholder="Buscar..."
+            hide-details
+            dense
+            solo-inverted
+            prepend-inner-icon="mdi-magnify"
+            class="search-bar"
+          />
+          
+          <NotificationMenu :notifications="notifications" />
+          <v-menu offset-y>
+            <template #activator="{ props }">
+              <v-btn icon v-bind="props" class="mx-2">
+                <v-icon>mdi-account-circle</v-icon>
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="router.push('/settings')">
+                <v-list-item-title>Perfil</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="onLogout">
+                <v-list-item-title>Logout</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-app-bar>
+
+        <v-main>
+          <v-container class="container">
+            <router-view v-slot="{ Component }">
+              <component :is="Component" @notify="showNotification" />
+            </router-view>
+          </v-container>
+        </v-main>
+        <div v-if="toast" class="toast">{{ toast }}</div>
+        <div v-if="showNewNotification" class="new-notification-toast">
+          Tienes una nueva notificación
+        </div>
+        <ChatbotWidget />
+      </v-app>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import ChatbotWidget from './components/ChatbotWidget.vue'
 import NotificationMenu from './components/NotificationMenu.vue'
 import api from './api.js'
 import { formatDateRelative } from './utils/formatters'
+import { logout } from './composables/useAuth.js'
 
 const route = useRoute()
+const router = useRouter()
 const drawer = ref(true)
 const toast = ref('')
 const search = ref('')
@@ -94,7 +135,7 @@ let notifTimer
 
 onMounted(async () => {
   try {
-    const { data } = await api.get('/notifications')
+    const { data } = await api.get('/notifications/unread')
     notifications.value = data || []
 
     // Aplicar valores por defecto
@@ -143,6 +184,11 @@ const getNotificationIcon = (type) => {
     'info': 'mdi-information'
   }
   return icons[type] || 'mdi-bell'
+}
+
+function onLogout() {
+  try { logout(); } catch (e) {}
+  router.push('/login').catch(() => {});
 }
 </script>
 
@@ -320,5 +366,14 @@ const getNotificationIcon = (type) => {
   &:hover .view-more-text {
     color: rgb(var(--v-theme-primary));
   }
+}
+
+.auth-container {
+  max-width: 420px;
+  margin: 80px auto;
+  padding: 32px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.08);
 }
 </style>

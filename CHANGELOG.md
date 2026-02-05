@@ -1,5 +1,218 @@
 # Changelog
 
+## [2026-02-04] - Migración: agregar `userId` a `Account` y `PaymentMethods`
+
+### Changed
+- Añadida migración SQL en `prisma/migrations/add-userid-to-accounts-and-paymentmethods/migration.sql` para agregar las columnas `userId` y las constraints FK en `Account` y `PaymentMethods`.
+
+## [2026-02-05] - Fix: evitar error en endpoint `/api/accounts/incomes`
+
+### Fixed
+- Ajuste en `src/services/accountService.js` para fijar la collation de conexión MySQL antes de ejecutar búsquedas de `Income` y `Transfer`, evitando errores de "Illegal mix of collations" en algunas instalaciones MySQL.
+
+## [2026-02-04] - Añadida autenticación básica (JWT)
+
+### Added
+- Endpoint de autenticación: `POST /api/auth/login` para obtener un JWT.
+- Middleware `src/middleware/auth.js` con `requireAuth` y `optionalAuth`.
+
+### Added
+- Endpoint de registro: `POST /api/auth/register` para crear usuarios persistentes (Prisma `User`).
+- Modelo `User` añadido en `prisma/schema.prisma`.
+
+### Changed
+- Se añadieron dependencias `bcryptjs` y `jsonwebtoken` en `package.json`.
+
+
+## [2025-06-22] - Mejoras en la barra de desplazamiento del menú de notificaciones
+
+### Changed
+- Mejorado el diseño de la barra de desplazamiento para hacerla más visible y funcional
+  - Aumentado el ancho de 6px a 8px para mejor visibilidad
+  - Añadido un borde sutil para mejorar el contraste visual
+  - Incrementado el contraste del color de fondo (de 0.3 a 0.6 de opacidad)
+  - Aplicado efecto de sombra para hacer la barra más prominente
+  - **Corregido:** Añadida propiedad `overflow-y: auto` para asegurar que la barra de desplazamiento se muestre
+- Añadido efecto hover en la barra de desplazamiento para mejor interacción
+  - Implementado cambio de opacidad de 0.6 a 0.8 al pasar el cursor
+  - Añadido efecto de resaltado cuando se hace hover sobre el contenedor de notificaciones
+- Optimizado el soporte para Firefox con propiedades scrollbar-width y scrollbar-color
+  - Mejorado el contraste de colores para Firefox con scrollbar-color
+- Ajustada la altura máxima del contenedor de notificaciones para mejor visualización
+  - Añadido padding lateral para evitar que el contenido se solape con la barra
+
+## [2025-06-22] - Mejora del menú de notificaciones
+
+### Added
+- Agregado endpoint `/notifications/unread` para obtener sólo notificaciones no leídas
+- Rediseñado el componente NotificationMenu para mostrar sólo notificaciones no leídas
+- Añadida actualización automática del menú de notificaciones cada 60 segundos
+- Implementada funcionalidad para marcar notificaciones como leídas directamente desde el menú
+
+### Changed
+- Mejorada la visualización del menú con iconos según tipo de notificación
+- Optimizado el rendimiento al cargar sólo notificaciones no leídas
+- Mejorada la interactividad con efectos visuales al hacer hover/clic
+
+## [2025-06-22] - Corrección de visualización en el panel de notificaciones
+
+### Fixed
+- Corregido problema donde las notificaciones agrupadas por fecha se cortaban o no se mostraban correctamente
+- Mejorada la validación de fechas para prevenir errores en la agrupación
+- Ajustada la visualización de los elementos de la lista para garantizar que todo el contenido sea visible
+- Mejorada la apariencia visual de los encabezados de fecha
+
+## [2025-06-22] - Correcciones en el panel de notificaciones
+
+### Fixed
+- Corregido error de importación en NotificationPanel.vue al añadir la función formatDate en utils/formatters.js
+
+## [2025-06-22] - Mejoras en el panel de notificaciones
+
+### Added
+- Implementada búsqueda avanzada de notificaciones por título y contenido
+- Añadida agrupación visual de notificaciones por fecha (Hoy, Ayer, fechas anteriores)
+- Agregada funcionalidad para eliminar notificaciones individuales
+- Añadido botón para eliminar todas las notificaciones leídas
+- Implementada paginación para mejorar el rendimiento con gran cantidad de notificaciones
+- Mejorados los filtros de tipo con chips visuales y mejor experiencia de usuario
+- Agregados tooltips informativos en los botones de acción
+
+### Changed
+- Rediseñada la interfaz para ser más limpia y accesible
+- Mejorada la API del backend para soportar filtrado avanzado y paginación
+- Optimizada la interacción con notificaciones (marcar como leído al hacer clic)
+- Mejorada la experiencia en dispositivos móviles con diseño adaptativo
+- Actualizado el sistema de filtrado para permitir múltiples filtros simultáneos
+
+## [2025-06-22] - Eliminación del selector de moneda en pagos
+
+### Changed
+- Eliminado el selector de moneda (ARS, USD) del diálogo de pago de facturas
+- La moneda ahora se asigna automáticamente según la cuenta asociada al método de pago seleccionado
+- Mejorado el algoritmo de selección automática de métodos de pago para respetar la moneda de la cuenta
+- Actualizada la función de verificación de saldo para tener en cuenta la moneda de la cuenta
+
+### Improved
+- La interfaz de pago es ahora más simple al eliminar la selección manual de moneda
+- Añadida selección automática de un método de pago preferido al iniciar el diálogo
+- Mejorada la experiencia de usuario al simplificar el proceso de pago
+
+## [2025-06-22] - Mejoras en la vista de Pagar factura
+
+### Added
+- Rediseñada la interfaz de pago de facturas con mejor visualización de la información
+- Añadida tarjeta resumen con estado del pago y totales
+- Implementada función de optimización automática de métodos de pago
+- Agregadas notificaciones más claras y detalladas durante el proceso de pago
+- Mejorada la validación de saldo en cuentas antes de confirmar el pago
+
+### Changed
+- Reorganizada la interfaz para mostrar primero la información importante
+- Mejorada la visualización de la tasa de cambio para pagos con múltiples monedas
+- Actualizada la funcionalidad para sugerir métodos de pago con saldo suficiente
+
+## [2025-06-22] - Implementación de descuento automático de saldo en cuentas
+
+### Added
+- Implementada la funcionalidad para descontar automáticamente el saldo de la cuenta asociada al método de pago al realizar un pago
+- Agregada validación para verificar si la cuenta tiene saldo suficiente antes de permitir el pago
+- Mejorados los componentes de diálogo de pago (PayDialog, OneTimePaymentDialog) para mostrar el saldo disponible en la cuenta
+- Implementada la conversión de monedas para cuentas y pagos en diferentes divisas
+
+### Changed
+- Modificado el servicio de pagos para actualizar el saldo de la cuenta después de cada pago
+- Actualizado el controlador de pagos para validar el saldo de la cuenta antes de procesar un pago
+- Modificado el servicio de facturación para actualizar los saldos de las cuentas al pagar facturas
+
+## [2025-06-22] - Mejoras en la vista de Historial de Pagos
+
+### Added
+- Agregada funcionalidad para exportar datos de pagos a Excel/CSV
+- Mejorada la visualización de montos con indicadores visuales por tipo de moneda (ARS/USD)
+- Restaurados los diálogos para crear nuevas categorías y métodos de pago
+- Completada la funcionalidad de filtrado por todos los campos
+
+### Fixed
+- Corregido el encabezado de la página para mostrar el nombre del servicio cuando corresponde
+- Restaurado el widget de resumen de pagos
+- Corregidos los filtros que estaban incompletos en la función filteredPayments
+
+## [2025-06-22] - Adición de tarjetas de resumen por moneda
+
+### Added
+- Agregadas tarjetas de resumen separadas para mostrar el total en ARS y USD en PaymentHistory
+- Implementada la discriminación de pagos por moneda en el servicio de pagos
+- Actualizado el componente PaymentSummaryWidget para mostrar totales por moneda
+
+## [2025-06-22] - Actualización de la columna de Medio de pago en ServiceBills
+
+### Changed
+- Actualizada la columna "Medio de pago" en ServiceBills.vue para usar paymentMethodName en lugar de paymentProvider
+- Modificado el método getServiceById para incluir la relación PaymentMethods en los pagos
+- Actualizado el template de ServiceBills para mostrar correctamente los métodos de pago relacionados
+
+## [2025-06-22] - Migración a paymentMethodId y actualización del servicio de pagos
+
+### Changed
+- Actualizado el servicio de pagos en el backend para usar `paymentMethodId` en lugar de `paymentProvider`
+- Modificada la función `addPayment` para recibir y almacenar el ID del método de pago
+- Actualizada la función `listPayments` para incluir filtro por `paymentMethodId`
+- Modificadas las funciones `getPaymentSummary` y `getPaymentTrends` para utilizar `paymentMethodId` y `PaymentMethods`
+- Corregido el componente OneTimePaymentDialog para usar `paymentMethodId` y cargar dinámicamente métodos de pago desde la API
+
+### Fixed
+- Corregido el acceso a la información del método de pago a través de la relación `PaymentMethods`
+- Actualizada la lógica para mostrar el método de pago más utilizado en los informes
+
+## [2025-06-22] - Corrección en filtros y diálogo de edición de pagos
+
+### Changed
+- Corregido el filtro de categorías en PaymentHistory.vue para utilizar el campo `categoryId` del servicio
+- Modificado el componente EditPaymentDialog para eliminar el selector de categorías
+- Actualizado el diálogo de edición de pagos para cargar los medios de pago desde el backend
+- Cambiado el almacenamiento de método de pago para usar `paymentMethodId` en lugar de `paymentProvider`
+- Actualizada la columna de método de pago en la tabla para que use la relación con PaymentMethods y muestre el nombre real del método
+- Modificado el componente PayDialog para eliminar el selector de categoría y alimentar los métodos de pago desde el backend
+
+### Fixed
+- Corregido el problema de visualización de categorías en el selector
+- Solucionado el error de filtrado de categorías en el listado de pagos
+- Corregido el filtrado de métodos de pago para usar el ID en lugar del nombre
+
+## [2025-06-21] - Pagos Únicos
+
+### Added
+- Agregado soporte para crear pagos únicos sin fecha de vencimiento
+- Nuevo componente OneTimePaymentDialog para registrar pagos de supermercado, panadería, etc.
+- Nueva ruta API para pagos únicos (/api/payments/one-time)
+- Actualizada base de datos para soportar pagos sin factura asociada
+
+### Changed
+- Modificado el servicio de pagos para soportar pagos únicos
+- Actualizada la vista de resumen mensual para incluir pagos únicos
+
+## [2025-06-19] - Centralización de Constantes
+
+### Changed
+- Creado archivo central de constantes para monedas, medios de pago y categorías
+- Refactorizados componentes para usar las constantes centralizadas
+- Actualizado BillForm.vue, EditServiceForm.vue y Analytics.vue para usar las constantes
+- Agregadas etiquetas y traducciones para las categorías
+- Agregados colores para las categorías en gráficos y UI
+
+### Fixed
+- Eliminado el hardcodeo de categorías, monedas y medios de pago en los componentes
+- Mejorada la consistencia en la visualización de categorías y monedas
+- Agregado soporte para formateo de monedas usando Intl.NumberFormat
+
+### Added
+- Nuevo archivo constants/index.js con constantes centralizadas
+- Helpers para formateo de monedas y obtención de íconos
+- Helpers para obtención de colores de categorías
+- Valores por defecto para monedas, categorías y medios de pago
+- Soporte para traducciones de categorías
+
 ## [2025-06-18] - Optimización de Filtrado de Pagos
 
 ### Changed
@@ -288,22 +501,93 @@
   - Visualización mejorada de íconos en la tabla de servicios
 
 ## [Unreleased]
-### Fixed
-- Corregida la visualización del mayor gasto en Analytics usando la categoría correcta
-- Mejorada la visualización de montos en ARS y USD en las tarjetas de resumen
-
 ### Added
-- Nuevo composable useAnalytics para manejar la lógica de análisis de gastos
-- Caché de datos de análisis para mejorar el rendimiento
-- Soporte mejorado para múltiples monedas en gráficos y tablas
-- Visualización separada de gastos en ARS y USD
+- Agregadas las tablas `Category` y `PaymentMethods` al esquema de Prisma.
+- Creado el servicio `categoryService.js` para manejar las operaciones CRUD de categorías.
+- Creado el servicio `paymentMethodService.js` para manejar las operaciones CRUD de métodos de pago.
+- Creado el controlador `categoryController.js` para interactuar con las categorías.
+- Creado el controlador `paymentMethodController.js` para interactuar con los métodos de pago.
+- Definidas las rutas `categoryRoutes.js` y `paymentMethodRoutes.js` para las operaciones CRUD de categorías y métodos de pago.
+- Generadas las migraciones necesarias para reflejar los cambios en la base de datos.
+- Integradas las rutas de métodos de pago en el archivo principal del backend.
+- Actualizado el componente `PaymentHistory.vue` para consumir las categorías y métodos de pago desde las nuevas APIs.
+- Creada nueva vista dedicada `SettingsView.vue` para la administración de categorías y métodos de pago.
+- Agregados formularios para crear, editar y eliminar categorías y métodos de pago.
+- Implementada navegación a la nueva vista de configuración desde la barra lateral.
+- Mejorado el filtrado de pagos para utilizar los IDs de las categorías.
+
+### Fixed
+- Corregido error en la creación de categorías y métodos de pago donde se enviaba `id` como nulo.
+- Mejorada la robustez de los controladores del backend para asegurar que el campo `id` se excluya de las peticiones de creación.
+
+## [2025-06-22] - Actualización de ServiceList para consumir categorías y métodos de pago desde el backend
 
 ### Changed
-- Refactorizado componente Analytics.vue para usar el nuevo composable
-- Mejorada la visualización de gráficos con soporte para múltiples monedas
-- Eliminado el sistema de caché en Analytics para simplificar la lógica y evitar problemas de datos inconsistentes
+- Actualizado ServiceList.vue para utilizar `paymentMethodId` en lugar de `paymentProvider`
+- Actualizado ServiceTable.vue para mostrar el nombre del método de pago relacionado
+- Implementada la carga dinámica de métodos de pago desde la API en ServiceTable.vue
+- Implementada la carga dinámica de categorías desde la API en ServiceTable.vue
+- Modificada la persistencia en localStorage para usar la clave correcta (svc_paymentMethod)
+- Mejorada la visualización de categorías y métodos de pago para mostrar sus nombres en lugar de IDs
 
 ### Fixed
-- Mejorado el manejo de errores al cargar datos del caché en Analytics
-- Añadida validación de datos recibidos del servidor
-- Implementada limpieza automática de caché corrupto o expirado
+- Corregida la lógica de filtrado para que funcione con los nuevos campos `paymentMethodId` y `categoryId`
+- Mejorados los tooltips para mostrar información dinámica desde el backend
+
+## [2025-06-22] - Eliminación de columna y filtro de Método de Pago en la vista de Servicios
+
+### Changed
+- Eliminada la columna "Método de Pago" de la tabla de servicios
+- Eliminado el filtro de método de pago en ServiceFilters
+- Simplificado el componente ServiceList y ServiceTable para eliminar referencias a métodos de pago
+- Reducido el código relacionado con la carga y filtrado de métodos de pago
+
+## [2025-06-22] - Implementación de Cuentas para rastrear el origen de los egresos
+
+### Added
+- Creado nuevo modelo `Account` en el esquema de Prisma para almacenar cuentas bancarias, efectivo y tarjetas
+- Actualizado el modelo `PaymentMethods` para vincularse con cuentas
+- Creado servicio `accountService.js` para gestionar las operaciones CRUD de cuentas
+- Creado controlador `accountController.js` para manejar las solicitudes HTTP
+- Creadas rutas en `accountRoutes.js` para acceder a las operaciones de cuentas
+- Nuevo componente `AccountManager.vue` para administrar cuentas en la interfaz
+- Integrada la gestión de cuentas en la vista de configuraciones
+- Modificados los componentes de pago para mostrar la cuenta asociada a cada método de pago
+- Mejorada la UX al mostrar la cuenta origen en cada método de pago en los diálogos de pago
+
+### Changed
+- Actualizada la forma de mostrar métodos de pago para incluir la cuenta de origen
+- Mejorada la pestaña de configuraciones para incluir la gestión de cuentas
+- Actualizado el esquema de base de datos con migraciones para las nuevas relaciones
+
+### Fixed
+- Corregida la visualización de métodos de pago para mostrar información adicional de la cuenta
+
+## [Unreleased]
+### Added
+- Endpoint `/income` para registrar ingresos en `accountRoutes.js`.
+- Función `registerIncome` en `accountController.js`.
+- Función `addIncome` en `accountService.js`.
+- Modelo `Income` en `schema.prisma`.
+- Migración `add-income-table`.
+- Componente Vue `IncomeForm.vue` para registrar ingresos.
+- Componente Vue `TransferForm.vue` para realizar transferencias entre cuentas.
+
+### Changed
+- Endpoint `/transfers` para crear transferencias entre cuentas en `accountRoutes.js`.
+- Función `createTransfer` en `accountController.js`.
+- Función `addTransfer` en `accountService.js`.
+- Modelo `Transfer` en `schema.prisma`.
+- Migración `add-transfer-table`.
+- Actualización del modelo `Account` con relaciones para transferencias entrantes y salientes.
+
+### Changed
+- Refactorización de `IncomeForm.vue` y `TransferForm.vue` para utilizar `<script setup>` y `api.js` para las peticiones HTTP.
+- Mejora en la estructura del código con la API de Composition de Vue 3.
+
+## [2025-06-22] - Refactorización de FinanceManager
+
+### Changed
+- Refactorización de `FinanceManager.vue` para utilizar `<script setup>` y `api.js`.
+- Añadida la ruta `/finance` en el router para acceder a la vista de gestión financiera.
+- Agregado nuevo ítem en el sidebar para acceder a la vista de Finanzas.

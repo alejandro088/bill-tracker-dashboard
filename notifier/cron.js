@@ -23,10 +23,11 @@ export const notifyUpcomingBills = async () => {
 
     const list = bills
       .map((b) => {
+        console.log(b)
         const url = `${process.env.FRONTEND_URL}/services/${b.serviceId}`;
         const amount = `$${b.amount.toLocaleString('es-AR')}`;
         const due = new Date(b.dueDate).toLocaleDateString('es-AR');
-        return `Servicio: ${b.name}<br/>Monto: ${amount}<br/>Vence: ${due}<br/><a href="${url}">🔗 Ver factura → ${url}</a>`;
+        return `Servicio: ${b.Service.name}<br/>Monto: ${amount}<br/>Vence: ${due}<br/><a href="${url}">🔗 Ver factura → ${url}</a>`;
       })
       .join('<br/><br/>');
 

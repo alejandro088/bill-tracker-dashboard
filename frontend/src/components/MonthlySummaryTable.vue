@@ -1,120 +1,123 @@
 <template>
-  <v-data-table
-    :headers="headers"
-    :items="groupedItems"
-    :group-by="['month']"
-    class="elevation-1 monthly-summary-table"
-    :items-per-page="-1"
-  >
-    <!-- Template para la columna de estado -->
-    <template #item.status="{ item }">
-      <v-chip
-        :color="getStatusColor(item.status)"
-        size="small"
-        class="text-capitalize status-chip"
-      >
-        <v-icon start size="small">{{ getStatusIcon(item.status) }}</v-icon>
-        {{ item.status }}
-      </v-chip>
-    </template>
+  <div>
 
-    <!-- Template para la columna de total -->
-    <template #item.total="{ item }">
-      <div class="d-flex align-center">
+    <v-data-table
+      :headers="headers"
+      :items="groupedItems"
+      :group-by="['month']"
+      class="elevation-1 monthly-summary-table"
+      :items-per-page="-1"
+    >
+      <!-- Template para la columna de estado -->
+      <template #item.status="{ item }">
         <v-chip
-          :color="item.currency === 'USD' ? 'success' : 'info'"
-          size="x-small"
-          variant="outlined"
-          class="mr-2 currency-chip"
+          :color="getStatusColor(item.status)"
+          size="small"
+          class="text-capitalize status-chip"
         >
-          {{ item.currency }}
+          <v-icon start size="small">{{ getStatusIcon(item.status) }}</v-icon>
+          {{ item.status }}
         </v-chip>
-        <span :class="{
-          'text-success': item.status === 'pagado',
-          'text-error': item.status === 'vencido',
-          'font-weight-medium': true
-        }">
-          {{ formatAmount(item.total, item.currency) }}
-        </span>
-      </div>
-    </template>
+      </template>
 
-    <!-- Template para la columna de cantidad -->
-    <template #item.count="{ item }">
-      <v-chip
-        color="grey"
-        size="small"
-        variant="flat"
-        class="count-chip"
-      >
-        {{ item.count }}
-      </v-chip>
-    </template>
-
-    <!-- Template para el grupo (mes) -->
-    <template #group.header="{ item, count, isGroup, toggle }">
-      <td :colspan="headers.length">
-        <v-hover v-slot="{ isHovering, props }">
-          <v-row
-            no-gutters
-            align="center"
-            class="pa-3 group-header"
-            v-if="isGroup"
-            v-bind="props"
-            :class="{ 'group-header-hover': isHovering }"
-            @click="toggle"
-            style="cursor: pointer"
+      <!-- Template para la columna de total -->
+      <template #item.total="{ item }">
+        <div class="d-flex align-center">
+          <v-chip
+            :color="item.currency === 'USD' ? 'success' : 'info'"
+            size="x-small"
+            variant="outlined"
+            class="mr-2 currency-chip"
           >
-            <v-col cols="auto" class="d-flex align-center">
-              <v-icon
-                :icon="isGroup.opened ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-                class="mr-2"
-              />
-              <span class="text-h6">{{ formatMonth(item.value) }}</span>
-            </v-col>
-            <v-col cols="auto" class="ml-4">
-              <v-chip color="primary" size="small" variant="flat" class="bills-count">
-                <v-icon start size="small">mdi-file-document-outline</v-icon>
-                {{ count }} facturas
-              </v-chip>
-            </v-col>
-            <v-col cols="auto" class="ml-4">
-              <div class="d-flex gap-2">
-                <div
-                  v-for="total in getMonthTotals(item.value)"
-                  :key="total.currency"
-                  class="currency-total"
-                >
-                  <v-chip
-                    :color="total.currency === 'USD' ? 'success' : 'info'"
-                    size="small"
-                    variant="elevated"
-                    class="total-chip"
+            {{ item.currency }}
+          </v-chip>
+          <span :class="{
+            'text-success': item.status === 'pagado',
+            'text-error': item.status === 'vencido',
+            'font-weight-medium': true
+          }">
+            {{ formatAmount(item.total, item.currency) }}
+          </span>
+        </div>
+      </template>
+
+      <!-- Template para la columna de cantidad -->
+      <template #item.count="{ item }">
+        <v-chip
+          color="grey"
+          size="small"
+          variant="flat"
+          class="count-chip"
+        >
+          {{ item.count }}
+        </v-chip>
+      </template>
+
+      <!-- Template para el grupo (mes) -->
+      <template #group.header="{ item, count, isGroup, toggle }">
+        <td :colspan="headers.length">
+          <v-hover v-slot="{ isHovering, props }">
+            <v-row
+              no-gutters
+              align="center"
+              class="pa-3 group-header"
+              v-if="isGroup"
+              v-bind="props"
+              :class="{ 'group-header-hover': isHovering }"
+              @click="toggle"
+              style="cursor: pointer"
+            >
+              <v-col cols="auto" class="d-flex align-center">
+                <v-icon
+                  :icon="isGroup.opened ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+                  class="mr-2"
+                />
+                <span class="text-h6">{{ formatMonth(item.value) }}</span>
+              </v-col>
+              <v-col cols="auto" class="ml-4">
+                <v-chip color="primary" size="small" variant="flat" class="bills-count">
+                  <v-icon start size="small">mdi-file-document-outline</v-icon>
+                  {{ count }} facturas
+                </v-chip>
+              </v-col>
+              <v-col cols="auto" class="ml-4">
+                <div class="d-flex gap-2">
+                  <div
+                    v-for="total in getMonthTotals(item.value)"
+                    :key="total.currency"
+                    class="currency-total"
                   >
-                    <v-icon start size="small">
-                      {{ total.currency === 'USD' ? 'mdi-currency-usd' : 'mdi-currency-ars' }}
-                    </v-icon>
-                    {{ total.currency }} {{ formatAmount(total.amount, total.currency) }}
-                  </v-chip>
+                    <v-chip
+                      :color="total.currency === 'USD' ? 'success' : 'info'"
+                      size="small"
+                      variant="elevated"
+                      class="total-chip"
+                    >
+                      <v-icon start size="small">
+                        {{ total.currency === 'USD' ? 'mdi-currency-usd' : 'mdi-currency-ars' }}
+                      </v-icon>
+                      {{ total.currency }} {{ formatAmount(total.amount, total.currency) }}
+                    </v-chip>
+                  </div>
                 </div>
-              </div>
-            </v-col>
-            <v-col cols="auto" class="ml-auto" v-if="isHovering">
-              <v-btn
-                icon="mdi-chart-bar"
-                variant="text"
-                size="small"
-                color="primary"
-                @click.stop="$emit('show-details', item.value)"
-              >
-                <v-tooltip activator="parent" location="top">Ver detalles del mes</v-tooltip>
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-hover>
-      </td>
-    </template>
-  </v-data-table>
+              </v-col>
+              <v-col cols="auto" class="ml-auto" v-if="isHovering">
+                <v-btn
+                  icon="mdi-chart-bar"
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  @click.stop="$emit('show-details', item.value)"
+                >
+                  <v-tooltip activator="parent" location="top">Ver detalles del mes</v-tooltip>
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-hover>
+        </td>
+      </template>
+    </v-data-table>
+  </div>
 </template>
 
 <script setup>
@@ -198,6 +201,12 @@ function getMonthTotals(month) {
     currency,
     amount
   }));
+}
+
+function fetchData() {
+  // Aquí puedes implementar la lógica para recargar los datos
+  // Por ejemplo, haciendo una llamada a la API para obtener los pagos actualizados
+  console.log('Recargando datos...');
 }
 </script>
 
