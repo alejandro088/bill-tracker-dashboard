@@ -134,11 +134,7 @@ export const getPaymentsByCurrency = async (currency, userId = null) => {
 
 // Obtener el total de pagos por moneda en un rango de fechas
 export const getTotalByDateRangeAndCurrency = async (startDate, endDate, currency, userId = null) => {
-  const where = {
-    currency,
-    paidAt: { gte: startDate, lte: endDate },
-    ...(userId && { userId })
-  };
+  const where = { currency, paidAt: { gte: startDate, lte: endDate }, ...(userId && { userId }) };
   const payments = await prisma.payment.findMany({ where });
   return payments.reduce((total, payment) => total + payment.amount, 0);
 };

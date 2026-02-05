@@ -31,23 +31,41 @@ const calculateNextDueDate = (currentDueDate, recurrence) => {
 };
 
 const handleAutoRenewal = async (bill) => {
-    if (bill.category !== 'subscriptions' || !bill.autoRenew) {
+    // Ensure we have the full bill loaded (include Service to check its autoRenew)
+    const billFull = (bill.Category || bill.categoryId || bill.Service) ? bill : await prisma.bill.findUnique({ where: { id: bill.id }, include: { Category: true, Service: true } });
+    if (!billFull) {
+        console.debug('handleAutoRenewal: billFull not found for', bill?.id);
         return null;
     }
 
-    const due = calculateNextDueDate(bill.dueDate, bill.recurrence);
-    return prisma.bill.create({
+    // Determine whether auto-renew is enabled on the bill or its parent service
+    const serviceAuto = billFull.Service?.autoRenew;
+    const billAuto = !!billFull.autoRenew;
+    const autoEnabled = billAuto || !!serviceAuto;
+    if (!autoEnabled) {
+        console.debug('handleAutoRenewal: autoRenew disabled for', billFull.id, 'billAuto=', billAuto, 'serviceAuto=', serviceAuto);
+        return null;
+    }
+
+    // Create the next bill using the Service recurrence (the service is the source of truth for recurrence)
+    const serviceRecurrence = billFull.Service?.recurrence || 'none';
+    const due = calculateNextDueDate(billFull.dueDate, serviceRecurrence);
+    console.debug('handleAutoRenewal: creating next bill for', billFull.id, 'due:', due.toISOString(), 'billAuto=', billAuto, 'serviceAuto=', serviceAuto);
+    const created = await prisma.bill.create({
         data: {
-            serviceId: bill.serviceId,
-            amount: bill.amount,
-            currency: bill.currency,
-            category: bill.category,
+            serviceId: billFull.serviceId,
+            amount: billFull.amount,
+            currency: billFull.currency,
+            categoryId: billFull.categoryId || null,
             dueDate: due,
             status: BILL_STATUS.PENDING,
-            autoRenew: bill.autoRenew,
-            recurrence: bill.recurrence || RECURRENCE_TYPES.NONE,
+            autoRenew: true,
+            recurrence: 'none',
+            userId: billFull.userId || billFull.Service?.userId || null,
         },
     });
+    console.debug('handleAutoRenewal: created bill', created.id);
+    return created;
 };
 
 const updateOverdueBills = async () => {
@@ -60,19 +78,6 @@ const updateOverdueBills = async () => {
     });
 };
 
-/**
- * Lista las facturas con filtros y paginación
- * @param {Object} query - Parámetros de búsqueda y paginación
- * @param {string} [query.search] - Término de búsqueda
- * @param {string} [query.category] - Categoría de factura
- * @param {string} [query.status] - Estado de la factura
- * @param {string} [query.recurrence] - Tipo de recurrencia
- * @param {string} [query.serviceId] - ID del servicio
- * @param {string} [query.sort='dueDate'] - Campo de ordenamiento
- * @param {number} [query.page=1] - Número de página
- * @param {number} [query.limit=10] - Límite de resultados por página
- * @returns {Promise<{total: number, page: number, limit: number, data: Array}>}
- */
 export const listBills = async (query = {}, userId = null) => {
     try {
         await updateOverdueBills();
@@ -98,12 +103,24 @@ export const listBills = async (query = {}, userId = null) => {
 
         const filters = {
             ...searchCondition,
-            ...(category && { category }),
             ...(status && { status }),
-            ...(recurrence && { recurrence }),
             ...(serviceId && { serviceId }),
             ...(userId && { userId })
         };
+
+        // Cuando se filtra por recurrencia, aplicarla sobre el Service (el servicio es la fuente de la recurrencia)
+        if (recurrence) {
+            filters.Service = { recurrence };
+        }
+
+        // Resolve category (can be id or name)
+        if (category) {
+            const cat = await prisma.category.findFirst({ where: { OR: [{ id: category }, { name: category }] } });
+            if (!cat) {
+                return { total: 0, page: Number(page), limit: Number(limit), data: [] };
+            }
+            filters.categoryId = cat.id;
+        }
 
         // Obtener total y datos
         const total = await prisma.bill.count({ where: filters });
@@ -112,7 +129,7 @@ export const listBills = async (query = {}, userId = null) => {
             orderBy: { [sort]: 'asc' },
             skip: (page - 1) * limit,
             take: Number(limit),
-            include: { Service: true, payments: true },
+            include: { Service: true, payments: true, Category: true },
         });
 
         // Mapear resultados
@@ -121,7 +138,9 @@ export const listBills = async (query = {}, userId = null) => {
             name: bill.Service?.name,
             description: bill.Service?.description,
             payments: bill.payments,
+            category: bill.Category?.name || null,
             Service: undefined,
+            Category: undefined,
         }));
 
         return { 
@@ -139,68 +158,96 @@ export const listBills = async (query = {}, userId = null) => {
 export const getBillById = async (id, userId = null) => {
     const where = { id };
     if (userId) where.userId = userId;
-    return prisma.bill.findFirst({
+    const bill = await prisma.bill.findFirst({
         where,
-        include: {
-            Service: true,
-            payments: true
-        }
+        include: { Service: true, payments: true, Category: true }
     });
+
+    if (!bill) return null;
+
+    return {
+        ...bill,
+        name: bill.Service?.name,
+        description: bill.Service?.description,
+        payments: bill.payments,
+        category: bill.Category?.name || null,
+        Service: undefined,
+        Category: undefined,
+    };
 };
 
 export const addBill = async (data, userId = null) => {
     let serviceId = data.serviceId;
     let serviceName = data.name;
-    
+
+    // Resolve category into categoryId (accepts id or name)
+    let categoryId = null;
+    if (data.category) {
+        const cat = await prisma.category.findFirst({ where: { OR: [{ id: data.category }, { name: data.category }] } });
+        if (cat) categoryId = cat.id;
+        else {
+            const created = await prisma.category.create({ data: { name: data.category } });
+            categoryId = created.id;
+        }
+    }
+
+    let serviceObj = null;
     if (!serviceId) {
-        let service = await prisma.service.findFirst({
+        const service = await prisma.service.findFirst({
             where: {
                 name: data.name,
-                category: data.category,
+                ...(categoryId && { categoryId }),
             },
         });
         if (!service) {
-            service = await prisma.service.create({
+            serviceObj = await prisma.service.create({
                 data: {
                     name: data.name,
                     description: data.description,
-                    category: data.category,
+                    categoryId: categoryId || null,
                     recurrence: data.recurrence || 'none',
                     autoRenew: data.autoRenew ?? false,
                     userId: userId
                 },
             });
-            
+
             // Notificación de nuevo servicio
             await prisma.notification.create({
                 data: {
-                    message: `Nuevo servicio registrado: ${service.name}`,
+                    message: `Nuevo servicio registrado: ${serviceObj.name}`,
                     read: false,
                     title: 'Nuevo Servicio',
                 }
             });
+        } else {
+            serviceObj = service;
         }
-        serviceId = service.id;
-        serviceName = service.name;
+        serviceId = serviceObj.id;
+        serviceName = serviceObj.name;
     } else {
-        // Si se proporcionó serviceId, obtenemos el nombre del servicio
-        const service = await prisma.service.findUnique({
+        // Si se proporcionó serviceId, obtenemos el nombre y flags del servicio
+        serviceObj = await prisma.service.findUnique({
             where: { id: serviceId },
-            select: { name: true }
+            select: { name: true, autoRenew: true, recurrence: true }
         });
-        serviceName = service?.name;
+        serviceName = serviceObj?.name;
     }
 
+    const effectiveAutoRenew = (data.autoRenew !== undefined) ? data.autoRenew : (serviceObj?.autoRenew ?? false);
+    const effectiveRecurrence = data.recurrence || serviceObj?.recurrence || 'none';
+
     const { name, description, ...billData } = data;
+    // Las facturas son hechos concretos: no almacenamos una "recurrence" activa en la factura.
+    // Heredamos autoRenew/recurrence desde el Service para la creación/auto-renovación, pero la factura creada tendrá recurrence 'none'.
     const bill = await prisma.bill.create({
         data: {
             status: 'pending',
-            autoRenew: data.autoRenew ?? false,
-            recurrence: data.recurrence || 'none',
+            autoRenew: effectiveAutoRenew,
+            recurrence: 'none',
             serviceId,
             amount: data.amount,
             dueDate: data.dueDate || new Date(),
-            category: data.category || 'other',
+            categoryId: categoryId || null,
             userId: userId
         },
     });
@@ -240,19 +287,31 @@ export const updateBill = async (id, data, userId = null) => {
         const { name, description, payments, ...rest } = data;
         const updateData = { ...rest };
 
+        // Debug logs to trace autoRenew behavior
+        try {
+          console.debug('updateBill: existing.autoRenew', existing.id, existing.autoRenew);
+          console.debug('updateBill: incoming data.autoRenew', id, data.autoRenew);
+          console.debug('updateBill: prepared updateData.autoRenew', id, updateData.autoRenew);
+        } catch (e) { /* ignore logging errors */ }
+
         // Actualizamos la bill
         const updated = await prisma.bill.update({
             where: { id },
             data: updateData,
         });
 
+                try {
+                    console.debug('updateBill: updated.autoRenew', updated.id, updated.autoRenew);
+                } catch (e) {}
+
         const justPaid = data.status === BILL_STATUS.PAID && existing.status !== BILL_STATUS.PAID;
+                console.debug('updateBill: justPaid', id, justPaid, 'existing.status', existing.status, 'incoming.status', data.status);
         if (!justPaid) {
             return { newBill: null };
         }
 
-        // Procesar pagos
-        await handlePayments(updated, data);
+        // Procesar pagos (pasar userId para asociar los pagos correctamente)
+        await handlePayments(updated, data, userId);
 
         // Crear notificación
         await createPaymentNotification(updated);
@@ -267,7 +326,7 @@ export const updateBill = async (id, data, userId = null) => {
     }
 };
 
-const handlePayments = async (bill, data) => {
+const handlePayments = async (bill, data, userId = null) => {
     const paidAt = new Date().toISOString();
     const paymentsArr =
         Array.isArray(data.payments) && data.payments.length
@@ -287,7 +346,8 @@ const handlePayments = async (bill, data) => {
             paidAt,
             paymentMethodId: p.paymentMethodId || null,
             exchangeRate: p.exchangeRate || null,
-            currency: p.currency || bill.currency
+            currency: p.currency || bill.currency,
+            userId: userId || bill.userId || null
         })),
         skipDuplicates: true,
     });
@@ -351,8 +411,11 @@ const createPaymentNotification = async (bill) => {
 export const deleteBill = async (id, userId = null) => {
     // Ensure bill belongs to user if userId provided
     if (userId) {
-        const existing = await prisma.bill.findUnique({ where: { id } });
-        if (!existing || existing.userId !== userId) {
+        const existing = await prisma.bill.findUnique({ where: { id }, include: { Service: true } });
+        if (!existing) throw new Error('Bill not found');
+        // Allow deletion when either the bill or its parent service belongs to the user
+        const ownerId = existing.userId || existing.Service?.userId || null;
+        if (ownerId !== userId) {
             throw new Error('Bill not found');
         }
     }
