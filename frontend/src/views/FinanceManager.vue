@@ -14,9 +14,9 @@
               <v-icon class="mr-2">mdi-cash-plus</v-icon>
               Ingresos
             </v-card-title>
-            <v-card-text>
+              <v-card-text>
               <p>Registra ingresos de dinero en tus cuentas</p>
-              <income-form @income-added="refreshData" />
+              <income-form :accounts="accounts" @income-added="refreshData" />
             </v-card-text>
           </v-card>
         </v-col>
@@ -27,9 +27,9 @@
               <v-icon class="mr-2">mdi-bank-transfer</v-icon>
               Transferencias
             </v-card-title>
-            <v-card-text>
+              <v-card-text>
               <p>Mueve dinero entre tus cuentas</p>
-              <transfer-form @transfer-completed="refreshData" />
+              <transfer-form :accounts="accounts" @transfer-completed="refreshData" />
             </v-card-text>
           </v-card>
         </v-col>
