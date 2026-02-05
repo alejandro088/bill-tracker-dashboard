@@ -158,13 +158,18 @@ export const addIncome = async ({ accountId, amount, description }, userId = nul
 };
 
 export const addWithdrawal = async ({ accountId, amount, description }, userId = null) => {
-  if (userId) {
-    const account = await prisma.account.findUnique({ where: { id: accountId } });
-    if (!account || account.userId !== userId) throw new Error('Account not found');
+  // Obtener cuenta y validar propiedad / existencia
+  const account = await prisma.account.findUnique({ where: { id: accountId } });
+  if (!account) throw new Error('Account not found');
+  if (userId && account.userId !== userId) throw new Error('Account not found');
+
+  const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const available = account.balance !== null ? parseFloat(account.balance) : 0;
+  if (parsedAmount > available) {
+    throw new Error('Insufficient funds');
   }
 
   return prisma.$transaction(async (prismaTx) => {
-    const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     const negativeAmount = parsedAmount * -1;
 
     // Registrar como un Income con monto negativo para conservar historial
