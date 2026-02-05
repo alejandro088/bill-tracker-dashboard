@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import prisma from '../db/prismaClient.js';
+import handleControllerError from '../utils/handleControllerError.js';
 
 dotenv.config();
 
@@ -46,7 +47,7 @@ export async function me(req, res) {
     if (!user) return res.status(404).json({ message: 'User not found' });
     return res.json({ id: user.id, username: user.username, email: user.email, role: user.role });
   } catch (e) {
-    return res.status(500).json({ message: 'Failed to fetch user' });
+    return handleControllerError(res, e);
   }
 }
 
