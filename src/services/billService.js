@@ -38,12 +38,11 @@ const handleAutoRenewal = async (bill) => {
         return null;
     }
 
-    // Determine whether auto-renew is enabled on the bill or its parent service
+    // Determine whether auto-renew is enabled on the parent service (service is source of truth)
     const serviceAuto = billFull.Service?.autoRenew;
-    const billAuto = !!billFull.autoRenew;
-    const autoEnabled = billAuto || !!serviceAuto;
+    const autoEnabled = !!serviceAuto;
     if (!autoEnabled) {
-        console.debug('handleAutoRenewal: autoRenew disabled for', billFull.id, 'billAuto=', billAuto, 'serviceAuto=', serviceAuto);
+        console.debug('handleAutoRenewal: autoRenew disabled for', billFull.id, 'serviceAuto=', serviceAuto);
         return null;
     }
 
@@ -58,7 +57,6 @@ const handleAutoRenewal = async (bill) => {
             currency: billFull.currency,
             dueDate: due,
             status: BILL_STATUS.PENDING,
-            autoRenew: true,
             userId: billFull.userId || billFull.Service?.userId || null,
         },
     });
@@ -233,15 +231,12 @@ export const addBill = async (data, userId = null) => {
         serviceName = serviceObj?.name;
     }
 
-    const effectiveAutoRenew = (data.autoRenew !== undefined) ? data.autoRenew : (serviceObj?.autoRenew ?? false);
-
     const { name, description, ...billData } = data;
     // Las facturas son hechos concretos y ya no almacenan `recurrence` ni `categoryId`.
     // La categoría y recurrencia provienen del Service relacionado.
     const bill = await prisma.bill.create({
         data: {
             status: 'pending',
-            autoRenew: effectiveAutoRenew,
             serviceId,
             amount: data.amount,
             dueDate: data.dueDate || new Date(),
@@ -289,12 +284,7 @@ export const updateBill = async (id, data, userId = null) => {
         delete updateData.recurrence;
         delete updateData.categoryId;
 
-        // Debug logs to trace autoRenew behavior
-        try {
-          console.debug('updateBill: existing.autoRenew', existing.id, existing.autoRenew);
-          console.debug('updateBill: incoming data.autoRenew', id, data.autoRenew);
-          console.debug('updateBill: prepared updateData.autoRenew', id, updateData.autoRenew);
-        } catch (e) { /* ignore logging errors */ }
+                // Debug logs
 
         // Actualizamos la bill
         const updated = await prisma.bill.update({
@@ -303,7 +293,7 @@ export const updateBill = async (id, data, userId = null) => {
         });
 
                 try {
-                    console.debug('updateBill: updated.autoRenew', updated.id, updated.autoRenew);
+                    console.debug('updateBill: updated', updated.id);
                 } catch (e) {}
 
         const justPaid = data.status === BILL_STATUS.PAID && existing.status !== BILL_STATUS.PAID;

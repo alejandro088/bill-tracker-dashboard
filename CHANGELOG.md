@@ -11,6 +11,12 @@
 
 ### Changed
 - Eliminado `categoryId` y `recurrence` del modelo `Bill` en `prisma/schema.prisma`.
+
+## [2026-02-05] - Backend: remover `autoRenew` de `Bill`
+
+### Changed
+- Eliminado el campo `autoRenew` del modelo `Bill` en `prisma/schema.prisma`. La configuración de renovación automática ahora vive exclusivamente en el modelo `Service` (`Service.autoRenew`).
+- Actualizado `src/services/billService.js` para no leer/escribir `autoRenew` en las facturas y para usar `Service.autoRenew` como fuente de la lógica de auto-renovación.
 ## [2026-02-05] - Frontend: vista Detalle de Factura
 
 ### Added
