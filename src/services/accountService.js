@@ -187,15 +187,26 @@ export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency
 
 export const getIncomes = async (userId = null) => {
   try {
-    const where = userId ? { account: { userId } } : {};
+
+    // Evitar comparaciones SQL entre collations distintas haciendo el filtro
+    // por `userId` en memoria: primero obtener cuentas, filtrar por `userId`
+    // en JS y luego pedir los ingresos por `accountId`.
+    if (userId) {
+      const allAccounts = await prisma.account.findMany({ select: { id: true, userId: true, name: true, currency: true } });
+      const accountIds = allAccounts.filter(a => a.userId === userId).map(a => a.id);
+      if (accountIds.length === 0) return [];
+
+      const incomes = await prisma.income.findMany({
+        where: { accountId: { in: accountIds } },
+        include: { account: true },
+        orderBy: { createdAt: 'desc' }
+      });
+      return incomes;
+    }
+
     const incomes = await prisma.income.findMany({
-      where,
-      include: {
-        account: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      include: { account: true },
+      orderBy: { createdAt: 'desc' }
     });
 
     console.log('Incomes retrieved:', incomes);
@@ -208,16 +219,25 @@ export const getIncomes = async (userId = null) => {
 
 export const getTransfers = async (userId = null) => {
   try {
-    const where = userId ? { OR: [ { fromAccount: { userId } }, { toAccount: { userId } } ] } : {};
+    if (userId) {
+      const allAccounts = await prisma.account.findMany({ select: { id: true, userId: true, name: true } });
+      const accountIds = allAccounts.filter(a => a.userId === userId).map(a => a.id);
+      if (accountIds.length === 0) return [];
+
+      const transfers = await prisma.transfer.findMany({
+        where: {
+          OR: [ { fromAccountId: { in: accountIds } }, { toAccountId: { in: accountIds } } ]
+        },
+        include: { fromAccount: true, toAccount: true },
+        orderBy: { transferDate: 'desc' }
+      });
+
+      return transfers;
+    }
+
     const transfers = await prisma.transfer.findMany({
-      where,
-      include: {
-        fromAccount: true,
-        toAccount: true
-      },
-      orderBy: {
-        transferDate: 'desc'
-      }
+      include: { fromAccount: true, toAccount: true },
+      orderBy: { transferDate: 'desc' }
     });
 
     return transfers;

@@ -5,6 +5,11 @@
 ### Changed
 - Añadida migración SQL en `prisma/migrations/add-userid-to-accounts-and-paymentmethods/migration.sql` para agregar las columnas `userId` y las constraints FK en `Account` y `PaymentMethods`.
 
+## [2026-02-05] - Fix: evitar error en endpoint `/api/accounts/incomes`
+
+### Fixed
+- Ajuste en `src/services/accountService.js` para fijar la collation de conexión MySQL antes de ejecutar búsquedas de `Income` y `Transfer`, evitando errores de "Illegal mix of collations" en algunas instalaciones MySQL.
+
 ## [2026-02-04] - Añadida autenticación básica (JWT)
 
 ### Added
