@@ -191,19 +191,26 @@ export const addWithdrawal = async ({ accountId, amount, description }, userId =
 };
 
 export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency, description, transferDate }, userId = null) => {
+  // Obtener cuentas y validar acceso
+  const fromAccount = await prisma.account.findUnique({ where: { id: fromAccountId } });
+  const toAccount = await prisma.account.findUnique({ where: { id: toAccountId } });
   if (userId) {
-    const fromAccount = await prisma.account.findUnique({ where: { id: fromAccountId } });
-    const toAccount = await prisma.account.findUnique({ where: { id: toAccountId } });
     if (!fromAccount || fromAccount.userId !== userId) throw new Error('From account not found');
     if (!toAccount || toAccount.userId !== userId) throw new Error('To account not found');
   }
-  return prisma.$transaction(async (prisma) => {
+
+  // Validar fondos suficientes en la cuenta de origen
+  const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const fromBalance = fromAccount && fromAccount.balance !== null ? parseFloat(fromAccount.balance) : 0;
+  if (parsedAmount > fromBalance) throw new Error('Insufficient funds');
+
+  return prisma.$transaction(async (prismaTx) => {
     // Crear la transferencia
-    const transfer = await prisma.transfer.create({
+    const transfer = await prismaTx.transfer.create({
       data: {
         fromAccountId,
         toAccountId,
-        amount,
+        amount: parsedAmount,
         currency,
         description,
         transferDate,
@@ -211,21 +218,21 @@ export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency
     });
 
     // Actualizar el saldo de la cuenta de origen (restar)
-    await prisma.account.update({
+    await prismaTx.account.update({
       where: { id: fromAccountId },
       data: {
         balance: {
-          decrement: parseFloat(amount),
+          decrement: parsedAmount,
         },
       },
     });
 
     // Actualizar el saldo de la cuenta de destino (sumar)
-    await prisma.account.update({
+    await prismaTx.account.update({
       where: { id: toAccountId },
       data: {
         balance: {
-          increment: parseFloat(amount),
+          increment: parsedAmount,
         },
       },
     });

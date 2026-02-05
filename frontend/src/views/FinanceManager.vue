@@ -161,11 +161,11 @@ const refreshData = async () => {
     transactions.value = [
       ...incomes.map(income => ({
         id: `income-${income.id}`,
-        type: 'Ingreso',
+        type: (Number(income.amount) < 0) ? 'Egreso' : 'Ingreso',
         date: new Date(income.createdAt),
         fromAccount: 'Externo',
         toAccount: income.account.name,
-        amount: income.amount,
+        amount: Math.abs(Number(income.amount)),
         currency: income.currency || 'ARS',
         description: income.description
       })),
