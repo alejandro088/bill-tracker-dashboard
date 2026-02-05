@@ -26,14 +26,7 @@
             <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
           </v-menu>
           <v-select v-model="category" :items="categories" item-title="title" item-value="value" label="Category" density="compact" :loading="loadingCategories"/>
-          <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
-          <v-select
-            v-model="recurrence"
-            :items="recurrenceOptions"
-            label="Recurrence"
-            density="compact"
-          />
-          <v-switch v-if="category === 'subscriptions'" v-model="autoRenew" label="Auto Renew" />
+          <!-- Status editing moved to payment actions; do not allow status change here -->
           <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
         </v-card-text>
         <v-card-actions class="pt-0">
@@ -60,13 +53,9 @@ const description = ref('');
 const amount = ref(0);
 const dueDate = ref('');
 const categories = ref([]);
-const statusOptions = ['pending', 'paid', 'overdue'];
 const category = ref('');
 const loadingCategories = ref(false);
-const status = ref('pending');
-const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
-const recurrence = ref('none');
-const autoRenew = ref(false);
+// Status is handled via payment actions; remove local status and autoRenew
 const loading = ref(false);
 const error = ref(null);
 
@@ -77,9 +66,6 @@ const setFields = (b) => {
   amount.value = b.amount;
   dueDate.value = b.dueDate.substring(0,10);
   category.value = b.category;
-  status.value = b.status;
-  recurrence.value = b.recurrence || 'none';
-  autoRenew.value = b.autoRenew || false;
 };
 
 watch(
@@ -122,9 +108,6 @@ const submit = async () => {
       amount: amount.value,
       dueDate: date.toISOString(),
       category: category.value,
-      status: status.value,
-      autoRenew: autoRenew.value,
-      recurrence: recurrence.value
     });
     emit('updated');
     error.value = null;
