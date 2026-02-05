@@ -1,4 +1,5 @@
 import * as accountService from '../services/accountService.js';
+import handleControllerError from '../utils/handleControllerError.js';
 
 // Obtener todas las cuentas
 export const getAllAccounts = async (req, res) => {
@@ -7,7 +8,7 @@ export const getAllAccounts = async (req, res) => {
     res.json(accounts);
   } catch (error) {
     console.error('Error al obtener todas las cuentas:', error);
-    res.status(500).json({ error: 'Error al obtener todas las cuentas' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -21,7 +22,7 @@ export const getAccountById = async (req, res) => {
     res.json(account);
   } catch (error) {
     console.error('Error al obtener la cuenta:', error);
-    res.status(500).json({ error: 'Error al obtener la cuenta' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -32,7 +33,7 @@ export const createAccount = async (req, res) => {
     res.status(201).json(newAccount);
   } catch (error) {
     console.error('Error al crear la cuenta:', error);
-    res.status(500).json({ error: 'Error al crear la cuenta' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -43,7 +44,7 @@ export const updateAccount = async (req, res) => {
     res.json(updatedAccount);
   } catch (error) {
     console.error('Error al actualizar la cuenta:', error);
-    res.status(500).json({ error: 'Error al actualizar la cuenta' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -54,10 +55,10 @@ export const deleteAccount = async (req, res) => {
     res.json({ message: 'Cuenta eliminada correctamente' });
   } catch (error) {
     console.error('Error al eliminar la cuenta:', error);
-    if (error.message.includes('tiene métodos de pago asociados')) {
+    if (error.message && error.message.includes('tiene métodos de pago asociados')) {
       return res.status(400).json({ error: error.message });
     }
-    res.status(500).json({ error: 'Error al eliminar la cuenta' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -69,7 +70,7 @@ export const linkPaymentMethod = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error al vincular método de pago a cuenta:', error);
-    res.status(500).json({ error: 'Error al vincular método de pago a cuenta' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -81,7 +82,7 @@ export const unlinkPaymentMethod = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error al desvincular método de pago de cuenta:', error);
-    res.status(500).json({ error: 'Error al desvincular método de pago de cuenta' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -92,7 +93,7 @@ export const getBalances = async (req, res) => {
     res.json(balances);
   } catch (error) {
     console.error('Error al obtener los balances:', error);
-    res.status(500).json({ error: 'Error al obtener los balances' });
+    return handleControllerError(res, error);
   }
 };
 
@@ -103,7 +104,7 @@ export const registerIncome = async (req, res) => {
     const income = await accountService.addIncome({ accountId, amount, description }, req.user?.userId);
     res.status(201).json(income);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
 
@@ -114,7 +115,7 @@ export const registerWithdrawal = async (req, res) => {
     const withdrawal = await accountService.addWithdrawal({ accountId, amount, description }, req.user?.userId);
     res.status(201).json(withdrawal);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
 
@@ -148,7 +149,7 @@ export const createTransfer = async (req, res) => {
     
     res.status(201).json(transfer);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
 
@@ -158,7 +159,7 @@ export const listIncomes = async (req, res) => {
     const incomes = await accountService.getIncomes(req.user?.userId);
     res.json(incomes);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
 
@@ -168,6 +169,6 @@ export const listTransfers = async (req, res) => {
     const transfers = await accountService.getTransfers(req.user?.userId);
     res.json(transfers);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
