@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import prisma from '../db/prismaClient.js';
+import handleControllerError from '../utils/handleControllerError.js';
 import FINANCE_ASSISTANT_PROMPT from '../prompts/financeAssistant.js';
 
 let chatHistory = [
@@ -50,6 +51,6 @@ export const ask = async (req, res) => {
     res.json({ answer });
   } catch (err) {
     console.error('OpenAI error', err.message);
-    res.status(500).json({ answer: "Sorry, I couldn't understand your question." });
+    return handleControllerError(res, err);
   }
 };

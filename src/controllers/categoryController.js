@@ -1,4 +1,5 @@
 import * as categoryService from '../services/categoryService.js';
+import handleControllerError from '../utils/handleControllerError.js';
 
 export const getAllCategories = async (req, res) => {
   try {
@@ -6,7 +7,7 @@ export const getAllCategories = async (req, res) => {
     res.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
 
@@ -15,7 +16,7 @@ export const createCategory = async (req, res) => {
     const category = await categoryService.createCategory(req.body);
     res.status(201).json(category);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
 
@@ -24,7 +25,7 @@ export const updateCategory = async (req, res) => {
     const category = await categoryService.updateCategory(req.params.id, req.body);
     res.json(category);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
 
@@ -33,6 +34,6 @@ export const deleteCategory = async (req, res) => {
     await categoryService.deleteCategory(req.params.id);
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return handleControllerError(res, error);
   }
 };
