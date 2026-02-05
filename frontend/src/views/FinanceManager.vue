@@ -17,6 +17,9 @@
               <v-card-text>
               <p>Registra ingresos de dinero en tus cuentas</p>
               <income-form :accounts="accounts" @income-added="refreshData" />
+              <div class="mt-3">
+                <withdrawal-form :accounts="accounts" @withdrawal-made="refreshData" />
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -107,6 +110,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import IncomeForm from '../components/IncomeForm.vue';
 import TransferForm from '../components/TransferForm.vue';
+import WithdrawalForm from '../components/WithdrawalForm.vue';
 import api from '../api';
 
 // Router
