@@ -1,4 +1,5 @@
 import prisma from '../db/prismaClient.js';
+import { ValidationError, NotFoundError, UnauthorizedError } from '../errors/httpErrors.js';
 
 export const getAllAccounts = async (userId = null) => {
   const where = { ...(userId && { userId }) };
@@ -45,7 +46,7 @@ export const updateAccount = async (id, accountData, userId = null) => {
   
   if (userId) {
     const existing = await prisma.account.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId) throw new Error('Account not found');
+    if (!existing || existing.userId !== userId) throw new NotFoundError('Account not found');
   }
   return prisma.account.update({
     where: { id },
@@ -69,10 +70,10 @@ export const deleteAccount = async (id, userId = null) => {
   });
   
   if (account.paymentMethods.length > 0) {
-    throw new Error('No se puede eliminar la cuenta porque tiene métodos de pago asociados');
+    throw new ValidationError('No se puede eliminar la cuenta porque tiene métodos de pago asociados');
   }
   if (userId) {
-    if (!account || account.userId !== userId) throw new Error('Account not found');
+    if (!account || account.userId !== userId) throw new NotFoundError('Account not found');
   }
   
   return prisma.account.delete({
@@ -84,9 +85,9 @@ export const deleteAccount = async (id, userId = null) => {
 export const linkPaymentMethodToAccount = async (paymentMethodId, accountId, userId = null) => {
   if (userId) {
     const account = await prisma.account.findUnique({ where: { id: accountId } });
-    if (!account || account.userId !== userId) throw new Error('Account not found');
+    if (!account || account.userId !== userId) throw new NotFoundError('Account not found');
     const pm = await prisma.paymentMethods.findUnique({ where: { id: paymentMethodId } });
-    if (!pm || pm.userId !== userId) throw new Error('Payment method not found');
+    if (!pm || pm.userId !== userId) throw new NotFoundError('Payment method not found');
   }
   return prisma.paymentMethods.update({
     where: { id: paymentMethodId },
@@ -97,9 +98,9 @@ export const linkPaymentMethodToAccount = async (paymentMethodId, accountId, use
 export const unlinkPaymentMethodFromAccount = async (paymentMethodId, userId = null) => {
   if (userId) {
     const pm = await prisma.paymentMethods.findUnique({ where: { id: paymentMethodId }, include: { Account: true } });
-    if (!pm) throw new Error('Payment method not found');
+    if (!pm) throw new NotFoundError('Payment method not found');
     const account = pm.Account;
-    if (account && account.userId !== userId) throw new Error('Not authorized');
+    if (account && account.userId !== userId) throw new UnauthorizedError('Not authorized');
   }
   return prisma.paymentMethods.update({
     where: { id: paymentMethodId },
@@ -130,7 +131,7 @@ export const getAccountsBalance = async (userId = null) => {
 export const addIncome = async ({ accountId, amount, description }, userId = null) => {
   if (userId) {
     const account = await prisma.account.findUnique({ where: { id: accountId } });
-    if (!account || account.userId !== userId) throw new Error('Account not found');
+    if (!account || account.userId !== userId) throw new NotFoundError('Account not found');
   }
   // Crear el ingreso y actualizar el balance de la cuenta en una transacción
   return prisma.$transaction(async (prismaTx) => {
@@ -160,13 +161,13 @@ export const addIncome = async ({ accountId, amount, description }, userId = nul
 export const addWithdrawal = async ({ accountId, amount, description }, userId = null) => {
   // Obtener cuenta y validar propiedad / existencia
   const account = await prisma.account.findUnique({ where: { id: accountId } });
-  if (!account) throw new Error('Account not found');
-  if (userId && account.userId !== userId) throw new Error('Account not found');
+  if (!account) throw new NotFoundError('Account not found');
+  if (userId && account.userId !== userId) throw new NotFoundError('Account not found');
 
   const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   const available = account.balance !== null ? parseFloat(account.balance) : 0;
   if (parsedAmount > available) {
-    throw new Error('Insufficient funds');
+    throw new ValidationError('Insufficient funds');
   }
 
   return prisma.$transaction(async (prismaTx) => {
@@ -200,14 +201,14 @@ export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency
   const fromAccount = await prisma.account.findUnique({ where: { id: fromAccountId } });
   const toAccount = await prisma.account.findUnique({ where: { id: toAccountId } });
   if (userId) {
-    if (!fromAccount || fromAccount.userId !== userId) throw new Error('From account not found');
-    if (!toAccount || toAccount.userId !== userId) throw new Error('To account not found');
+    if (!fromAccount || fromAccount.userId !== userId) throw new NotFoundError('From account not found');
+    if (!toAccount || toAccount.userId !== userId) throw new NotFoundError('To account not found');
   }
 
   // Validar fondos suficientes en la cuenta de origen
   const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   const fromBalance = fromAccount && fromAccount.balance !== null ? parseFloat(fromAccount.balance) : 0;
-  if (parsedAmount > fromBalance) throw new Error('Insufficient funds');
+  if (parsedAmount > fromBalance) throw new ValidationError('Insufficient funds');
 
   return prisma.$transaction(async (prismaTx) => {
     // Crear la transferencia
