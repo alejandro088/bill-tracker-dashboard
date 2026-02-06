@@ -1,27 +1,27 @@
+import prisma from '../db/prismaClient.js';
+import { ValidationError } from '../errors/httpErrors.js';
+import { createNotification } from './notificationService.js';
+
 /**
  * Archiva un servicio (soft delete)
  * @param {string} id - ID del servicio
  * @returns {Promise<Object|null>} Servicio archivado o null
  */
 export const archiveService = async (id, userId) => {
-  try {
+  
     validateString(id, 'id');
-    if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
-    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    if (!id) throw new ValidationError('ID de servicio requerido');
+    if (!userId) throw new ValidationError('userId requerido');
     const existing = await prisma.service.findUnique({ where: { id } });
     if (!existing) return null;
     if (existing.userId !== userId) {
-      throw new ServiceError('Service not found', 'not_found');
+      throw new ValidationError('Service not found');
     }
     return await prisma.service.update({
       where: { id },
       data: { archived: true }
     });
-  } catch (error) {
-    console.error('Error al archivar servicio:', error);
-    if (error instanceof ServiceError) throw error;
-    throw new ServiceError('Error al archivar servicio', 'db');
-  }
+  
 };
 
 /**
@@ -30,54 +30,39 @@ export const archiveService = async (id, userId) => {
  * @returns {Promise<Object|null>} Servicio restaurado o null
  */
 export const restoreService = async (id, userId) => {
-  try {
     validateString(id, 'id');
-    if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
-    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    if (!id) throw new ValidationError('ID de servicio requerido');
+    if (!userId) throw new ValidationError('userId requerido');
     const existing = await prisma.service.findUnique({ where: { id } });
     if (!existing) return null;
     if (existing.userId !== userId) {
-      throw new ServiceError('Service not found', 'not_found');
+      throw new ValidationError('Service not found');
     }
     return await prisma.service.update({
       where: { id },
       data: { archived: false }
     });
-  } catch (error) {
-    console.error('Error al restaurar servicio:', error);
-    if (error instanceof ServiceError) throw error;
-    throw new ServiceError('Error al restaurar servicio', 'db');
-  }
+  
 };
-// --- Clase de error personalizada ---
-class ServiceError extends Error {
-  constructor(message, type = 'general') {
-    super(message);
-    this.name = 'ServiceError';
-    this.type = type;
-  }
-}
+
 // --- Validaciones auxiliares ---
 function validateString(value, name) {
   if (value && typeof value !== 'string') {
-    throw new ServiceError(`${name} debe ser un string`, 'validation');
+    throw new ValidationError(`${name} debe ser una cadena de texto`);
   }
 }
 
 function validateNumber(value, name) {
   if (value && isNaN(Number(value))) {
-    throw new ServiceError(`${name} debe ser un número`, 'validation');
+    throw new ValidationError(`${name} debe ser un número`);
   }
 }
 
 function validateObject(value, name) {
   if (!value || typeof value !== 'object') {
-    throw new ServiceError(`${name} debe ser un objeto`, 'validation');
+    throw new ValidationError(`${name} debe ser un objeto`);
   }
 }
-
-import prisma from '../db/prismaClient.js';
-import { createNotification } from './notificationService.js';
 
 /**
  * Construye el objeto de filtros para la consulta de servicios
@@ -109,8 +94,7 @@ function buildServiceFilters(query = {}) {
  * @returns {Promise<Array>} Listado de servicios
  */
 export const listServicesPaginated = async (query = {}, userId) => {
-  try {
-    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    if (!userId) throw new ValidationError('userId requerido');
     const { limit = 20, offset = 0 } = query;
     const where = { ...buildServiceFilters(query), userId };
     const services = await prisma.service.findMany({
@@ -128,11 +112,7 @@ export const listServicesPaginated = async (query = {}, userId) => {
       lastBill: s.bills[0] || null, 
       paymentMethodName: s.PaymentMethods?.name || null
     }));
-  } catch (error) {
-    console.error('Error al listar servicios:', error);
-    if (error instanceof ServiceError) throw error;
-    throw new ServiceError('Error al listar servicios', 'db');
-  }
+  
 };
 
 export const listServices = async (query = {}, userId) => {
@@ -156,8 +136,7 @@ export const listServices = async (query = {}, userId) => {
       }
     };
   }
-  try {
-    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    if (!userId) throw new ValidationError('userId requerido');
     const { limit = 20, offset = 0 } = query;
     const whereWithUser = { ...(where), userId };
     const [services, total] = await Promise.all([
@@ -182,11 +161,6 @@ export const listServices = async (query = {}, userId) => {
       })),
       total
     };
-  } catch (error) {
-    console.error('Error al listar servicios:', error);
-    if (error instanceof ServiceError) throw error;
-    throw new ServiceError('Error al listar servicios', 'db');
-  }
 };
 
 /**
@@ -195,10 +169,9 @@ export const listServices = async (query = {}, userId) => {
  * @returns {Promise<Object|null>} Servicio encontrado o null
  */
 export const getServiceById = async (id, userId) => {
-  try {
     validateString(id, 'id');
-    if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
-    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    if (!id) throw new ValidationError('ID de servicio requerido');
+    if (!userId) throw new ValidationError('userId requerido');
     return await prisma.service.findFirst({
       where: { id, userId },
       include: { 
@@ -211,11 +184,6 @@ export const getServiceById = async (id, userId) => {
         } 
       }
     });
-  } catch (error) {
-    console.error('Error al obtener servicio por ID:', error);
-    if (error instanceof ServiceError) throw error;
-    throw new ServiceError('Error al obtener servicio', 'db');
-  }
 };
 
 /**
@@ -225,29 +193,23 @@ export const getServiceById = async (id, userId) => {
  * @returns {Promise<Object|null>} Servicio actualizado o null
  */
 export const updateService = async (id, data, userId) => {
-  try {
     validateString(id, 'id');
-    if (!id) throw new ServiceError('ID de servicio requerido', 'validation');
+    if (!id) throw new ValidationError('ID de servicio requerido');
     validateObject(data, 'data');
-    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    if (!userId) throw new ValidationError('userId requerido');
     const existing = await prisma.service.findUnique({ where: { id } });
     if (!existing) return null;
     if (existing.userId !== userId) {
       throw new ServiceError('Service not found', 'not_found');
     }
     return await prisma.service.update({ where: { id }, data });
-  } catch (error) {
-    console.error('Error al actualizar servicio:', error);
-    if (error instanceof ServiceError) throw error;
-    throw new ServiceError('Error al actualizar servicio', 'db');
-  }
 };
 
 export const createService = async (data, userId) => {
-  try {
+  
     validateObject(data, 'data');
-    if (!data.name) throw new ServiceError('Datos de servicio incompletos o inválidos', 'validation');
-    if (!userId) throw new ServiceError('userId requerido', 'validation');
+    if (!data.name) throw new ValidationError('Datos de servicio incompletos o inválidos');
+    if (!userId) throw new ValidationError('userId requerido');
     const createData = { ...data, userId };
 
     // If a categoryId was passed, use nested connect instead of scalar field
@@ -325,9 +287,5 @@ export const createService = async (data, userId) => {
     // Return service with bills included
     return await prisma.service.findUnique({ where: { id: service.id }, include: { bills: true, Category: true } });
 
-  } catch (error) {
-    console.error('Error al crear servicio:', error);
-    if (error instanceof ServiceError) throw error;
-    throw new ServiceError('Error al crear servicio', 'db');
-  }
+  
 }

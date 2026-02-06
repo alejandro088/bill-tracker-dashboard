@@ -5,6 +5,7 @@ import {
   createService,
   restoreService
 } from '../services/serviceService.js';
+import handleControllerError from '../utils/handleControllerError.js';
 
 export const restore = async (req, res, next) => {
   try {
@@ -59,6 +60,7 @@ export const create = async (req, res, next) => {
     const service = await createService(req.body, req.user?.userId);
     res.status(201).json(service);
   } catch (err) {
-    next(err);
+    //next(err);
+    return handleControllerError(res, err);
   }
 };
