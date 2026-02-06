@@ -116,7 +116,6 @@ function resetForm() {
   amount.value = 0
   currency.value = DEFAULT_CURRENCY
   dueDate.value = ''
-  paymentMethod.value = PAYMENT_METHODS.VISA
   category.value = ''
   recurrence.value = 'none'
   autoRenew.value = false
