@@ -25,15 +25,8 @@
             </template>
             <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
           </v-menu>
-          <v-select v-model="category" :items="categories" label="Category" density="compact" />
-          <v-select v-model="status" :items="statusOptions" label="Status" density="compact" />
-          <v-select
-            v-model="recurrence"
-            :items="recurrenceOptions"
-            label="Recurrence"
-            density="compact"
-          />
-          <v-switch v-if="category === 'subscriptions'" v-model="autoRenew" label="Auto Renew" />
+          <v-select v-model="category" :items="categories" item-title="title" item-value="value" label="Category" density="compact" :loading="loadingCategories"/>
+          <!-- Status editing moved to payment actions; do not allow status change here -->
           <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
         </v-card-text>
         <v-card-actions class="pt-0">
@@ -47,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import api from '../api.js';
 
 const props = defineProps({ bill: Object });
@@ -59,13 +52,10 @@ const name = ref('');
 const description = ref('');
 const amount = ref(0);
 const dueDate = ref('');
-const categories = ['utilities', 'subscriptions', 'taxes', 'others'];
-const statusOptions = ['pending', 'paid', 'overdue'];
-const category = ref('utilities');
-const status = ref('pending');
-const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly'];
-const recurrence = ref('none');
-const autoRenew = ref(false);
+const categories = ref([]);
+const category = ref('');
+const loadingCategories = ref(false);
+// Status is handled via payment actions; remove local status and autoRenew
 const loading = ref(false);
 const error = ref(null);
 
@@ -76,9 +66,6 @@ const setFields = (b) => {
   amount.value = b.amount;
   dueDate.value = b.dueDate.substring(0,10);
   category.value = b.category;
-  status.value = b.status;
-  recurrence.value = b.recurrence || 'none';
-  autoRenew.value = b.autoRenew || false;
 };
 
 watch(
@@ -90,6 +77,19 @@ watch(
   { immediate: true }
 );
 
+onMounted(async () => {
+  loadingCategories.value = true;
+  try {
+    const { data } = await api.get('/categories');
+    categories.value = data.map(cat => ({ title: cat.name, value: cat.name }));
+  } catch (e) {
+    console.error('Error cargando categorías:', e);
+    categories.value = [{ title: 'Servicios', value: 'utilities' }, { title: 'Suscripciones', value: 'subscriptions' }];
+  } finally {
+    loadingCategories.value = false;
+  }
+});
+
 function close() {
   dialog.value = false;
   emit('close');
@@ -98,19 +98,13 @@ function close() {
 const submit = async () => {
   loading.value = true;
   try {
-    // Convert date to ISO format with current time
-    const date = new Date(dueDate.value);
-    date.setHours(23, 59, 59); // Set to end of day
-    
+    // Send only the date (YYYY-MM-DD). Time doesn't matter for bills in this app.
     await api.put(`/bills/${props.bill.id}`, {
       name: name.value,
       description: description.value,
       amount: amount.value,
-      dueDate: date.toISOString(),
+      dueDate: dueDate.value,
       category: category.value,
-      status: status.value,
-      autoRenew: autoRenew.value,
-      recurrence: recurrence.value
     });
     emit('updated');
     error.value = null;

@@ -1,13 +1,13 @@
 <template>
   <v-btn class="add-btn" color="primary" @click="dialog = true">
     <v-icon start>mdi-plus</v-icon>
-    Add Bill
+    Add Service
   </v-btn>
 
   <v-dialog v-model="dialog" max-width="500">
     <v-card>
       <v-form @submit.prevent="submit">
-        <v-card-title>Add Bill</v-card-title>
+        <v-card-title>Add Service</v-card-title>
         <v-card-text class="pt-0">
           <v-text-field v-model="name" label="Name" density="compact" required />
           <v-text-field v-model="description" label="Description" density="compact" />
@@ -41,12 +41,6 @@
             <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
           </v-menu>
           <v-select
-            v-model="paymentMethod"
-            :items="PAYMENT_METHOD_LIST"
-            label="Payment Method"
-            density="compact"
-          />
-          <v-select
             v-model="category"
             :items="categories"
             item-title="name"
@@ -69,7 +63,7 @@
             density="compact"
           />
           <v-switch
-            v-if="category === CATEGORIES.SUBSCRIPTIONS"
+            v-if="category === 'subscriptions'"
             v-model="autoRenew"
             label="Auto Renew"
           />
@@ -91,12 +85,7 @@ import api from '../api.js'
 import { 
   CURRENCIES, 
   CURRENCY_LIST, 
-  DEFAULT_CURRENCY, 
-  PAYMENT_METHODS,
-  PAYMENT_METHOD_LIST,
-  CATEGORIES,
-  CATEGORY_OPTIONS,
-  DEFAULT_CATEGORY
+  DEFAULT_CURRENCY
 } from '../constants'
 
 const emit = defineEmits(['added', 'notify'])
@@ -107,8 +96,7 @@ const amount = ref(0)
 const currency = ref(DEFAULT_CURRENCY)
 const dueDate = ref('')
 const menu = ref(false)
-const paymentMethod = ref(PAYMENT_METHODS.VISA)
-const category = ref(DEFAULT_CATEGORY)
+const category = ref('')
 const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly']
 const recurrence = ref('none')
 const autoRenew = ref(false)
@@ -129,32 +117,36 @@ function resetForm() {
   currency.value = DEFAULT_CURRENCY
   dueDate.value = ''
   paymentMethod.value = PAYMENT_METHODS.VISA
-  category.value = DEFAULT_CATEGORY
+  category.value = ''
   recurrence.value = 'none'
   autoRenew.value = false
   error.value = null
 }
 
-const submit = async () => {
+  const submit = async () => {
   loading.value = true
   try {
-    const due = new Date(dueDate.value)
-    const bill = {
-      name: name.value,
-      description: description.value,
-      amount: Number(amount.value),
-      currency: currency.value,
-      dueDate: due.toISOString(),
-      paymentMethod: paymentMethod.value,
-      category: category.value,
-      recurrence: recurrence.value,
-      autoRenew: category.value === CATEGORIES.SUBSCRIPTIONS ? autoRenew.value : false,
-    }
+      // Build service payload. We create the Service and optionally a nested Bill
+      const servicePayload = {
+        name: name.value,
+        description: description.value,
+        categoryId: category.value || undefined,
+        recurrence: recurrence.value,
+        autoRenew: autoRenew.value,
+        defaultCurrency: currency.value
+      }
 
-    await api.post('/bills', bill)
-    emit('notify', `Bill added: ${name.value} (${currency.value} ${amount.value})`)
-    emit('added')
-    close()
+      // If an amount is provided, include amount/currency/dueDate in payload
+      if (amount.value && Number(amount.value) > 0) {
+        servicePayload.amount = Number(amount.value)
+        servicePayload.currency = currency.value
+        servicePayload.dueDate = dueDate.value || undefined
+      }
+
+      const resp = await api.post('/services', servicePayload)
+      emit('notify', `Servicio creado: ${resp.data.name}`)
+      emit('added')
+      close()
   } catch (e) {
     error.value = e.message
   } finally {
@@ -166,7 +158,8 @@ const fetchCategories = async () => {
   loading.value = true
   try {
     const response = await api.get('/categories')
-    categories.value = response.data
+    // Usamos name como value para mantener compatibilidad con el backend
+    categories.value = response.data.map(c => ({ id: c.id, name: c.name, color: c.color }))
   } catch (e) {
     error.value = e.message
   } finally {

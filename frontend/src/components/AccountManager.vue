@@ -52,6 +52,9 @@
                 <v-btn variant="text" @click="editAccount(account)">
                   <v-icon>mdi-pencil</v-icon>
                 </v-btn>
+                <v-btn variant="text" @click="viewAccount(account)">
+                  <v-icon>mdi-eye</v-icon>
+                </v-btn>
                 <v-btn variant="text" @click="confirmDelete(account)">
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
@@ -204,6 +207,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import api from '../api';
 
 // Estados
@@ -425,6 +429,13 @@ onMounted(() => {
   fetchAccounts();
   fetchPaymentMethods();
 });
+
+// Navegar a la vista detalle de cuenta
+const router = useRouter();
+const viewAccount = (account) => {
+  if (!account || !account.id) return;
+  router.push(`/accounts/${account.id}`);
+};
 </script>
 
 <style scoped>

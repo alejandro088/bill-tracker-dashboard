@@ -25,8 +25,8 @@ Automatically creates a new bill for subscriptions after a payment is marked as 
 **Trigger:**  
 - On bill update → when status changes to `"paid"`
 
-**Logic:**
-- Duplicates `name`, `description`, `amount`, `category`, `paymentProvider`, `autoRenew`
+-**Logic:**
+- Duplicates `name`, `description`, `amount`, `category`, `paymentProvider`
 - Increments `dueDate` by 1 month
 - Sets status to `"pending"`
 

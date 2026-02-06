@@ -49,6 +49,8 @@ export function useAnalytics() {
   const currency = ref('Todas')
   const category = ref('Todas')
 
+  const categories = ref([])
+
   const categoryColors = {
     utilities: '#1976d2',
     subscriptions: '#9c27b0',
@@ -57,6 +59,8 @@ export function useAnalytics() {
     taxes: '#e53935',
     others: '#fb8c00'
   }
+
+  const categoryOptions = computed(() => ([{ title: 'Todas', value: 'Todas' }, ...categories.value.map(c => ({ title: c.name, value: c.name }))]))
 
   // Computed
   const filteredBills = computed(() => {
@@ -136,6 +140,18 @@ export function useAnalytics() {
     error.value = null
     
     try {
+      // Cargar categorías para obtener colores/íconos desde la DB
+      try {
+        const catResp = await api.get('/categories')
+        categories.value = Array.isArray(catResp.data) ? catResp.data : []
+        // Actualizar mapping de colores con los datos de la DB
+        categories.value.forEach(c => {
+          if (c.name) categoryColors[c.name] = c.color || categoryColors[c.name] || '#9e9e9e'
+        })
+      } catch (e) {
+        console.warn('No se pudieron cargar categorías desde la API:', e)
+      }
+
       const [billsResponse, paymentsResponse] = await Promise.all([
         api.get('/bills', { 
           params: { 
@@ -212,6 +228,8 @@ export function useAnalytics() {
     currency,
     category,
     error,
+    categories,
+    categoryOptions,
     // Computed
     filteredBills,
     filteredPayments,

@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { formatDateRelative } from '../utils/formatters';
 import api from '../api';
@@ -195,8 +195,15 @@ const getTypeColor = (type) => {
     return colors[type] || 'primary';
 };
 
-// Cargar notificaciones inicialmente
-onMounted(fetchUnreadNotifications);
+// Cargar notificaciones inicialmente y suscribirse a eventos de refresco
+onMounted(() => {
+    fetchUnreadNotifications();
+    window.addEventListener('notifications:refresh', fetchUnreadNotifications);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('notifications:refresh', fetchUnreadNotifications);
+});
 
 </script>
 

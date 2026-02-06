@@ -1,5 +1,47 @@
 # Changelog
 
+## [2026-02-06] - Frontend: vista Detalle de Cuenta
+
+### Added
+- Nueva vista `AccountDetail.vue` en `frontend/src/views/` para visualizar el detalle de una cuenta y todos sus movimientos (pagos, ingresos/egresos, transferencias). Ruta registrada: `/accounts/:id`.
+ 
+## [2026-02-06] - Refactor: extraer lógica de notificaciones a servicio
+
+### Changed
+- Extraída la lógica de acceso a datos y operaciones de notificaciones a `src/services/notificationService.js`. `src/controllers/notificationController.js` ahora delega en el servicio y usa `handleControllerError` para manejo centralizado de errores.
+
+## [2026-02-06] - Backend: no crear `Category` automáticamente en `addBill`
+
+### Changed
+- Eliminada la creación automática de `Category` en `addBill` (ahora, si se pasa una categoría que no existe, no se crea; `categoryId` quedará en `null`).
+
+
+## [2026-02-05] - Frontend: usar categorías desde DB
+
+### Changed
+- Eliminadas las categorías hardcodeadas del frontend; ahora se cargan desde `/categories`.
+- Actualizados `frontend/src/constants/index.js`, `BillForm.vue`, `EditBillForm.vue`, `useAnalytics.js` y `Analytics.vue` para consumir las categorías desde la base de datos.
+- `BillForm` y `EditBillForm` usan ahora las categorías de la API para los selectores.
+
+## [2026-02-05] - Backend: remover `categoryId` y `recurrence` de `Bill`
+
+### Changed
+- Eliminado `categoryId` y `recurrence` del modelo `Bill` en `prisma/schema.prisma`.
+
+## [2026-02-05] - Backend: remover `autoRenew` de `Bill`
+
+### Changed
+- Eliminado el campo `autoRenew` del modelo `Bill` en `prisma/schema.prisma`. La configuración de renovación automática ahora vive exclusivamente en el modelo `Service` (`Service.autoRenew`).
+- Actualizado `src/services/billService.js` para no leer/escribir `autoRenew` en las facturas y para usar `Service.autoRenew` como fuente de la lógica de auto-renovación.
+## [2026-02-05] - Frontend: vista Detalle de Factura
+
+### Added
+- Nueva vista `BillDetails.vue` en `frontend/src/views/` para visualizar los detalles de una factura y su historial de pagos. Ruta registrada: `/bills/:id`.
+
+- Actualizado `src/services/billService.js` para no leer/escribir estos campos y para exponer `category` y `recurrence` desde el `Service` relacionado.
+- Asegúrate de crear una migración de Prisma después de desplegar estos cambios.
+
+
 ## [2026-02-04] - Migración: agregar `userId` a `Account` y `PaymentMethods`
 
 ### Changed
@@ -9,6 +51,9 @@
 
 ### Fixed
 - Ajuste en `src/services/accountService.js` para fijar la collation de conexión MySQL antes de ejecutar búsquedas de `Income` y `Transfer`, evitando errores de "Illegal mix of collations" en algunas instalaciones MySQL.
+
+### Added
+- Migración manual: añadida `prisma/migrations/require-notification-userid/migration.sql` para agregar la columna `userId`, índice y constraint FK en `Notification`. La migración intenta forzar `NOT NULL` sólo si no hay filas con `userId` NULL.
 
 ## [2026-02-04] - Añadida autenticación básica (JWT)
 

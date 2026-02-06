@@ -22,7 +22,6 @@ const sampleBill = {
   dueDate: new Date().toISOString(),
   status: 'pending',
   category: 'utilities',
-  autoRenew: false,
   recurrence: 'none'
 };
 
@@ -75,7 +74,7 @@ describe('Bill endpoints', () => {
   });
 
   it('PUT /bills/:id should create new bill when auto-renew paid', async () => {
-    billService.updateBill.mockResolvedValue({ updated: { ...sampleBill, status: 'paid', autoRenew: true }, newBill: { ...sampleBill, id: '2' } });
+    billService.updateBill.mockResolvedValue({ updated: { ...sampleBill, status: 'paid' }, newBill: { ...sampleBill, id: '2' } });
     const res = await request(app)
       .put('/bills/1')
       .send({ status: 'paid', payments: [{ amount: 50, paymentProvider: 'Visa' }] });
@@ -83,11 +82,11 @@ describe('Bill endpoints', () => {
     expect(res.body.newBill.id).toBe('2');
   });
 
-  it('PUT /bills/:id autoRenew false should cancel subscription', async () => {
-    billService.updateBill.mockResolvedValue({ updated: { ...sampleBill, autoRenew: false }, newBill: null });
+  it('PUT /bills/:id autoRenew false should be ignored on bill (service-level setting)', async () => {
+    billService.updateBill.mockResolvedValue({ updated: { ...sampleBill }, newBill: null });
     const res = await request(app).put('/bills/1').send({ autoRenew: false });
     expect(res.status).toBe(200);
-    expect(res.body.updated.autoRenew).toBe(false);
+    expect(res.body.updated).not.toHaveProperty('autoRenew');
   });
 
   it('DELETE /bills/:id should remove bill', async () => {

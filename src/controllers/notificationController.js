@@ -1,53 +1,100 @@
-const { prisma } = require('../db/prismaClient');
+import * as notificationService from '../services/notificationService.js';
+import handleControllerError from '../utils/handleControllerError.js';
 
-async function getNotifications(req, res) {
+export const listNotifications = async (req, res) => {
   try {
-    const notifications = await prisma.notification.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 50 // Limitar a las 50 notificaciones más recientes
-    });
-    
-    res.json(notifications);
+    const result = await notificationService.listNotifications(req.query, req.user?.userId);
+    res.json(result);
   } catch (error) {
     console.error('Error al obtener notificaciones:', error);
-    res.status(500).json({ error: 'Error al obtener notificaciones' });
+    return handleControllerError(res, error);
   }
-}
+};
 
-async function markAsRead(req, res) {
-  const { id } = req.params;
-  
+export const getUnreadNotifications = async (req, res) => {
   try {
-    await prisma.notification.update({
-      where: { id: parseInt(id) },
-      data: { read: true }
-    });
-    
+    const { limit = 100 } = req.query;
+    const notifications = await notificationService.getUnreadNotifications(limit, req.user?.userId);
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error al obtener notificaciones no leídas:', error);
+    return handleControllerError(res, error);
+  }
+};
+
+export const createNotification = async (req, res) => {
+  try {
+    const notification = await notificationService.createNotification(req.body, req.user?.userId);
+    res.status(201).json(notification);
+  } catch (error) {
+    console.error('Error al crear notificación:', error);
+    return handleControllerError(res, error);
+  }
+};
+
+export const markAsRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await notificationService.markAsRead(id, req.user?.userId);
+    if (result.count === 0) return res.status(404).json({ error: 'Notification not found' });
     res.json({ success: true });
   } catch (error) {
     console.error('Error al marcar notificación como leída:', error);
-    res.status(500).json({ error: 'Error al marcar notificación como leída' });
+    return handleControllerError(res, error);
   }
-}
+};
 
-async function markAllAsRead(req, res) {
+export const markAllAsRead = async (req, res) => {
   try {
-    await prisma.notification.updateMany({
-      where: { read: false },
-      data: { read: true }
-    });
-    
+    const { type } = req.query;
+    await notificationService.markAllAsRead(type, req.user?.userId);
     res.json({ success: true });
   } catch (error) {
     console.error('Error al marcar todas las notificaciones como leídas:', error);
-    res.status(500).json({ error: 'Error al marcar todas las notificaciones como leídas' });
+    return handleControllerError(res, error);
   }
-}
+};
 
-module.exports = {
-  getNotifications,
-  markAsRead,
-  markAllAsRead
+export const patchMarkAsRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notification = await notificationService.patchMarkAsRead(id, req.user?.userId);
+    if (!notification) return res.status(404).json({ error: 'Notification not found' });
+    res.json(notification);
+  } catch (error) {
+    console.error('Error al marcar notificación como leída:', error);
+    return handleControllerError(res, error);
+  }
+};
+
+export const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await notificationService.deleteNotification(id, req.user?.userId);
+    if (result.count === 0) return res.status(404).json({ error: 'Notification not found' });
+    res.status(204).end();
+  } catch (error) {
+    console.error('Error al eliminar notificación:', error);
+    return handleControllerError(res, error);
+  }
+};
+
+export const clearReadNotifications = async (req, res) => {
+  try {
+    await notificationService.clearReadNotifications(req.user?.userId);
+    res.status(204).end();
+  } catch (error) {
+    console.error('Error al eliminar notificaciones leídas:', error);
+    return handleControllerError(res, error);
+  }
+};
+
+export const getUnreadCount = async (req, res) => {
+  try {
+    const result = await notificationService.getUnreadCount(req.user?.userId);
+    res.json(result);
+  } catch (error) {
+    console.error('Error al obtener conteo de notificaciones:', error);
+    return handleControllerError(res, error);
+  }
 };
