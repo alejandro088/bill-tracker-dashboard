@@ -254,8 +254,55 @@ export const createService = async (data, userId) => {
     if (!data.name) throw new ServiceError('Datos de servicio incompletos o inválidos', 'validation');
     if (!userId) throw new ServiceError('userId requerido', 'validation');
     const createData = { ...data, userId };
-    const service = await prisma.service.create({ data: createData });
+
+    // If nested bills are provided, normalize dueDate and ensure status
+    if (createData.bills && createData.bills.create) {
+      const normalizeToDateOnly = (dateInput) => {
+        if (!dateInput) return null;
+        let iso = typeof dateInput === 'string' ? dateInput : (dateInput instanceof Date ? dateInput.toISOString() : String(dateInput));
+        const match = iso.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (!match) {
+          const d = new Date(iso);
+          return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+        }
+        const [year, month, day] = match[1].split('-').map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
+      };
+
+      const normalizeBill = (b) => {
+        const nb = { ...b };
+        const nd = normalizeToDateOnly(nb.dueDate);
+        nb.dueDate = nd || (new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())));
+        nb.status = nb.status || 'pending';
+        return nb;
+      };
+
+      if (Array.isArray(createData.bills.create)) {
+        createData.bills.create = createData.bills.create.map(normalizeBill);
+      } else {
+        createData.bills.create = normalizeBill(createData.bills.create);
+      }
+    }
+
+    const service = await prisma.service.create({ data: createData, include: { bills: true } });
+
+    // Notification for new service
     await createNotification(`Nuevo servicio registrado: ${service.name}`, userId);
+
+    // If bills were created, create notifications for each
+    if (service.bills && service.bills.length) {
+      for (const bill of service.bills) {
+        try {
+          const currency = (bill.currency || service.defaultCurrency || 'ARS');
+          const formatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(bill.amount);
+          const due = new Date(bill.dueDate).toLocaleDateString('es-ES');
+          await createNotification(`Nueva factura registrada para ${service.name}: ${formatted} (vence: ${due})`, userId);
+        } catch (err) {
+          console.debug('createService: failed to create bill notification', err);
+        }
+      }
+    }
+
     return service;
   } catch (error) {
     console.error('Error al crear servicio:', error);
