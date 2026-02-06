@@ -9,6 +9,7 @@ import SettingsView from '../views/SettingsView.vue';
 import FinanceManager from '../views/FinanceManager.vue';
 import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
+import CalendarView from '../views/CalendarView.vue';
 
 const routes = [
   { path: '/', component: Dashboard },
@@ -22,6 +23,11 @@ const routes = [
   { path: '/finance', component: FinanceManager, meta: { requiresAuth: true } },
   { path: '/login', component: Login, meta: { layout: 'auth' } },
   { path: '/register', component: Register, meta: { layout: 'auth' } }
+  {
+    path: '/calendar',
+    name: 'Calendar',
+    component: CalendarView
+  }
 ];
 
 export default createRouter({
