@@ -1,5 +1,10 @@
 # Changelog
 
+## [2026-02-06] - Fix: Frontend - corregido `paymentMethod` no definido en Add Service
+
+### Fixed
+- Eliminada la referencia a `paymentMethod` no definida en `frontend/src/components/BillForm.vue` que causaba el error "paymentMethod is not defined" en el diálogo "Add Service".
+
 ## [2026-02-06] - Frontend: vista Detalle de Cuenta
 
 ### Added
