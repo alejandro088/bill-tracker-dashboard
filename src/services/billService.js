@@ -30,6 +30,20 @@ const calculateNextDueDate = (currentDueDate, recurrence) => {
     return due;
 };
 
+const normalizeToDateOnly = (dateInput) => {
+    if (!dateInput) return null;
+    // Accept Date object or string. Extract YYYY-MM-DD and create UTC midnight Date.
+    let iso = typeof dateInput === 'string' ? dateInput : (dateInput instanceof Date ? dateInput.toISOString() : String(dateInput));
+    const match = iso.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (!match) {
+        // fallback: parse then take date parts
+        const d = new Date(iso);
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    }
+    const [year, month, day] = match[1].split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+};
+
 const handleAutoRenewal = async (bill) => {
     // Ensure we have the full bill loaded (include Service to check its autoRenew)
     const billFull = bill.Service ? bill : await prisma.bill.findUnique({ where: { id: bill.id }, include: { Service: { include: { Category: true } } } });
@@ -234,12 +248,18 @@ export const addBill = async (data, userId = null) => {
     const { name, description, ...billData } = data;
     // Las facturas son hechos concretos y ya no almacenan `recurrence` ni `categoryId`.
     // La categoría y recurrencia provienen del Service relacionado.
+    // Normalize dueDate to date-only (UTC midnight). If not provided, use today date-only.
+    let normalizedDue = normalizeToDateOnly(data.dueDate);
+    if (!normalizedDue) {
+        const now = new Date();
+        normalizedDue = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    }
     const bill = await prisma.bill.create({
         data: {
             status: 'pending',
             serviceId,
             amount: data.amount,
-            dueDate: data.dueDate || new Date(),
+            dueDate: normalizedDue,
             userId: userId
         },
     });
@@ -283,6 +303,13 @@ export const updateBill = async (id, data, userId = null) => {
         delete updateData.category;
         delete updateData.recurrence;
         delete updateData.categoryId;
+
+        // Normalize incoming dueDate to date-only if present
+        if (updateData.dueDate) {
+            const nd = normalizeToDateOnly(updateData.dueDate);
+            if (nd) updateData.dueDate = nd;
+            else delete updateData.dueDate;
+        }
 
                 // Debug logs
 

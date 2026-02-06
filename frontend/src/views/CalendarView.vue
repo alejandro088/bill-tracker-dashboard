@@ -35,11 +35,13 @@ onMounted(async () => {
       // console.log('Date clicked', info.dateStr)
     },
     eventDrop: async (info) => {
-      // Actualizar dueDate de la factura
+      // Actualizar dueDate de la factura (enviar solo YYYY-MM-DD)
       const id = info.event.extendedProps.billId || info.event.id
       if (!id) return
       try {
-        await api.put(`/bills/${id}`, { dueDate: info.event.start.toISOString() })
+        // info.event.startStr is YYYY-MM-DD for allDay events
+        const dateOnly = info.event.startStr ? info.event.startStr.slice(0,10) : info.event.start.toISOString().slice(0,10)
+        await api.put(`/bills/${id}`, { dueDate: dateOnly })
       } catch (e) {
         console.error('Error updating bill date', e)
         info.revert()
@@ -53,18 +55,15 @@ onMounted(async () => {
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
     const end = new Date(now.getFullYear(), now.getMonth() + 2, 1).toISOString()
     const res = await api.get('/bills', { params: { page: 1, limit: 100, start, end } })
+    // Force all events to allDay and use only the YYYY-MM-DD part
     const items = (res.data.data || []).map(b => {
       const iso = b.dueDate || ''
-      const hasTime = /T\d{2}:\d{2}:\d{2}/.test(iso)
-      // Treat end-of-day timestamps (23:59:59) as date-only to avoid timezone shifts
-      const isEndOfDay = /T23:59:59(?:Z)?$/.test(iso)
-      const allDay = !hasTime || isEndOfDay
-      const start = allDay ? iso.slice(0, 10) : iso
+      const dateOnly = iso.slice(0, 10)
       return {
         id: b.id,
         title: `${b.name} — ${b.amount}`,
-        start,
-        allDay,
+        start: dateOnly,
+        allDay: true,
         color: b.status === 'paid' ? 'green' : (b.status === 'overdue' ? 'red' : 'orange'),
         extendedProps: { billId: b.id }
       }

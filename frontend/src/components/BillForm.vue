@@ -126,13 +126,12 @@ function resetForm() {
 const submit = async () => {
   loading.value = true
   try {
-    const due = new Date(dueDate.value)
     const bill = {
       name: name.value,
       description: description.value,
       amount: Number(amount.value),
       currency: currency.value,
-      dueDate: due.toISOString(),
+      dueDate: dueDate.value,
       category: category.value,
       recurrence: recurrence.value,
       autoRenew: category.value === CATEGORIES.SUBSCRIPTIONS ? autoRenew.value : false,

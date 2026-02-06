@@ -98,15 +98,12 @@ function close() {
 const submit = async () => {
   loading.value = true;
   try {
-    // Convert date to ISO format with current time
-    const date = new Date(dueDate.value);
-    date.setHours(23, 59, 59); // Set to end of day
-    
+    // Send only the date (YYYY-MM-DD). Time doesn't matter for bills in this app.
     await api.put(`/bills/${props.bill.id}`, {
       name: name.value,
       description: description.value,
       amount: amount.value,
-      dueDate: date.toISOString(),
+      dueDate: dueDate.value,
       category: category.value,
     });
     emit('updated');
