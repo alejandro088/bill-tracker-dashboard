@@ -44,7 +44,7 @@
             v-model="category"
             :items="categories"
             item-title="name"
-            item-value="name"
+            item-value="id"
             label="Categoría"
             density="compact"
           />
@@ -123,25 +123,35 @@ function resetForm() {
   error.value = null
 }
 
-const submit = async () => {
+  const submit = async () => {
   loading.value = true
   try {
-    const bill = {
-      name: name.value,
-      description: description.value,
-      amount: Number(amount.value),
-      currency: currency.value,
-      dueDate: dueDate.value,
-      category: category.value,
-      recurrence: recurrence.value,
-      autoRenew: category.value === CATEGORIES.SUBSCRIPTIONS ? autoRenew.value : false,
-          status: 'pending',
-        }
+      // Build service payload. We create the Service and optionally a nested Bill
+      const servicePayload = {
+        name: name.value,
+        description: description.value,
+        categoryId: category.value || undefined,
+        recurrence: recurrence.value,
+        autoRenew: autoRenew.value,
+        defaultCurrency: currency.value
+      }
 
-    await api.post('/bills', bill)
-    emit('notify', `Bill added: ${name.value} (${currency.value} ${amount.value})`)
-    emit('added')
-    close()
+      // If an amount is provided, include a nested bill creation
+      if (amount.value && Number(amount.value) > 0) {
+        servicePayload.bills = {
+          create: {
+            amount: Number(amount.value),
+            currency: currency.value,
+            dueDate: dueDate.value,
+            status: 'pending'
+          }
+        }
+      }
+
+      const resp = await api.post('/services', servicePayload)
+      emit('notify', `Servicio creado: ${resp.data.name}`)
+      emit('added')
+      close()
   } catch (e) {
     error.value = e.message
   } finally {
