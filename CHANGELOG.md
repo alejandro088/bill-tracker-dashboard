@@ -1,5 +1,10 @@
 # Changelog
 
+## [2026-02-06] - Frontend: vista Detalle de Cuenta
+
+### Added
+- Nueva vista `AccountDetail.vue` en `frontend/src/views/` para visualizar el detalle de una cuenta y todos sus movimientos (pagos, ingresos/egresos, transferencias). Ruta registrada: `/accounts/:id`.
+
 ## [2026-02-06] - Backend: no crear `Category` automáticamente en `addBill`
 
 ### Changed

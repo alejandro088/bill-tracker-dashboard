@@ -1,13 +1,13 @@
 <template>
   <v-btn class="add-btn" color="primary" @click="dialog = true">
     <v-icon start>mdi-plus</v-icon>
-    Add Bill
+    Add Service
   </v-btn>
 
   <v-dialog v-model="dialog" max-width="500">
     <v-card>
       <v-form @submit.prevent="submit">
-        <v-card-title>Add Bill</v-card-title>
+        <v-card-title>Add Service</v-card-title>
         <v-card-text class="pt-0">
           <v-text-field v-model="name" label="Name" density="compact" required />
           <v-text-field v-model="description" label="Description" density="compact" />
@@ -136,16 +136,11 @@ function resetForm() {
         defaultCurrency: currency.value
       }
 
-      // If an amount is provided, include a nested bill creation
+      // If an amount is provided, include amount/currency/dueDate in payload
       if (amount.value && Number(amount.value) > 0) {
-        servicePayload.bills = {
-          create: {
-            amount: Number(amount.value),
-            currency: currency.value,
-            dueDate: dueDate.value,
-            status: 'pending'
-          }
-        }
+        servicePayload.amount = Number(amount.value)
+        servicePayload.currency = currency.value
+        servicePayload.dueDate = dueDate.value || undefined
       }
 
       const resp = await api.post('/services', servicePayload)
