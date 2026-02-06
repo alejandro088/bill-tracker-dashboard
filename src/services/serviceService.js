@@ -243,11 +243,6 @@ export const updateService = async (id, data, userId) => {
   }
 };
 
-/**
- * Crea un nuevo servicio
- * @param {Object} data - Datos del servicio
- * @returns {Promise<Object>} Servicio creado
- */
 export const createService = async (data, userId) => {
   try {
     validateObject(data, 'data');
@@ -255,58 +250,68 @@ export const createService = async (data, userId) => {
     if (!userId) throw new ServiceError('userId requerido', 'validation');
     const createData = { ...data, userId };
 
-    // If nested bills are provided, normalize dueDate and ensure status
-    if (createData.bills && createData.bills.create) {
-      const normalizeToDateOnly = (dateInput) => {
-        if (!dateInput) return null;
-        let iso = typeof dateInput === 'string' ? dateInput : (dateInput instanceof Date ? dateInput.toISOString() : String(dateInput));
-        const match = iso.match(/^(\d{4}-\d{2}-\d{2})/);
-        if (!match) {
-          const d = new Date(iso);
-          return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-        }
-        const [year, month, day] = match[1].split('-').map(Number);
-        return new Date(Date.UTC(year, month - 1, day));
-      };
-
-      const normalizeBill = (b) => {
-        const nb = { ...b };
-        const nd = normalizeToDateOnly(nb.dueDate);
-        nb.dueDate = nd || (new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())));
-        nb.status = nb.status || 'pending';
-        return nb;
-      };
-
-      if (Array.isArray(createData.bills.create)) {
-        createData.bills.create = createData.bills.create.map(normalizeBill);
-      } else {
-        createData.bills.create = normalizeBill(createData.bills.create);
-      }
+    // If a categoryId was passed, use nested connect instead of scalar field
+    if (createData.categoryId) {
+      createData.Category = { connect: { id: createData.categoryId } };
+      delete createData.categoryId;
     }
 
-    const service = await prisma.service.create({ data: createData, include: { bills: true } });
+    // Remove transient bill fields so Prisma.service.create doesn't receive unknown args
+    const transientFields = ['amount', 'currency', 'dueDate'];
+    for (const f of transientFields) delete createData[f];
+
+    // Create service
+    const service = await prisma.service.create({ data: createData });
+
+    // Helper: normalize incoming dueDate to UTC midnight date-only
+    const normalizeToDateOnly = (dateInput) => {
+      if (!dateInput) return null;
+      const iso = typeof dateInput === 'string' ? dateInput : (dateInput instanceof Date ? dateInput.toISOString() : String(dateInput));
+      const match = iso.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (!match) {
+        const d = new Date(iso);
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+      }
+      const [year, month, day] = match[1].split('-').map(Number);
+      return new Date(Date.UTC(year, month - 1, day));
+    };
+
+    // Create initial bill only if amount provided
+    let createdBill = null;
+    if (data.amount && Number(data.amount) > 0) {
+      const billData = {
+        serviceId: service.id,
+        amount: Number(data.amount),
+        currency: data.currency || service.defaultCurrency || 'ARS',
+        dueDate: normalizeToDateOnly(data.dueDate) || new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())),
+        status: 'pending',
+        userId: userId || service.userId || null
+      };
+
+      createdBill = await prisma.bill.create({ data: billData });
+    }
 
     // Notification for new service
     await createNotification(`Nuevo servicio registrado: ${service.name}`, userId);
 
-    // If bills were created, create notifications for each
-    if (service.bills && service.bills.length) {
-      for (const bill of service.bills) {
-        try {
-          const currency = (bill.currency || service.defaultCurrency || 'ARS');
-          const formatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(bill.amount);
-          const due = new Date(bill.dueDate).toLocaleDateString('es-ES');
-          await createNotification(`Nueva factura registrada para ${service.name}: ${formatted} (vence: ${due})`, userId);
-        } catch (err) {
-          console.debug('createService: failed to create bill notification', err);
-        }
+    // Notification for new bill (if created)
+    if (createdBill) {
+      try {
+        const currency = (createdBill.currency || service.defaultCurrency || 'ARS');
+        const formatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(createdBill.amount);
+        const due = new Date(createdBill.dueDate).toLocaleDateString('es-ES');
+        await createNotification(`Nueva factura registrada para ${service.name}: ${formatted} (vence: ${due})`, userId);
+      } catch (err) {
+        console.debug('createService: failed to create bill notification', err);
       }
     }
 
-    return service;
+    // Return service with bills included
+    return await prisma.service.findUnique({ where: { id: service.id }, include: { bills: true, Category: true } });
+
   } catch (error) {
     console.error('Error al crear servicio:', error);
     if (error instanceof ServiceError) throw error;
     throw new ServiceError('Error al crear servicio', 'db');
   }
-};
+}
