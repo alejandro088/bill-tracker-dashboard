@@ -44,6 +44,91 @@ const normalizeToDateOnly = (dateInput) => {
     return new Date(Date.UTC(year, month - 1, day));
 };
 
+// Helpers extracted from addBill for clarity
+const resolveCategoryId = async (category) => {
+    if (!category) return null;
+    const cat = await prisma.category.findFirst({ where: { OR: [{ id: category }, { name: category }] } });
+    return cat ? cat.id : null;
+};
+
+const findOrCreateService = async (data, categoryId, userId) => {
+    if (data.serviceId) {
+        const serviceObj = await prisma.service.findUnique({
+            where: { id: data.serviceId },
+            select: { id: true, name: true, autoRenew: true, recurrence: true }
+        });
+        return { serviceObj, serviceCreated: false };
+    }
+
+    const service = await prisma.service.findFirst({
+        where: {
+            name: data.name,
+            ...(categoryId && { categoryId }),
+        },
+    });
+
+    if (service) return { serviceObj: service, serviceCreated: false };
+
+    const serviceObj = await prisma.service.create({
+        data: {
+            name: data.name,
+            description: data.description,
+            categoryId: categoryId || null,
+            recurrence: data.recurrence || 'none',
+            autoRenew: data.autoRenew ?? false,
+            userId: userId
+        },
+    });
+
+    // Notification for new service
+    await prisma.notification.create({
+        data: {
+            message: `Nuevo servicio registrado: ${serviceObj.name}`,
+            read: false,
+            title: 'Nuevo Servicio',
+            userId: userId || serviceObj.userId || null
+        }
+    });
+
+    return { serviceObj, serviceCreated: true };
+};
+
+const normalizeDueDateOrToday = (dueDate) => {
+    let nd = normalizeToDateOnly(dueDate);
+    if (!nd) {
+        const now = new Date();
+        nd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    }
+    return nd;
+};
+
+const createBillRecord = async ({ serviceId, amount, dueDate, userId }) => {
+    return await prisma.bill.create({
+        data: {
+            status: 'pending',
+            serviceId,
+            amount,
+            dueDate,
+            userId
+        },
+    });
+};
+
+const createBillNotification = async (bill, serviceName, userId) => {
+    await prisma.notification.create({
+        data: {
+            message: `Nueva factura registrada para ${serviceName}: ${new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+            }).format(bill.amount)} (vence: ${new Date(bill.dueDate).toLocaleDateString('es-ES')})`,
+            read: false,
+            title: 'Nueva Factura',
+            userId: userId || bill.userId || null
+
+        }
+    });
+};
+
 const handleAutoRenewal = async (bill) => {
     // Ensure we have the full bill loaded (include Service to check its autoRenew)
     const billFull = bill.Service ? bill : await prisma.bill.findUnique({ where: { id: bill.id }, include: { Service: { include: { Category: true } } } });
@@ -188,95 +273,22 @@ export const getBillById = async (id, userId = null) => {
 };
 
 export const addBill = async (data, userId = null) => {
-    let serviceId = data.serviceId;
-    let serviceName = data.name;
+    // resolve category id (do not create categories implicitly)
+    const categoryId = await resolveCategoryId(data.category);
 
-    // Resolve category into categoryId (accepts id or name)
-    let categoryId = null;
-    if (data.category) {
-        const cat = await prisma.category.findFirst({ where: { OR: [{ id: data.category }, { name: data.category }] } });
-        if (cat) categoryId = cat.id;
-        else {
-            const created = await prisma.category.create({ data: { name: data.category } });
-            categoryId = created.id;
-        }
-    }
+    // find or create service and notify if created
+    const { serviceObj } = await findOrCreateService(data, categoryId, userId);
+    const serviceId = serviceObj?.id;
+    const serviceName = serviceObj?.name || data.name;
 
-    let serviceObj = null;
-    if (!serviceId) {
-        const service = await prisma.service.findFirst({
-            where: {
-                name: data.name,
-                ...(categoryId && { categoryId }),
-            },
-        });
-        if (!service) {
-            serviceObj = await prisma.service.create({
-                data: {
-                    name: data.name,
-                    description: data.description,
-                    categoryId: categoryId || null,
-                    recurrence: data.recurrence || 'none',
-                    autoRenew: data.autoRenew ?? false,
-                    userId: userId
-                },
-            });
+    // Normalize due date to date-only (UTC midnight) or use today
+    const normalizedDue = normalizeDueDateOrToday(data.dueDate);
 
-            // Notificación de nuevo servicio
-            await prisma.notification.create({
-                data: {
-                    message: `Nuevo servicio registrado: ${serviceObj.name}`,
-                    read: false,
-                    title: 'Nuevo Servicio',
-                    userId: userId || serviceObj.userId || null
-                }
-            });
-        } else {
-            serviceObj = service;
-        }
-        serviceId = serviceObj.id;
-        serviceName = serviceObj.name;
-    } else {
-        // Si se proporcionó serviceId, obtenemos el nombre y flags del servicio
-        serviceObj = await prisma.service.findUnique({
-            where: { id: serviceId },
-            select: { name: true, autoRenew: true, recurrence: true }
-        });
-        serviceName = serviceObj?.name;
-    }
+    // Create bill record
+    const bill = await createBillRecord({ serviceId, amount: data.amount, dueDate: normalizedDue, userId });
 
-    const { name, description, ...billData } = data;
-    // Las facturas son hechos concretos y ya no almacenan `recurrence` ni `categoryId`.
-    // La categoría y recurrencia provienen del Service relacionado.
-    // Normalize dueDate to date-only (UTC midnight). If not provided, use today date-only.
-    let normalizedDue = normalizeToDateOnly(data.dueDate);
-    if (!normalizedDue) {
-        const now = new Date();
-        normalizedDue = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    }
-    const bill = await prisma.bill.create({
-        data: {
-            status: 'pending',
-            serviceId,
-            amount: data.amount,
-            dueDate: normalizedDue,
-            userId: userId
-        },
-    });
-
-    // Notificación de nueva factura
-    await prisma.notification.create({
-        data: {
-            message: `Nueva factura registrada para ${serviceName}: ${new Intl.NumberFormat('es-AR', {
-                style: 'currency',
-                currency: 'ARS',
-            }).format(bill.amount)} (vence: ${new Date(bill.dueDate).toLocaleDateString('es-ES')})`,
-            read: false,
-            title: 'Nueva Factura',
-            userId: userId || bill.userId || null
-
-        }
-    });
+    // Create notification for the new bill
+    await createBillNotification(bill, serviceName, userId);
 
     return bill;
 };

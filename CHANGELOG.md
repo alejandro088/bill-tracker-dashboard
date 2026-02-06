@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026-02-06] - Backend: no crear `Category` automáticamente en `addBill`
+
+### Changed
+- Eliminada la creación automática de `Category` en `addBill` (ahora, si se pasa una categoría que no existe, no se crea; `categoryId` quedará en `null`).
+
+
 ## [2026-02-05] - Frontend: usar categorías desde DB
 
 ### Changed
