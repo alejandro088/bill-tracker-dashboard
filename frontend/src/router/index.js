@@ -22,7 +22,7 @@ const routes = [
   { path: '/settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/finance', component: FinanceManager, meta: { requiresAuth: true } },
   { path: '/login', component: Login, meta: { layout: 'auth' } },
-  { path: '/register', component: Register, meta: { layout: 'auth' } }
+  { path: '/register', component: Register, meta: { layout: 'auth' } },
   {
     path: '/calendar',
     name: 'Calendar',

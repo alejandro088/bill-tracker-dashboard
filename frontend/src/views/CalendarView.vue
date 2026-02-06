@@ -53,13 +53,22 @@ onMounted(async () => {
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
     const end = new Date(now.getFullYear(), now.getMonth() + 2, 1).toISOString()
     const res = await api.get('/bills', { params: { page: 1, limit: 100, start, end } })
-    const items = (res.data.data || []).map(b => ({
-      id: b.id,
-      title: `${b.name} — ${b.amount}`,
-      start: b.dueDate,
-      color: b.status === 'paid' ? 'green' : (b.status === 'overdue' ? 'red' : 'orange'),
-      extendedProps: { billId: b.id }
-    }))
+    const items = (res.data.data || []).map(b => {
+      const iso = b.dueDate || ''
+      const hasTime = /T\d{2}:\d{2}:\d{2}/.test(iso)
+      // Treat end-of-day timestamps (23:59:59) as date-only to avoid timezone shifts
+      const isEndOfDay = /T23:59:59(?:Z)?$/.test(iso)
+      const allDay = !hasTime || isEndOfDay
+      const start = allDay ? iso.slice(0, 10) : iso
+      return {
+        id: b.id,
+        title: `${b.name} — ${b.amount}`,
+        start,
+        allDay,
+        color: b.status === 'paid' ? 'green' : (b.status === 'overdue' ? 'red' : 'orange'),
+        extendedProps: { billId: b.id }
+      }
+    })
     calendar.addEventSource(items)
   } catch (e) {
     console.error('Error fetching bills for calendar', e)
