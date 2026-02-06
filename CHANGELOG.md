@@ -4,6 +4,11 @@
 
 ### Added
 - Nueva vista `AccountDetail.vue` en `frontend/src/views/` para visualizar el detalle de una cuenta y todos sus movimientos (pagos, ingresos/egresos, transferencias). Ruta registrada: `/accounts/:id`.
+ 
+## [2026-02-06] - Refactor: extraer lógica de notificaciones a servicio
+
+### Changed
+- Extraída la lógica de acceso a datos y operaciones de notificaciones a `src/services/notificationService.js`. `src/controllers/notificationController.js` ahora delega en el servicio y usa `handleControllerError` para manejo centralizado de errores.
 
 ## [2026-02-06] - Backend: no crear `Category` automáticamente en `addBill`
 
