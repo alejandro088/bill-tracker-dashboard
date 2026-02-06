@@ -256,6 +256,12 @@ export const createService = async (data, userId) => {
       delete createData.categoryId;
     }
 
+    // If a userId was passed, connect the User relation instead of passing scalar
+    if (createData.userId) {
+      createData.User = { connect: { id: createData.userId } };
+      delete createData.userId;
+    }
+
     // Remove transient bill fields so Prisma.service.create doesn't receive unknown args
     const transientFields = ['amount', 'currency', 'dueDate'];
     for (const f of transientFields) delete createData[f];
