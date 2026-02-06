@@ -298,7 +298,12 @@ export const createService = async (data, userId) => {
     }
 
     // Notification for new service
-    await createNotification(`Nuevo servicio registrado: ${service.name}`, userId);
+    await createNotification({
+      type: 'info',
+      title: 'Nuevo servicio registrado',
+      message: `Nuevo servicio registrado: ${service.name}`,
+      actionUrl: `/services/${service.id}`
+    }, userId);
 
     // Notification for new bill (if created)
     if (createdBill) {
@@ -306,7 +311,12 @@ export const createService = async (data, userId) => {
         const currency = (createdBill.currency || service.defaultCurrency || 'ARS');
         const formatted = new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(createdBill.amount);
         const due = new Date(createdBill.dueDate).toLocaleDateString('es-ES');
-        await createNotification(`Nueva factura registrada para ${service.name}: ${formatted} (vence: ${due})`, userId);
+        await createNotification({
+          type: 'info',
+          title: `Nueva factura para ${service.name}`,
+          message: `Nueva factura registrada para ${service.name}: ${formatted} (vence: ${due})`,
+          actionUrl: `/bills/${createdBill.id}`
+        }, userId);
       } catch (err) {
         console.debug('createService: failed to create bill notification', err);
       }
