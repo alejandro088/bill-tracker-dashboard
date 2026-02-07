@@ -1,5 +1,6 @@
 import prisma from '../db/prismaClient.js';
 import { ValidationError, NotFoundError, UnauthorizedError } from '../errors/httpErrors.js';
+import { logDebug, logError } from '../utils/logger.js';
 
 export const getAllAccounts = async (userId = null) => {
   const where = { ...(userId && { userId }) };
@@ -271,10 +272,10 @@ export const getIncomes = async (userId = null) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    console.log('Incomes retrieved:', incomes);
+    logDebug('Incomes retrieved', { count: incomes.length });
     return incomes;
   } catch (error) {
-    console.error('Error retrieving incomes:', error);
+    logError('Error retrieving incomes', error);
     throw new Error('Error retrieving incomes: ' + error.message);
   }
 };

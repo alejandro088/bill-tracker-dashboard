@@ -1,5 +1,42 @@
 # Changelog
 
+## [2026-02-07] - Mejora: Sistema de logging y manejo de errores
+
+### Added
+- **Backend**: Logger estructurado con Winston (`src/utils/logger.js`)
+  - Logs con niveles: info, warn, error, debug
+  - Formato personalizado con timestamp y metadata
+  - Diferentes transports según entorno (consola en dev, archivos en producción)
+  - Logs silenciados en tests
+- **Frontend**: Servicio centralizado de manejo de errores (`frontend/src/utils/errorService.js`)
+  - Clasificación de errores por tipo: network, validation, auth, server, unknown
+  - Niveles de error: info, warning, error, critical
+  - Historial de errores con límite configurable
+  - Mensajes user-friendly automáticos
+- **Frontend**: Composable Vue para manejo de errores (`frontend/src/composables/useErrorHandler.js`)
+  - Hook `useErrorHandler` para componentes Vue
+  - Wrapper para funciones async con manejo automático
+  - Acceso reactivo a errores actuales e historial
+
+### Changed
+- Reemplazados todos los `console.log/error/debug` en backend por logger estructurado
+- Archivos actualizados:
+  - `src/index.js`: Logs de servidor y conexión DB
+  - `src/middleware/logger.js`: Middleware de requests HTTP
+  - `src/utils/handleControllerError.js`: Errores de controladores
+  - `src/reminder.js`: Logs de recordatorios
+  - `notifier/cron.js`: Logs de notificaciones por email
+  - `src/services/billService.js`: Logs de operaciones de facturas
+  - `src/services/accountService.js`: Logs de cuentas
+  - `src/db/paymentsDB.js`: Logs de pagos
+
+### Fixed
+- Eliminado bloque `catch` vacío en `src/services/billService.js`
+- Mejorado manejo de errores con contexto y metadata estructurada
+
+### Dependencies
+- Agregado `winston` como dependencia para logging estructurado
+
 ## [2026-02-06] - Fix: Frontend - corregido `paymentMethod` no definido en Add Service
 
 ### Fixed

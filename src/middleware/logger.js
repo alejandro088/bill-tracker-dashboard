@@ -1,4 +1,11 @@
+import logger from '../utils/logger.js';
+
 export default (req, res, next) => {
-  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+  logger.info(`${req.method} ${req.url}`, {
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    userAgent: req.get('user-agent')
+  });
   next();
 };

@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import prisma from './db/prismaClient.js';
+import { logInfo } from './utils/logger.js';
 
 const checkUpcoming = async () => {
   const now = new Date();
@@ -8,7 +9,7 @@ const checkUpcoming = async () => {
     where: { dueDate: { gte: now, lte: limit } }
   });
   if (upcoming.length) {
-    console.log('Upcoming bills:', upcoming);
+    logInfo(`Found ${upcoming.length} upcoming bills`, { count: upcoming.length });
   }
 };
 

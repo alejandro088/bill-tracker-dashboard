@@ -1,5 +1,6 @@
 import prisma from '../db/prismaClient.js';
 import { addPayment } from './paymentService.js';
+import { logDebug, logError } from '../utils/logger.js';
 
 // Constantes
 export const BILL_STATUS = {
@@ -133,7 +134,7 @@ const handleAutoRenewal = async (bill) => {
     // Ensure we have the full bill loaded (include Service to check its autoRenew)
     const billFull = bill.Service ? bill : await prisma.bill.findUnique({ where: { id: bill.id }, include: { Service: { include: { Category: true } } } });
     if (!billFull) {
-        console.debug('handleAutoRenewal: billFull not found for', bill?.id);
+        logDebug('handleAutoRenewal: billFull not found', { billId: bill?.id });
         return null;
     }
 
@@ -141,14 +142,14 @@ const handleAutoRenewal = async (bill) => {
     const serviceAuto = billFull.Service?.autoRenew;
     const autoEnabled = !!serviceAuto;
     if (!autoEnabled) {
-        console.debug('handleAutoRenewal: autoRenew disabled for', billFull.id, 'serviceAuto=', serviceAuto);
+        logDebug('handleAutoRenewal: autoRenew disabled', { billId: billFull.id, serviceAuto });
         return null;
     }
 
     // Create the next bill using the Service recurrence (the service is the source of truth for recurrence)
     const serviceRecurrence = billFull.Service?.recurrence || 'none';
     const due = calculateNextDueDate(billFull.dueDate, serviceRecurrence);
-    console.debug('handleAutoRenewal: creating next bill for', billFull.id, 'due:', due.toISOString(), 'serviceAuto=', serviceAuto);
+    logDebug('handleAutoRenewal: creating next bill', { billId: billFull.id, dueDate: due.toISOString(), serviceAuto });
     const created = await prisma.bill.create({
         data: {
             serviceId: billFull.serviceId,
@@ -159,7 +160,7 @@ const handleAutoRenewal = async (bill) => {
             userId: billFull.userId || billFull.Service?.userId || null,
         },
     });
-    console.debug('handleAutoRenewal: created bill', created.id);
+    logDebug('handleAutoRenewal: bill created', { newBillId: created.id });
     return created;
 };
 
@@ -323,20 +324,16 @@ export const updateBill = async (id, data, userId = null) => {
             else delete updateData.dueDate;
         }
 
-                // Debug logs
-
         // Actualizamos la bill
         const updated = await prisma.bill.update({
             where: { id },
             data: updateData,
         });
 
-                try {
-                    console.debug('updateBill: updated', updated.id);
-                } catch (e) {}
+        logDebug('Bill updated', { billId: updated.id });
 
         const justPaid = data.status === BILL_STATUS.PAID && existing.status !== BILL_STATUS.PAID;
-                console.debug('updateBill: justPaid', id, justPaid, 'existing.status', existing.status, 'incoming.status', data.status);
+        logDebug('Checking if just paid', { billId: id, justPaid, existingStatus: existing.status, incomingStatus: data.status });
         if (!justPaid) {
             return { newBill: null };
         }

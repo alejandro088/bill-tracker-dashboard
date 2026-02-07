@@ -26,8 +26,10 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import logger, { logError, logInfo } from './utils/logger.js';
+
 prisma.$connect().catch((e) => {
-  console.error('Failed to connect to DB', e);
+  logError('Failed to connect to DB', e);
   process.exit(1);
 });
 
@@ -70,7 +72,7 @@ app.use(errorHandler);
 if (process.env.NODE_ENV !== 'test') {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+    logInfo(`Server listening on port ${PORT}`);
   });
 }
 

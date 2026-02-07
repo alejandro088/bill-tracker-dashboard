@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { getUpcomingBills } from '../src/services/billService.js';
+import { logInfo, logError, logDebug } from '../src/utils/logger.js';
 
 dotenv.config();
 
@@ -17,13 +18,13 @@ export const notifyUpcomingBills = async () => {
   try {
     const bills = await getUpcomingBills();
     if (!bills.length) {
-      console.log('No upcoming bills to notify.');
+      logInfo('No upcoming bills to notify.');
       return;
     }
 
     const list = bills
       .map((b) => {
-        console.log(b)
+        logDebug('Processing bill for notification', { billId: b.id, service: b.Service.name });
         const url = `${process.env.FRONTEND_URL}/services/${b.serviceId}`;
         const amount = `$${b.amount.toLocaleString('es-AR')}`;
         const due = new Date(b.dueDate).toLocaleDateString('es-AR');
@@ -37,9 +38,9 @@ export const notifyUpcomingBills = async () => {
       subject: '📬 Recordatorio: Facturas próximas a vencer',
       html: list
     });
-    console.log('Upcoming bills notification sent.');
+    logInfo('Upcoming bills notification sent successfully.', { billsCount: bills.length });
   } catch (err) {
-    console.error('Error sending notification', err);
+    logError('Error sending notification', err);
   }
 };
 

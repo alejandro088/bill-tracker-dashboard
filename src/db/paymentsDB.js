@@ -1,4 +1,5 @@
 import prisma from './prismaClient.js';
+import { logDebug } from '../utils/logger.js';
 
 export const addPayment = async (payment, userId = null) => {
   const { 
@@ -35,9 +36,7 @@ export const addPayment = async (payment, userId = null) => {
     data.userId = payment.userId;
   }
 
-  console.log('Adding payment with billId:', billId);
-  console.log('🧾 Data to be created:', data);
-
+  logDebug('Adding payment', { billId, amount, currency });
 
   return prisma.payment.create({ data });
 };
