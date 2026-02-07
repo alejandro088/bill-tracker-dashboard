@@ -1,5 +1,48 @@
 # Changelog
 
+## [2026-02-07] - Mejora: Validación de datos de entrada con Zod
+
+### Added
+- **Backend**: Sistema de validación robusto con Zod
+  - Schemas de validación para todos los endpoints principales (`src/validation/schemas.js`)
+  - Middleware de validación reutilizable (`src/middleware/validate.js`)
+  - Validación de body, query params y URL params
+  - Mensajes de error user-friendly y estructurados
+- **Schemas implementados**:
+  - Bills: `createBillSchema`, `updateBillSchema`, `billQuerySchema`
+  - Services: `createServiceSchema`, `updateServiceSchema`
+  - Payments: `createPaymentSchema`, `updatePaymentSchema`
+  - Accounts: `createAccountSchema`, `updateAccountSchema`, `createIncomeSchema`, `createTransferSchema`, `createWithdrawalSchema`
+  - Auth: `registerSchema`, `loginSchema`
+  - Categories: `createCategorySchema`, `updateCategorySchema`
+  - Payment Methods: `createPaymentMethodSchema`, `updatePaymentMethodSchema`
+  - Notifications: `createNotificationSchema`
+
+### Changed
+- Rutas actualizadas con validación automática:
+  - `src/routes/billRoutes.js`: Validación de creación, actualización y query params
+  - `src/routes/serviceRoutes.js`: Validación de servicios
+  - `src/routes/paymentRoutes.js`: Validación de pagos
+  - `src/routes/accountRoutes.js`: Validación de cuentas, ingresos, transferencias y retiros
+  - `src/routes/authRoutes.js`: Validación de registro y login
+  - `src/routes/categoryRoutes.js`: Validación de categorías
+  - `src/routes/paymentMethodRoutes.js`: Validación de métodos de pago
+
+### Improved
+- Errores de validación ahora retornan detalles estructurados con campo y mensaje
+- Validación de tipos de datos (UUIDs, fechas, emails, URLs)
+- Prevención de datos inválidos antes de llegar a servicios
+- Transformación automática de query params (strings a números)
+- Validación de restricciones de negocio (ej: cuentas origen/destino diferentes en transferencias)
+
+### Dependencies
+- Agregado `zod@^3.25.76` para validación de schemas
+
+### Notes
+- Tests de integración existentes requieren actualización para cumplir con los nuevos schemas de validación
+- Tests unitarios del backend continúan funcionando correctamente
+- La validación está activa y funcionando en el servidor
+
 ## [2026-02-07] - Mejora: Sistema de logging y manejo de errores
 
 ### Added

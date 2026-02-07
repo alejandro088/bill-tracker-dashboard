@@ -13,6 +13,14 @@ vi.mock('openai', () => ({
     chat = { completions: { create: vi.fn().mockResolvedValue({ choices: [{ message: { content: 'answer' } }] }) } };
   }
 }));
+// Mock auth middleware para tests
+vi.mock('../../src/middleware/auth.js', () => ({
+  requireAuth: (req, res, next) => {
+    req.user = { userId: 'test-user-id' };
+    next();
+  },
+  optionalAuth: (req, res, next) => next()
+}));
 import app from '../../src/index.js';
 
 describe('Assistant endpoints', () => {

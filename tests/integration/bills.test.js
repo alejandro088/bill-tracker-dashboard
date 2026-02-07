@@ -9,6 +9,14 @@ vi.mock('../../src/db/prismaClient.js', () => ({
   }
 }));
 vi.mock('openai', () => ({ default: vi.fn() }));
+// Mock auth middleware para tests
+vi.mock('../../src/middleware/auth.js', () => ({
+  requireAuth: (req, res, next) => {
+    req.user = { userId: 'test-user-id' };
+    next();
+  },
+  optionalAuth: (req, res, next) => next()
+}));
 import app from '../../src/index.js';
 import * as billService from '../../src/services/billService.js';
 

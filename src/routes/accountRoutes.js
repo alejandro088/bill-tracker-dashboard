@@ -1,6 +1,14 @@
 import express from 'express';
 import * as accountController from '../controllers/accountController.js';
 import { requireAuth } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { 
+  createAccountSchema, 
+  updateAccountSchema,
+  createIncomeSchema,
+  createTransferSchema,
+  createWithdrawalSchema 
+} from '../validation/schemas.js';
 
 const router = express.Router();
 
@@ -14,11 +22,11 @@ router.get('/', accountController.getAllAccounts);
 router.get('/balance/summary', accountController.getBalances);
 
 // Ruta para registrar ingresos
-router.post('/income', accountController.registerIncome);
+router.post('/income', validate(createIncomeSchema), accountController.registerIncome);
 // Ruta para crear transferencias
-router.post('/transfers', accountController.createTransfer);
+router.post('/transfers', validate(createTransferSchema), accountController.createTransfer);
 // Ruta para registrar retiros/egresos
-router.post('/withdraw', accountController.registerWithdrawal);
+router.post('/withdraw', validate(createWithdrawalSchema), accountController.registerWithdrawal);
 
 // Nuevas rutas para listar ingresos y transferencias
 router.get('/incomes', accountController.listIncomes);
@@ -26,8 +34,8 @@ router.get('/transfers', accountController.listTransfers);
 
 
 router.get('/:id', accountController.getAccountById);
-router.post('/', accountController.createAccount);
-router.put('/:id', accountController.updateAccount);
+router.post('/', validate(createAccountSchema), accountController.createAccount);
+router.put('/:id', validate(updateAccountSchema), accountController.updateAccount);
 router.delete('/:id', accountController.deleteAccount);
 
 // Rutas para gestionar vinculación de métodos de pago
