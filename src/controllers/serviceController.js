@@ -60,7 +60,6 @@ export const create = async (req, res, next) => {
     const service = await createService(req.body, req.user?.userId);
     res.status(201).json(service);
   } catch (err) {
-    //next(err);
-    return handleControllerError(res, err);
+    next(err);
   }
 };

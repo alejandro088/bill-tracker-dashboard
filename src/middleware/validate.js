@@ -20,16 +20,17 @@ export const validate = (schema, source = 'body') => {
     } catch (error) {
       if (error instanceof ZodError) {
         // Formatear errores de Zod para respuesta user-friendly
-        const errors = error.errors.map(err => ({
-          field: err.path.join('.'),
+        const rawErrors = error.issues || [];
+        const errors = rawErrors.map(err => ({
+          field: err.path?.join('.') || 'unknown',
           message: err.message
         }));
         
         logWarn('Validation failed', {
           source,
-          errors,
           path: req.path,
-          method: req.method
+          method: req.method,
+          errors
         });
         
         return res.status(400).json({
@@ -39,6 +40,12 @@ export const validate = (schema, source = 'body') => {
       }
       
       // Error inesperado durante validación
+      logWarn('Unexpected validation error', {
+        source,
+        path: req.path,
+        method: req.method,
+        error: error.message || error.toString()
+      });
       next(error);
     }
   };

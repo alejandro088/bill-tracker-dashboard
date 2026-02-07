@@ -1,13 +1,13 @@
+import { logError } from '../utils/logger.js';
+
 export default (err, req, res, next) => {
-  //console.error(err.stack);
+  // Loguear el error con Winston
+  logError('Error handler caught error', err, {
+    path: req.path,
+    method: req.method,
+    userId: req.user?.userId
+  });
+  
+  res.status(err.statusCode || 500).json({ message: err.message });
 
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({ message: err.message });
-  }
-
-  if (err.name === 'NotFoundError') {
-    return res.status(404).json({ message: 'Not Found' });
-  }
-
-  res.status(500).json({ message: 'Internal Server Error' });
 };

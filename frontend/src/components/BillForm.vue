@@ -147,7 +147,17 @@ function resetForm() {
       emit('added')
       close()
   } catch (e) {
-    error.value = e.message
+    // Manejar errores de validación del backend
+    if (e.response?.data?.details && Array.isArray(e.response.data.details)) {
+      const errorMessages = e.response.data.details
+        .map(detail => `${detail.field}: ${detail.message}`)
+        .join(', ')
+      error.value = errorMessages || e.response.data.error || e.message
+    } else if (e.response?.data?.error) {
+      error.value = e.response.data.error
+    } else {
+      error.value = e.message
+    }
   } finally {
     loading.value = false
   }

@@ -219,6 +219,10 @@
                         </v-row>
                     </v-col>
                 </v-row>
+
+                <v-alert v-if="error" type="error" density="compact" class="mt-2">
+                    {{ error }}
+                </v-alert>
                 </v-form>
             </v-card-text>
 
@@ -252,6 +256,7 @@ const props = defineProps({
 const emit = defineEmits(['updated', 'close']);
 const form = ref(null);
 const loading = ref(false);
+const error = ref(null);
 const show = ref(true);
 
 // Observar cambios en show para emitir el evento close
@@ -336,12 +341,24 @@ const save = async () => {
     if (!valid) return;
     
     loading.value = true;
+    error.value = null;
     try {
         await api.put(`/services/${props.service.id}`, formData.value);
         emit('updated');
         closeDialog();
-    } catch (error) {
-        console.error('Error al actualizar el servicio:', error);
+    } catch (e) {
+        // Manejar errores de validación del backend
+        if (e.response?.data?.details && Array.isArray(e.response.data.details)) {
+            const errorMessages = e.response.data.details
+                .map(detail => `${detail.field}: ${detail.message}`)
+                .join(', ');
+            error.value = errorMessages || e.response.data.error || e.message;
+        } else if (e.response?.data?.error) {
+            error.value = e.response.data.error;
+        } else {
+            error.value = e.message;
+        }
+        console.error('Error al actualizar el servicio:', e);
     } finally {
         loading.value = false;
     }
