@@ -86,7 +86,7 @@ export const logInfo = (message, meta = {}) => logger.info(message, meta);
 export const logWarn = (message, meta = {}) => logger.warn(message, meta);
 export const logError = (message, error = null, meta = {}) => {
   if (error instanceof Error) {
-    logger.error(message, { ...meta, error: error.message, stack: error.stack });
+    logger.error(message, { ...meta, error: error.message, stack: error.stack })
   } else {
     logger.error(message, meta);
   }
