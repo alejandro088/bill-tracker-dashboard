@@ -14,7 +14,7 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import paymentMethodRoutes from './routes/paymentMethodRoutes.js';
 import accountRoutes from './routes/accountRoutes.js';
 import authRoutes from './routes/authRoutes.js';
-import logger from './middleware/logger.js';
+import requestLogger from './middleware/logger.js';
 import errorHandler from './middleware/errorHandler.js';
 import './reminder.js';
 import '../notifier/cron.js';
@@ -41,7 +41,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use(cors({ origin: process.env.FRONTEND_URL }));
 }
 
-app.use(logger);
+app.use(requestLogger);
 
 // API routes
 app.use('/api/notifications', notificationRoutes);
