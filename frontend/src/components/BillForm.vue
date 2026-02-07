@@ -9,7 +9,14 @@
       <v-form @submit.prevent="submit">
         <v-card-title>Add Service</v-card-title>
         <v-card-text class="pt-0">
-          <v-text-field v-model="name" label="Name" density="compact" required />
+          <v-text-field
+            v-model="name"
+            label="Name"
+            density="compact"
+            required
+            :error-messages="validationErrors.name || []"
+            :error="validationErrors.name && validationErrors.name.length > 0"
+          />
           <v-text-field v-model="description" label="Description" density="compact" />
           <div class="d-flex">
             <v-text-field
@@ -47,6 +54,8 @@
             item-value="id"
             label="Categoría"
             density="compact"
+            :error-messages="validationErrors.categoryId || validationErrors.category || []"
+            :error="(validationErrors.categoryId && validationErrors.categoryId.length > 0) || (validationErrors.category && validationErrors.category.length > 0)"
           />
           <v-btn
             variant="text"
@@ -67,7 +76,7 @@
             v-model="autoRenew"
             label="Auto Renew"
           />
-          <v-alert v-if="error" type="error" dense class="mt-2">{{ error }}</v-alert>
+          <v-alert v-if="generalError" type="error" dense class="mt-2">{{ generalError }}</v-alert>
         </v-card-text>
         <v-card-actions class="pt-0">
           <v-spacer />
@@ -101,7 +110,8 @@ const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly']
 const recurrence = ref('none')
 const autoRenew = ref(false)
 const loading = ref(false)
-const error = ref(null)
+const generalError = ref(null)
+const validationErrors = ref({})
 const dialog = ref(false)
 const categories = ref([])
 
@@ -119,7 +129,8 @@ function resetForm() {
   category.value = ''
   recurrence.value = 'none'
   autoRenew.value = false
-  error.value = null
+  generalError.value = null
+  validationErrors.value = {}
 }
 
   const submit = async () => {
@@ -148,15 +159,23 @@ function resetForm() {
       close()
   } catch (e) {
     // Manejar errores de validación del backend
+    generalError.value = null
+    validationErrors.value = {}
     if (e.response?.data?.details && Array.isArray(e.response.data.details)) {
-      const errorMessages = e.response.data.details
-        .map(detail => `${detail.field}: ${detail.message}`)
-        .join(', ')
-      error.value = errorMessages || e.response.data.error || e.message
+      // Mapeamos detalles a un objeto { field: [messages] }
+      const map = {}
+      e.response.data.details.forEach(d => {
+        if (d.field) {
+          map[d.field] = map[d.field] || []
+          map[d.field].push(d.message)
+        }
+      })
+      validationErrors.value = map
+      generalError.value = e.response.data.error || 'Datos de entrada inválidos'
     } else if (e.response?.data?.error) {
-      error.value = e.response.data.error
+      generalError.value = e.response.data.error
     } else {
-      error.value = e.message
+      generalError.value = e.message
     }
   } finally {
     loading.value = false
@@ -170,7 +189,7 @@ const fetchCategories = async () => {
     // Usamos name como value para mantener compatibilidad con el backend
     categories.value = response.data.map(c => ({ id: c.id, name: c.name, color: c.color }))
   } catch (e) {
-    error.value = e.message
+    generalError.value = e.message
   } finally {
     loading.value = false
   }

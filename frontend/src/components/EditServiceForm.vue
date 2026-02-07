@@ -16,6 +16,8 @@
                             required
                             variant="outlined"
                             density="comfortable"
+                            :error-messages="validationErrors.name || []"
+                            :error="validationErrors.name && validationErrors.name.length > 0"
                         />
                     </v-col>
 
@@ -220,8 +222,8 @@
                     </v-col>
                 </v-row>
 
-                <v-alert v-if="error" type="error" density="compact" class="mt-2">
-                    {{ error }}
+                <v-alert v-if="generalError" type="error" density="compact" class="mt-2">
+                    {{ generalError }}
                 </v-alert>
                 </v-form>
             </v-card-text>
@@ -256,7 +258,8 @@ const props = defineProps({
 const emit = defineEmits(['updated', 'close']);
 const form = ref(null);
 const loading = ref(false);
-const error = ref(null);
+const generalError = ref(null);
+const validationErrors = ref({});
 const show = ref(true);
 
 // Observar cambios en show para emitir el evento close
@@ -341,22 +344,27 @@ const save = async () => {
     if (!valid) return;
     
     loading.value = true;
-    error.value = null;
+    generalError.value = null;
+    validationErrors.value = {};
     try {
         await api.put(`/services/${props.service.id}`, formData.value);
         emit('updated');
         closeDialog();
     } catch (e) {
-        // Manejar errores de validación del backend
         if (e.response?.data?.details && Array.isArray(e.response.data.details)) {
-            const errorMessages = e.response.data.details
-                .map(detail => `${detail.field}: ${detail.message}`)
-                .join(', ');
-            error.value = errorMessages || e.response.data.error || e.message;
+            const map = {};
+            e.response.data.details.forEach(d => {
+                if (d.field) {
+                    map[d.field] = map[d.field] || [];
+                    map[d.field].push(d.message);
+                }
+            });
+            validationErrors.value = map;
+            generalError.value = e.response.data.error || 'Datos de entrada inválidos';
         } else if (e.response?.data?.error) {
-            error.value = e.response.data.error;
+            generalError.value = e.response.data.error;
         } else {
-            error.value = e.message;
+            generalError.value = e.message;
         }
         console.error('Error al actualizar el servicio:', e);
     } finally {
