@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-02-07] - Fix: Visualización de errores de validación en frontend
+
+### Fixed
+- **Frontend**: Formularios ahora muestran errores de validación específicos del backend
+  - `BillForm.vue`: Muestra detalles de errores de validación en lugar de "Request failed with status code 400"
+  - `EditServiceForm.vue`: Agregado v-alert para mostrar errores de validación
+  - Extracción y formateo de errores desde `response.data.details`
+  - Mensajes user-friendly mostrando campo y mensaje específico (ej: "name: Nombre es requerido")
+- **Backend**: Correcciones en logging y manejo de errores
+  - `errorHandler.js`: Ahora usa Winston logger para registrar todos los errores
+  - `serviceController.js`: Cambiado de `handleControllerError` a `next(err)` para pasar errores al middleware
+  - `validate.js`: Corregido para usar `error.issues` (propiedad correcta de Zod) en lugar de `error.errors`
+  - Agregado optional chaining para prevenir crashes en manejo de errores
+
+### Improved
+- Experiencia de usuario mejorada con mensajes de error claros y accionables
+- Todos los errores del servidor ahora se loguean correctamente con contexto (path, method, userId)
+- Sistema de logging más robusto y consistente en todo el stack
+
 ## [2026-02-07] - Mejora: Validación de datos de entrada con Zod
 
 ### Added
