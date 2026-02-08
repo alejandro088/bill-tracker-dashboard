@@ -184,3 +184,15 @@ export const updateReminderPreferences = async (req, res) => {
     return handleControllerError(res, error);
   }
 };
+
+// Obtener preferencias de reminder del usuario autenticado
+export const getReminderPreferences = async (req, res) => {
+  try {
+    const prefs = await accountService.getReminderPreferences(req.user?.userId);
+    if (!prefs) return res.status(404).json({ error: 'User not found' });
+    res.json(prefs);
+  } catch (error) {
+    console.error('Error fetching reminder preferences:', error);
+    return handleControllerError(res, error);
+  }
+};

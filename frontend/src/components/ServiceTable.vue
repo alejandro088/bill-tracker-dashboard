@@ -77,20 +77,25 @@
 
             <!-- Template para la categoría -->
             <template #item.category="{ item }">
-                <v-tooltip :text="getCategoryInfo(item.Category.name)">
-                    <template #activator="{ props }">
-                        <v-chip
-                            v-bind="props"
-                            :color="getCategoryColor(item.Category.name)"
-                            size="small"
-                            class="text-capitalize"
-                            variant="flat"
-                        >
-                            <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.Category.name) }}</v-icon>
-                            {{ getCategoryName(item.Category.name) }}
-                        </v-chip>
-                    </template>
-                </v-tooltip>
+                <div v-if="item.Category">
+                    <v-tooltip :text="getCategoryInfo(item.Category.id)">
+                        <template #activator="{ props }">
+                            <v-chip
+                                v-bind="props"
+                                :color="getCategoryColor(item.Category.id)"
+                                size="small"
+                                class="text-capitalize"
+                                variant="flat"
+                            >
+                                <v-icon size="16" start class="mr-1">{{ getCategoryIcon(item.Category.id) }}</v-icon>
+                                {{ getCategoryName(item.Category.id) }}
+                            </v-chip>
+                        </template>
+                    </v-tooltip>
+                </div>
+                <div v-else>
+                    <v-chip size="small" variant="flat" color="grey">Sin categoría</v-chip>
+                </div>
             </template>
 
             <template #item.recurrence="{ item }">

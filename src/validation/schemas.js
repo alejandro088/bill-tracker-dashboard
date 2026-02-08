@@ -67,7 +67,7 @@ export const createServiceSchema = z.object({
   iconKey: z.string().max(50).optional(),
   customIconUrl: z.string().url('URL de ícono inválida').optional().or(z.literal('')),
   customIconKey: z.string().max(50).optional(),
-  categoryId: uuidSchema.optional(),
+  categoryId: z.string('Nombre es requerido').uuid('ID de categoría inválido'),
   paymentMethodId: uuidSchema.optional(),
   paymentProvider: z.string().max(100).optional(),
   recurrence: recurrenceSchema.optional(),
@@ -165,6 +165,16 @@ export const createWithdrawalSchema = z.object({
   amount: z.number().positive('Monto debe ser positivo'),
   description: z.string().min(1, 'Descripción requerida').max(500),
   date: dateSchema.optional()
+});
+
+// ============================================================================
+// REMINDER PREFERENCES
+// ============================================================================
+
+export const reminderPreferencesSchema = z.object({
+  reminderEnabled: z.boolean().optional(),
+  reminderWindowDays: z.number().int().positive('Días debe ser un entero positivo').min(1, 'Debe ser al menos 1').max(30, 'Máximo 30 días').optional(),
+  reminderChannel: z.enum(['email', 'push'], { message: 'Canal inválido' }).optional()
 });
 
 // ============================================================================

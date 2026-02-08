@@ -1,54 +1,56 @@
 <template>
   <v-dialog v-model="dialog" max-width="500" @update:modelValue="val => !val && close()">
     <v-card>
-      <v-form @submit.prevent="submit">
-        <v-card-title>Nueva factura</v-card-title>
-        <v-card-text class="pt-0">
-          <v-text-field
-            v-model="name"
-            label="Name"
-            density="compact"
-            :error-messages="validationErrors.name || []"
-            :error="validationErrors.name && validationErrors.name.length > 0"
-          />
-          <v-text-field
-            v-model.number="amount"
-            label="Amount"
-            type="number"
-            density="compact"
-            required
-            :error-messages="validationErrors.amount || []"
-            :error="validationErrors.amount && validationErrors.amount.length > 0"
-          />
-          <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
-            <template #activator="{ props }">
-              <v-text-field
-                v-model="dueDate"
-                label="Due Date"
-                readonly
-                v-bind="props"
-                density="compact"
-                :error-messages="validationErrors.dueDate || []"
-                :error="validationErrors.dueDate && validationErrors.dueDate.length > 0"
-              />
-            </template>
-            <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
-          </v-menu>
-        </v-card-text>
-        <v-card-actions class="pt-0">
-          <v-spacer />
-          <v-btn text @click="close">Cancel</v-btn>
-          <v-btn type="submit" :loading="loading" color="primary">Save</v-btn>
-          <v-alert v-if="generalError" type="error" dense class="mt-2">{{ generalError }}</v-alert>
-        </v-card-actions>
-      </v-form>
+      <FormWrapper urlOnSubmit="/bills" v-slot="{ loading, generalError, fieldErrors, hasFieldErrors, submit }">
+        <v-form @submit.prevent="handleSubmit(submit)">
+          <v-card-title>Nueva factura</v-card-title>
+          <v-card-text class="pt-0">
+            <v-text-field
+              v-model="name"
+              label="Name"
+              density="compact"
+              :error-messages="fieldErrors('name')"
+              :error="hasFieldErrors('name')"
+            />
+            <v-text-field
+              v-model.number="amount"
+              label="Amount"
+              type="number"
+              density="compact"
+              required
+              :error-messages="fieldErrors('amount')"
+              :error="hasFieldErrors('amount')"
+            />
+            <v-menu v-model="menu" :close-on-content-click="false" transition="scale-transition">
+              <template #activator="{ props }">
+                <v-text-field
+                  v-model="dueDate"
+                  label="Due Date"
+                  readonly
+                  v-bind="props"
+                  density="compact"
+                  :error-messages="fieldErrors('dueDate')"
+                  :error="hasFieldErrors('dueDate')"
+                />
+              </template>
+              <v-date-picker v-model="dueDate" @update:modelValue="menu = false" />
+            </v-menu>
+            <v-alert v-if="generalError" type="error" dense class="mt-2">{{ generalError }}</v-alert>
+          </v-card-text>
+          <v-card-actions class="pt-0">
+            <v-spacer />
+            <v-btn text @click="close">Cancel</v-btn>
+            <v-btn type="submit" :loading="loading" color="primary">Save</v-btn>
+          </v-card-actions>
+        </v-form>
+      </FormWrapper>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
-import api from '../api.js';
+import FormWrapper from './FormWrapper.vue';
 
 const props = defineProps({ bill: Object });
 const emit = defineEmits(['created', 'close']);
@@ -62,10 +64,6 @@ const paymentProvider = ref('');
 const serviceId = ref('');
 const amount = ref(0);
 const dueDate = ref('');
-// Status is managed via payment actions; do not allow editing here
-const loading = ref(false);
-const generalError = ref(null);
-const validationErrors = ref({});
 
 watch(
   () => props.bill,
@@ -89,41 +87,21 @@ function close() {
   emit('close');
 }
 
-const submit = async () => {
-  loading.value = true;
+const handleSubmit = async (submit) => {
+  const payload = {
+    name: name.value,
+    amount: amount.value,
+    dueDate: dueDate.value,
+    serviceId: serviceId.value,
+    status: 'pending'
+  };
+
   try {
-    await api.post('/bills', {
-      name: name.value,
-      amount: amount.value,
-      dueDate: dueDate.value,
-      serviceId: serviceId.value,
-      status: 'pending'
-    });
+    await submit(payload);
     emit('created');
-    generalError.value = null;
-    validationErrors.value = {};
     close();
   } catch (err) {
-    // Handle backend validation errors
-    generalError.value = null;
-    validationErrors.value = {};
-    if (err.response?.data?.details && Array.isArray(err.response.data.details)) {
-      const map = {};
-      err.response.data.details.forEach(d => {
-        if (d.field) {
-          map[d.field] = map[d.field] || [];
-          map[d.field].push(d.message);
-        }
-      });
-      validationErrors.value = map;
-      generalError.value = err.response.data.error || 'Datos de entrada inválidos';
-    } else if (err.response?.data?.error) {
-      generalError.value = err.response.data.error;
-    } else {
-      generalError.value = err.message;
-    }
-  } finally {
-    loading.value = false;
+    // FormWrapper handles setting validation errors
   }
 };
 </script>

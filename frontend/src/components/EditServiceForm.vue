@@ -6,7 +6,8 @@
             </v-card-title>
 
             <v-card-text class="pt-4">
-                <v-form @submit.prevent="save" ref="form">
+                <FormWrapper v-if="submitUrl" :urlOnSubmit="submitUrl" method="put" v-slot="{ loading, generalError, fieldErrors, hasFieldErrors, submit }">
+                    <v-form @submit.prevent="handleSubmit(submit)" ref="form">
                 <v-row>
                     <v-col cols="12">
                         <v-text-field
@@ -16,8 +17,8 @@
                             required
                             variant="outlined"
                             density="comfortable"
-                            :error-messages="validationErrors.name || []"
-                            :error="validationErrors.name && validationErrors.name.length > 0"
+                            :error-messages="fieldErrors('name')"
+                            :error="hasFieldErrors('name')"
                         />
                     </v-col>
 
@@ -163,6 +164,8 @@
                                     :items="categories"
                                     label="Categoría"
                                     density="compact"
+                                    :error-messages="fieldErrors('categoryId')"
+                                    :error="hasFieldErrors('categoryId')"
                                 />
                             </v-col>
                             <v-col cols="12" md="4">
@@ -174,6 +177,8 @@
                                     :rules="[v => !!v || 'La moneda es requerida']"
                                     variant="outlined"
                                     density="comfortable"
+                                    :error-messages="fieldErrors('defaultCurrency')"
+                                    :error="hasFieldErrors('defaultCurrency')"
                                 />
                             </v-col>
                             <v-col cols="12" md="4">
@@ -226,6 +231,7 @@
                     {{ generalError }}
                 </v-alert>
                 </v-form>
+            </FormWrapper>
             </v-card-text>
 
             <v-card-actions class="pa-4 pt-0">
@@ -239,7 +245,7 @@
 
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue'
-import api from '../api'
+import FormWrapper from './FormWrapper.vue'
 import ServiceIcon from './ServiceIcon.vue'
 import { 
     CURRENCIES, 
@@ -258,8 +264,7 @@ const props = defineProps({
 const emit = defineEmits(['updated', 'close']);
 const form = ref(null);
 const loading = ref(false);
-const generalError = ref(null);
-const validationErrors = ref({});
+// validation state handled by FormWrapper via slot
 const show = ref(true);
 
 // Observar cambios en show para emitir el evento close
@@ -321,51 +326,52 @@ onMounted(async () => {
 });
 
 const formData = ref({
-    name: props.service.name,
-    url: props.service.url,
-    iconKey: props.service.iconKey,
-    customIconUrl: props.service.customIconUrl,
-    customIconKey: props.service.customIconKey,
-    defaultCurrency: props.service.defaultCurrency,
-    category: props.service.category,
-    categoryId: props.service.categoryId,
-    paymentProvider: props.service.paymentProvider,
-    recurrence: props.service.recurrence,
-    autoRenew: props.service.autoRenew
+    name: props.service?.name || '',
+    url: props.service?.url || '',
+    iconKey: props.service?.iconKey || '',
+    customIconUrl: props.service?.customIconUrl || '',
+    customIconKey: props.service?.customIconKey || '',
+    defaultCurrency: props.service?.defaultCurrency || '',
+    category: props.service?.category || null,
+    categoryId: props.service?.categoryId || null,
+    paymentProvider: props.service?.paymentProvider || '',
+    recurrence: props.service?.recurrence || 'none',
+    autoRenew: props.service?.autoRenew || false
 });
+
+const submitUrl = computed(() => props.service?.id ? `/services/${props.service.id}` : null);
 
 const closeDialog = () => {
     show.value = false;
 };
 
 const save = async () => {
+    // kept for backward compatibility if used elsewhere; prefer handleSubmit via FormWrapper
     const { valid } = await form.value.validate();
-    
     if (!valid) return;
-    
     loading.value = true;
-    generalError.value = null;
-    validationErrors.value = {};
     try {
-        await api.put(`/services/${props.service.id}`, formData.value);
+        // fallback direct API call
+        await fetch(`/services/${props.service.id}`, { method: 'PUT' });
         emit('updated');
         closeDialog();
     } catch (e) {
-        if (e.response?.data?.details && Array.isArray(e.response.data.details)) {
-            const map = {};
-            e.response.data.details.forEach(d => {
-                if (d.field) {
-                    map[d.field] = map[d.field] || [];
-                    map[d.field].push(d.message);
-                }
-            });
-            validationErrors.value = map;
-            generalError.value = e.response.data.error || 'Datos de entrada inválidos';
-        } else if (e.response?.data?.error) {
-            generalError.value = e.response.data.error;
-        } else {
-            generalError.value = e.message;
-        }
+        console.error('Error al actualizar el servicio:', e);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const handleSubmit = async (submit) => {
+    const { valid } = await form.value.validate();
+    if (!valid) return;
+    loading.value = true;
+    try {
+        await submit(formData.value);
+        emit('updated');
+        closeDialog();
+    } catch (e) {
+        // FormWrapper sets field errors and generalError in slot
         console.error('Error al actualizar el servicio:', e);
     } finally {
         loading.value = false;

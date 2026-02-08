@@ -6,16 +6,17 @@
 
   <v-dialog v-model="dialog" max-width="500">
     <v-card>
-      <v-form @submit.prevent="submit">
-        <v-card-title>Add Service</v-card-title>
-        <v-card-text class="pt-0">
+      <FormWrapper urlOnSubmit="/services" v-slot="{ loading, generalError, fieldErrors, hasFieldErrors, submit }">
+        <v-form @submit.prevent="handleSubmit(submit)">
+          <v-card-title>Add Service</v-card-title>
+          <v-card-text class="pt-0">
           <v-text-field
             v-model="name"
             label="Name"
             density="compact"
             required
-            :error-messages="validationErrors.name || []"
-            :error="validationErrors.name && validationErrors.name.length > 0"
+            :error-messages="fieldErrors('name')"
+            :error="hasFieldErrors('name')"
           />
           <v-text-field v-model="description" label="Description" density="compact" />
           <div class="d-flex">
@@ -54,8 +55,8 @@
             item-value="id"
             label="Categoría"
             density="compact"
-            :error-messages="validationErrors.categoryId || validationErrors.category || []"
-            :error="(validationErrors.categoryId && validationErrors.categoryId.length > 0) || (validationErrors.category && validationErrors.category.length > 0)"
+            :error-messages="fieldErrors('categoryId')"
+            :error="hasFieldErrors('categoryId')"
           />
           <v-btn
             variant="text"
@@ -77,19 +78,21 @@
             label="Auto Renew"
           />
           <v-alert v-if="generalError" type="error" dense class="mt-2">{{ generalError }}</v-alert>
-        </v-card-text>
-        <v-card-actions class="pt-0">
-          <v-spacer />
-          <v-btn text @click="close">Cancel</v-btn>
-          <v-btn type="submit" :loading="loading" color="primary">Add</v-btn>
-        </v-card-actions>
-      </v-form>
+          </v-card-text>
+          <v-card-actions class="pt-0">
+            <v-spacer />
+            <v-btn text @click="close">Cancel</v-btn>
+            <v-btn type="submit" :loading="loading" color="primary">Add</v-btn>
+          </v-card-actions>
+        </v-form>
+      </FormWrapper>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import FormWrapper from './FormWrapper.vue'
 import api from '../api.js'
 import { 
   CURRENCIES, 
@@ -98,6 +101,11 @@ import {
 } from '../constants'
 
 const emit = defineEmits(['added', 'notify'])
+
+// Local state for auxiliary async ops (e.g. fetching categories)
+const loading = ref(false)
+const generalError = ref(null)
+const validationErrors = ref({})
 
 const name = ref('')
 const description = ref('')
@@ -109,9 +117,7 @@ const category = ref('')
 const recurrenceOptions = ['none', 'weekly', 'monthly', 'bimonthly', 'yearly']
 const recurrence = ref('none')
 const autoRenew = ref(false)
-const loading = ref(false)
-const generalError = ref(null)
-const validationErrors = ref({})
+// loading, generalError and validationErrors are provided by FormWrapper via slot
 const dialog = ref(false)
 const categories = ref([])
 
@@ -133,54 +139,30 @@ function resetForm() {
   validationErrors.value = {}
 }
 
-  const submit = async () => {
-  loading.value = true
-  try {
-      // Build service payload. We create the Service and optionally a nested Bill
-      const servicePayload = {
-        name: name.value,
-        description: description.value,
-        categoryId: category.value || undefined,
-        recurrence: recurrence.value,
-        autoRenew: autoRenew.value,
-        defaultCurrency: currency.value
-      }
-
-      // If an amount is provided, include amount/currency/dueDate in payload
-      if (amount.value && Number(amount.value) > 0) {
-        servicePayload.amount = Number(amount.value)
-        servicePayload.currency = currency.value
-        servicePayload.dueDate = dueDate.value || undefined
-      }
-
-      const resp = await api.post('/services', servicePayload)
-      emit('notify', `Servicio creado: ${resp.data.name}`)
-      emit('added')
-      close()
-  } catch (e) {
-    // Manejar errores de validación del backend
-    generalError.value = null
-    validationErrors.value = {}
-    if (e.response?.data?.details && Array.isArray(e.response.data.details)) {
-      // Mapeamos detalles a un objeto { field: [messages] }
-      const map = {}
-      e.response.data.details.forEach(d => {
-        if (d.field) {
-          map[d.field] = map[d.field] || []
-          map[d.field].push(d.message)
-        }
-      })
-      validationErrors.value = map
-      generalError.value = e.response.data.error || 'Datos de entrada inválidos'
-    } else if (e.response?.data?.error) {
-      generalError.value = e.response.data.error
-    } else {
-      generalError.value = e.message
-    }
-  } finally {
-    loading.value = false
+const handleSubmit = async (submit) => {
+  const servicePayload = {
+    name: name.value,
+    description: description.value,
+    categoryId: category.value || undefined,
+    recurrence: recurrence.value,
+    autoRenew: autoRenew.value,
+    defaultCurrency: currency.value
+  };
+  if (amount.value && Number(amount.value) > 0) {
+    servicePayload.amount = Number(amount.value);
+    servicePayload.currency = currency.value;
+    servicePayload.dueDate = dueDate.value || undefined;
   }
-}
+
+  try {
+    const resp = await submit(servicePayload);
+    emit('notify', `Servicio creado: ${resp.data.name}`);
+    emit('added');
+    close();
+  } catch (e) {
+    // FormWrapper already set validation errors; nothing else to do here
+  }
+};
 
 const fetchCategories = async () => {
   loading.value = true

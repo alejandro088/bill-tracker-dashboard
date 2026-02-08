@@ -8,6 +8,7 @@ import {
   createIncomeSchema,
   createTransferSchema,
   createWithdrawalSchema 
+  , reminderPreferencesSchema
 } from '../validation/schemas.js';
 
 const router = express.Router();
@@ -33,7 +34,8 @@ router.get('/incomes', accountController.listIncomes);
 router.get('/transfers', accountController.listTransfers);
 
 // Actualizar preferencias de reminder (user must be authenticated)
-router.put('/reminder/preferences', accountController.updateReminderPreferences);
+router.get('/reminder/preferences', accountController.getReminderPreferences);
+router.put('/reminder/preferences', validate(reminderPreferencesSchema), accountController.updateReminderPreferences);
 
 
 router.get('/:id', accountController.getAccountById);

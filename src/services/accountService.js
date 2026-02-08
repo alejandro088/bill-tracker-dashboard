@@ -257,6 +257,16 @@ export const updateReminderPreferences = async (userId, prefs) => {
   return prisma.user.update({ where: { id: userId }, data: allowed });
 };
 
+export const getReminderPreferences = async (userId) => {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, reminderEnabled: true, reminderWindowDays: true, reminderChannel: true } });
+  if (!user) return null;
+  return {
+    reminderEnabled: user.reminderEnabled,
+    reminderWindowDays: user.reminderWindowDays,
+    reminderChannel: user.reminderChannel
+  };
+};
+
 export const getIncomes = async (userId = null) => {
   try {
 

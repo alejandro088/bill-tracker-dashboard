@@ -36,6 +36,10 @@
         <v-icon start>mdi-bank</v-icon>
         Cuentas
       </v-tab>
+      <v-tab value="reminders">
+        <v-icon start>mdi-bell-ring</v-icon>
+        Recordatorios
+      </v-tab>
     </v-tabs>
 
     <v-window v-model="activeTab">
@@ -152,6 +156,9 @@
       <!-- Pestaña de Cuentas -->
       <v-window-item value="accounts">
         <AccountManager />
+      </v-window-item>
+      <v-window-item value="reminders">
+        <ReminderPreferences />
       </v-window-item>
     </v-window>
 
@@ -335,6 +342,7 @@
 import { ref, onMounted } from 'vue';
 import api from '../api.js';
 import AccountManager from '../components/AccountManager.vue';
+import ReminderPreferences from '../components/ReminderPreferences.vue';
 
 // Estado de las pestañas
 const activeTab = ref('categories');
