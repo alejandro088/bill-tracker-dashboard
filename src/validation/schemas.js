@@ -53,7 +53,7 @@ export const billQuerySchema = z.object({
   recurrence: recurrenceSchema.optional(),
   sort: z.enum(['dueDate', 'amount', 'status', 'name']).optional(),
   page: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().positive()).optional(),
-  limit: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().positive().max(100)).optional()
+  limit: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().positive().max(2000)).optional()
 });
 
 // ============================================================================
@@ -153,6 +153,7 @@ export const createTransferSchema = z.object({
   fromAccountId: uuidSchema,
   toAccountId: uuidSchema,
   amount: z.number().positive('Monto debe ser positivo'),
+  currency: currencySchema.optional(),
   description: z.string().max(500).optional(),
   transferDate: dateSchema.optional()
 }).refine(data => data.fromAccountId !== data.toAccountId, {

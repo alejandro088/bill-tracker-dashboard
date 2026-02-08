@@ -130,10 +130,11 @@ export const getAccountsBalance = async (userId = null) => {
 };
 
 export const addIncome = async ({ accountId, amount, description }, userId = null) => {
-  if (userId) {
-    const account = await prisma.account.findUnique({ where: { id: accountId } });
-    if (!account || account.userId !== userId) throw new NotFoundError('Account not found');
-  }
+  // Obtener cuenta para validar y heredar currency
+  const account = await prisma.account.findUnique({ where: { id: accountId } });
+  if (!account) throw new NotFoundError('Account not found');
+  if (userId && account.userId !== userId) throw new NotFoundError('Account not found');
+  
   // Crear el ingreso y actualizar el balance de la cuenta en una transacción
   return prisma.$transaction(async (prismaTx) => {
     const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -141,6 +142,7 @@ export const addIncome = async ({ accountId, amount, description }, userId = nul
       data: {
         accountId,
         amount: parsedAmount,
+        currency: account.currency,
         description,
       },
     });
@@ -179,6 +181,7 @@ export const addWithdrawal = async ({ accountId, amount, description }, userId =
       data: {
         accountId,
         amount: negativeAmount,
+        currency: account.currency,
         description,
       },
     });
@@ -218,7 +221,7 @@ export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency
         fromAccountId,
         toAccountId,
         amount: parsedAmount,
-        currency,
+        currency: currency || fromAccount.currency,
         description,
         transferDate,
       },

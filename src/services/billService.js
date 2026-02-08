@@ -545,12 +545,13 @@ const getSummaryWithCurrency = async (userId = null) => {
     const bills = await prisma.bill.findMany({ where });
 
     const summary = {
-        ars: { paid: 0, pending: 0, overdue: 0 },
-        usd: { paid: 0, pending: 0, overdue: 0 }
+        ARS: { paid: 0, pending: 0, overdue: 0 },
+        USD: { paid: 0, pending: 0, overdue: 0 }
     };
 
     bills.forEach(bill => {
-        const currency = (bill.currency || 'ARS').toLowerCase();
+        // Currency es enum, usar directamente sin toLowerCase
+        const currency = bill.currency || 'ARS';
         const amount = bill.amount || 0;
 
         if (bill.status === BILL_STATUS.PAID && bill.paidAt >= startDate) {
