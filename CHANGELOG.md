@@ -1,5 +1,38 @@
 # Changelog
 
+## [2026-02-08] - Fix: Normalización de campos de moneda
+
+### Fixed
+- **Backend - Schema**: Normalización completa de campos de moneda en Prisma schema
+  - `Transfer.currency`: Cambiado de `String` a `Currency` (enum ARS/USD)
+  - `Income.currency`: Añadido campo `Currency` con valor por defecto `ARS`
+  - Todos los modelos ahora usan el enum `Currency` de forma consistente
+
+### Changed
+- **Backend - Services**: 
+  - `accountService.js`: `addIncome` ahora hereda la moneda de la cuenta asociada
+  - `accountService.js`: `addWithdrawal` incluye currency al crear registro de Income
+  - `accountService.js`: `addTransfer` usa currency de la cuenta origen si no se proporciona explícitamente
+  - `billService.js`: `getSummaryWithCurrency` mejorado para usar correctamente el enum Currency (ARS/USD en mayúsculas)
+  
+- **Backend - Validation**:
+  - `schemas.js`: `createTransferSchema` ahora incluye validación opcional de `currency`
+
+### Database
+- **Migración**: `prisma/migrations/20260208_normalize_currency/`
+  - ALTER TABLE `Transfer` MODIFY `currency` ENUM('ARS', 'USD')
+  - ALTER TABLE `Income` ADD `currency` ENUM('ARS', 'USD') DEFAULT 'ARS'
+
+### Improved
+- Consistencia en el manejo de monedas en toda la aplicación
+- Agrupación correcta por moneda en resúmenes (ARS y USD separados)
+- Prevención de errores de tipo en operaciones con monedas
+- Mejor validación y type-safety con el enum Currency
+
+### Notes
+- Ejecutar migración SQL antes de iniciar el servidor actualizado
+- Ejecutar `npx prisma generate` después de aplicar la migración
+
 ## [2026-02-07] - Fix: Visualización de errores de validación en frontend
 
 ### Fixed

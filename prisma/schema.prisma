@@ -149,6 +149,7 @@ model Income {
   account     Account  @relation(fields: [accountId], references: [id])
   accountId   String
   amount      Decimal
+  currency    Currency @default(ARS)
   description String?
   createdAt   DateTime @default(now())
 }
@@ -160,7 +161,7 @@ model Transfer {
   toAccount     Account  @relation("ToAccount", fields: [toAccountId], references: [id])
   toAccountId   String
   amount        Decimal
-  currency      String
+  currency      Currency @default(ARS)
   description   String?
   transferDate  DateTime
   createdAt     DateTime @default(now())
