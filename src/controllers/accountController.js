@@ -172,3 +172,15 @@ export const listTransfers = async (req, res) => {
     return handleControllerError(res, error);
   }
 };
+
+// Actualizar preferencias de reminder del usuario autenticado
+export const updateReminderPreferences = async (req, res) => {
+  try {
+    const prefs = req.body || {};
+    const updated = await accountService.updateReminderPreferences(req.user?.userId, prefs);
+    res.json({ message: 'Reminder preferences updated', data: { reminderEnabled: updated.reminderEnabled, reminderWindowDays: updated.reminderWindowDays, reminderChannel: updated.reminderChannel } });
+  } catch (error) {
+    console.error('Error updating reminder preferences:', error);
+    return handleControllerError(res, error);
+  }
+};

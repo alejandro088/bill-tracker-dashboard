@@ -32,6 +32,9 @@ router.post('/withdraw', validate(createWithdrawalSchema), accountController.reg
 router.get('/incomes', accountController.listIncomes);
 router.get('/transfers', accountController.listTransfers);
 
+// Actualizar preferencias de reminder (user must be authenticated)
+router.put('/reminder/preferences', accountController.updateReminderPreferences);
+
 
 router.get('/:id', accountController.getAccountById);
 router.post('/', validate(createAccountSchema), accountController.createAccount);

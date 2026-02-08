@@ -460,9 +460,9 @@ export const deleteBill = async (id, userId = null) => {
     return true;
 };
 
-export const getUpcomingBills = async (userId = null) => {
+export const getUpcomingBills = async (userId = null, windowDays = 3) => {
     const now = new Date();
-    const limit = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const limit = new Date(now.getTime() + Number(windowDays) * 24 * 60 * 60 * 1000);
     const where = { dueDate: { gte: now, lte: limit } };
     if (userId) where.userId = userId;
     const bills = await prisma.bill.findMany({

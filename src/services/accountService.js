@@ -248,6 +248,15 @@ export const addTransfer = async ({ fromAccountId, toAccountId, amount, currency
   });
 };
 
+export const updateReminderPreferences = async (userId, prefs) => {
+  const allowed = {};
+  if (prefs.reminderEnabled !== undefined) allowed.reminderEnabled = Boolean(prefs.reminderEnabled);
+  if (prefs.reminderWindowDays !== undefined) allowed.reminderWindowDays = Number(prefs.reminderWindowDays);
+  if (prefs.reminderChannel !== undefined) allowed.reminderChannel = String(prefs.reminderChannel);
+
+  return prisma.user.update({ where: { id: userId }, data: allowed });
+};
+
 export const getIncomes = async (userId = null) => {
   try {
 
